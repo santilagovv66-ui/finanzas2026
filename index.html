@@ -90,8 +90,8 @@ th{color:var(--muted);font-size:11px}
     <div class="auth-card" style="text-align: center;">
         <h2>🔒 App Bloqueada</h2>
         <p style="color: var(--muted); margin-bottom: 20px; font-size: 14px;">Usa tu huella o PIN para desbloquear Mis Finanzas.</p>
-        <button class="primary" onclick="desbloquearHuella()" style="padding: 15px; font-size: 16px;">👆 Desbloquear con Huella/PIN</button>
-        <button class="danger" onclick="logout()" style="margin-top: 15px; padding: 10px;">Cerrar Sesión</button>
+        <button class="primary" onclick="desbloquearHuella()" style="padding: 15px; font-size: 16px; margin-bottom: 10px;">👆 Desbloquear con Huella/PIN</button>
+        <button class="danger" onclick="logout()" style="padding: 10px;">Cerrar Sesión</button>
     </div>
 </div>
 
@@ -437,13 +437,16 @@ async function toggleBiometric() {
 
             const publicKeyCredentialCreationOptions = {
                 challenge: challenge,
-                rp: { name: "Mis Finanzas" },
+                rp: { name: "Mis Finanzas", id: window.location.hostname },
                 user: {
                     id: userId,
                     name: auth.currentUser.email,
                     displayName: auth.currentUser.email,
                 },
-                pubKeyCredParams: [{ alg: -7, type: "public-key" }],
+                pubKeyCredParams: [
+                    { alg: -7, type: "public-key" },  // ES256
+                    { alg: -257, type: "public-key" } // RS256
+                ],
                 authenticatorSelection: {
                     authenticatorAttachment: "platform", // Fuerza huella/PIN local
                     userVerification: "required",
