@@ -3,15 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
-<title>Mis Finanzas v9.0</title>
-<script>
-    // LIMPIEZA AUTOMÁTICA DE MEMORIA DAÑADA
-    localStorage.removeItem('fin_v6');
-    localStorage.removeItem('fin_v7_0');
-    localStorage.removeItem('fin_v7_1');
-    localStorage.removeItem('fin_v8_0');
-    localStorage.removeItem('fin_v8_1');
-</script>
+<title>Mis Finanzas v10.0</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
@@ -61,7 +53,7 @@ th{color:var(--muted);font-size:11px}
 </head>
 <body>
 <header>
-  <h1>💰 Mis Finanzas v9.0</h1>
+  <h1>💰 Mis Finanzas v10.0</h1>
   <div class="year-nav" id="yearNav"></div>
 </header>
 <nav id="mainNav">
@@ -147,6 +139,7 @@ th{color:var(--muted);font-size:11px}
         <select class="chart-selector" id="projChartType" onchange="changeProjChart()">
           <option value="line">Líneas</option>
           <option value="bar">Barras</option>
+          <option value="radar">Radar</option>
         </select>
       </div>
       <canvas id="projChart" height="100"></canvas>
@@ -233,16 +226,13 @@ th{color:var(--muted);font-size:11px}
       <input type="text" id="newCatName" placeholder="Nombre Categoría (ej. Educación)">
       <input type="text" id="newCatDesc" placeholder="Guía (ej. Cursos, libros)">
       <button class="primary" onclick="addCat()">+ Añadir Categoría</button>
-      
-      <h3 style="font-size:12px; color:var(--red); margin-top:20px; margin-bottom:5px;">4. Reparación de la App</h3>
-      <button class="danger" onclick="forceReset()">⚠️ Borrar Memoria y Reiniciar App</button>
     </div>
   </section>
 </main>
 <div id="toastWrap"></div>
 
 <script>
-const KEY = 'fin_v9_0'; 
+const KEY = 'fin_v10_0'; 
 let state = JSON.parse(localStorage.getItem(KEY) || 'null') || {
   config: { 
     placer: 30, 
@@ -271,49 +261,24 @@ let state = JSON.parse(localStorage.getItem(KEY) || 'null') || {
   placerLimits: {} 
 };
 
-// REPARACIÓN DE EMERGENCIA POR SI LOS DATOS GUARDADOS ESTÁN VACÍOS
-if(!state.accounts || state.accounts.length === 0) {
-    state.accounts = [
-        {id:'nequi', name:'Nequi'},
-        {id:'banco', name:'Bancolombia'},
-        {id:'billetera', name:'Billetera (Efectivo)'}
-    ];
-}
-if(!state.pockets || state.pockets.length === 0) {
-    state.pockets = [
-        {id:'ahorro_gen', name:'Ahorro General', meta: 0},
-        {id:'ahorro_emg', name:'Ahorro Emergencias', meta: 0},
-        {id:'ahorro_car', name:'Ahorro Carro', meta: 0}
-    ];
-}
-if(!state.debts) state.debts = [];
-if(!state.config) state.config = { placer: 30, chartType: 'bar', pieType: 'doughnut', projChartType: 'line', cats: [] };
-if(!state.config.cats) state.config.cats = [];
 if(!state.hidden) state.hidden = { global: false, stats: {}, locks: {} };
 if(!state.hidden.stats) state.hidden.stats = {};
 if(!state.hidden.locks) state.hidden.locks = {};
+if(!state.config.chartType) state.config.chartType = 'bar';
+if(!state.config.pieType) state.config.pieType = 'doughnut';
+if(!state.config.projChartType) state.config.projChartType = 'line';
 if(!state.placerLimits) state.placerLimits = {};
 
-if(!state.years) state.years = {};
 if(!state.years[state.active]) {
     state.years[state.active] = { locked:false, lockedInit: false, openingBalances: {}, txs:[] };
+    state.accounts.forEach(a => state.years[state.active].openingBalances[a.id] = 0);
+    state.pockets.forEach(p => state.years[state.active].openingBalances[p.id] = 0);
 }
-if(!state.years[state.active].openingBalances) state.years[state.active].openingBalances = {};
-if(!state.years[state.active].txs) state.years[state.active].txs = [];
-
-state.accounts.forEach(a => { if(state.years[state.active].openingBalances[a.id] === undefined) state.years[state.active].openingBalances[a.id] = 0; });
-state.pockets.forEach(p => { if(state.years[state.active].openingBalances[p.id] === undefined) state.years[state.active].openingBalances[p.id] = 0; });
 
 function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
 function fmt(n){ return new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0}).format(n||0); }
 function genId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 function toast(m){ const d=document.createElement('div'); d.className='toast'; d.textContent=m; document.body.appendChild(d); setTimeout(()=>d.remove(),3000); }
-
-function forceReset() {
-    if(!confirm('¿Borrar TODOS los datos guardados?')) return;
-    localStorage.clear();
-    location.reload();
-}
 
 function toggleGlobalHide() {
     state.hidden.global = !state.hidden.global;
@@ -663,17 +628,6 @@ function renderAll() {
   
   document.getElementById('alerts').innerHTML=al;
 
-  const months=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  const incM=Array(12).fill(0), gasM=Array(12).fill(0);
-  yr.txs.forEach(t => {
-    const m=new Date(t.date).getMonth();
-    if(t.type==='Ingreso') incM[m]+=t.amount;
-    if(t.type==='Gasto'||t.type==='PagoDeuda') gasM[m]+=t.amount;
-  });
-  
-  try { drawFlowChart(incM, gasM); } catch(e) {}
-  try { drawPieChart(flow); } catch(e) {}
-
   renderTable();
   
   if(isLocked) {
@@ -785,11 +739,71 @@ function renderAll() {
 
   document.getElementById('fType').dispatchEvent(new Event('change'));
 
-  try {
-    renderAnalisis();
-  } catch (e) {
-    console.warn('El gráfico de proyección falló, pero la app sigue funcionando.', e);
-  }
+  renderAnalisis();
+}
+
+let flowChartInstance = null;
+let pieChartInstance = null;
+let projChartInstance = null;
+
+function drawFlowChart(incM, gasM) {
+  const canvas = document.getElementById('flowChart');
+  if(!canvas) return;
+  if(flowChartInstance) flowChartInstance.destroy();
+  const type = state.config.chartType || 'bar';
+  flowChartInstance = new Chart(canvas, {
+    type: type, 
+    data:{labels:['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'], datasets:[
+      {label:'Ingresos',data:incM,backgroundColor: type==='line'?'#22c55e':'rgba(34,197,94,0.7)', borderColor: '#22c55e', fill: false},
+      {label:'Gastos',data:gasM,backgroundColor: type==='line'?'#ef4444':'rgba(239,68,68,0.7)', borderColor: '#ef4444', fill: false}
+    ]}, 
+    options:{plugins:{legend:{labels:{color:'#e2e8f0'}}}, scales:{x:{ticks:{color:'#94a3b8'}},y:{ticks:{color:'#94a3b8'}}}}
+  });
+}
+
+function drawPieChart(flow) {
+  const canvas = document.getElementById('pieChart');
+  if(!canvas) return;
+  if(pieChartInstance) pieChartInstance.destroy();
+  const cats = {};
+  state.config.cats.forEach(c => cats[c.name] = flow.catTotals[c.id] || 0);
+  const catColors = state.config.cats.map(c => c.color || '#3b82f6');
+  const type = state.config.pieType || 'doughnut';
+  
+  pieChartInstance = new Chart(canvas, {
+    type:type, 
+    data:{labels:Object.keys(cats), datasets:[{data:Object.values(cats), backgroundColor:catColors}]}, 
+    options:{plugins:{legend:{labels:{color:'#e2e8f0'}}}}
+  });
+}
+
+function changeFlowChart() {
+  state.config.chartType = document.getElementById('flowChartType').value;
+  save();
+  const yr = state.years[state.active];
+  const incM=Array(12).fill(0), gasM=Array(12).fill(0);
+  yr.txs.forEach(t => {
+    const m=new Date(t.date).getMonth();
+    if(t.type==='Ingreso') incM[m]+=t.amount;
+    if(t.type==='Gasto'||t.type==='PagoDeuda') gasM[m]+=t.amount;
+  });
+  drawFlowChart(incM, gasM);
+  toast('Gráfico de flujo actualizado');
+}
+
+function changePieChart() {
+  state.config.pieType = document.getElementById('pieChartType').value;
+  save();
+  const flow = getFlow(state.active);
+  drawPieChart(flow);
+  toast('Gráfico de gastos actualizado');
+}
+
+function changeProjChart() {
+  state.config.projChartType = document.getElementById('projChartType').value;
+  save();
+  renderProjection();
+  toast('Proyección actualizada');
 }
 
 function renderProjection() {
@@ -838,10 +852,9 @@ function renderProjection() {
 
     const canvas = document.getElementById('projChart');
     if(!canvas) return;
-
-    if(window.projChartInstance) window.projChartInstance.destroy();
+    if(projChartInstance) projChartInstance.destroy();
     const type = state.config.projChartType || 'line';
-    window.projChartInstance = new Chart(canvas, {
+    projChartInstance = new Chart(canvas, {
         type: type,
         data: {
             labels: months,
@@ -943,8 +956,6 @@ function renderAnalisis() {
       <div class="label">Promedio Ahorro Real Mensual</div><div class="value">${renderVal('avg_ahorro', avgAhorro)}</div>
     </div>
   `;
-
-  renderProjection();
 }
 
 function unlockOpeningBalances() {
@@ -1090,11 +1101,49 @@ function createNextYear(){
 
 function toggleLock(){ state.years[state.active].locked=!state.years[state.active].locked; save(); renderAll(); }
 
+// LÓGICA CLAVE: RENDERIZAR GRÁFICOS AL CAMBIAR DE PESTAÑA
 document.querySelectorAll('#mainNav button').forEach(b=>{
-  b.onclick=()=>{ document.querySelectorAll('#mainNav button').forEach(x=>x.classList.remove('active')); document.querySelectorAll('.view').forEach(v=>v.classList.remove('active')); b.classList.add('active'); document.getElementById('view-'+b.dataset.view).classList.add('active'); };
+  b.onclick=()=>{ 
+    document.querySelectorAll('#mainNav button').forEach(x=>x.classList.remove('active')); 
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active')); 
+    b.classList.add('active'); 
+    document.getElementById('view-'+b.dataset.view).classList.add('active'); 
+    
+    // Si entramos al Panel, dibujamos sus gráficos
+    if(b.dataset.view === 'dashboard') {
+        const yr=state.years[state.active];
+        const incM=Array(12).fill(0), gasM=Array(12).fill(0);
+        yr.txs.forEach(t => {
+            const m=new Date(t.date).getMonth();
+            if(t.type==='Ingreso') incM[m]+=t.amount;
+            if(t.type==='Gasto'||t.type==='PagoDeuda') gasM[m]+=t.amount;
+        });
+        drawFlowChart(incM, gasM);
+        drawPieChart(getFlow(state.active));
+    }
+    
+    // Si entramos a Análisis, dibujamos la proyección
+    if(b.dataset.view === 'analisis') {
+        renderProjection();
+    }
+  };
 });
+
 document.getElementById('fDate').value=new Date().toISOString().slice(0,10);
 renderAll();
+
+// Forzar el dibujo inicial del panel
+setTimeout(() => {
+    const yr=state.years[state.active];
+    const incM=Array(12).fill(0), gasM=Array(12).fill(0);
+    yr.txs.forEach(t => {
+        const m=new Date(t.date).getMonth();
+        if(t.type==='Ingreso') incM[m]+=t.amount;
+        if(t.type==='Gasto'||t.type==='PagoDeuda') gasM[m]+=t.amount;
+    });
+    drawFlowChart(incM, gasM);
+    drawPieChart(getFlow(state.active));
+}, 200);
 </script>
 </body>
 </html>
