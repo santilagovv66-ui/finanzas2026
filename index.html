@@ -78,6 +78,9 @@ th{color:var(--muted);font-size:11px}
         <button class="warning" onclick="signup()">Registrarse</button>
         <button class="primary" style="background: #db4437;" onclick="loginWithGoogle()">Iniciar sesión con Google</button>
         <p id="auth-error"></p>
+        <div style="text-align: center; margin-top: 15px;">
+            <a href="#" onclick="forgotPassword()" style="color: var(--muted); font-size: 13px; text-decoration: none;">¿Olvidaste tu contraseña?</a>
+        </div>
     </div>
 </div>
 
@@ -259,6 +262,14 @@ th{color:var(--muted);font-size:11px}
           <button class="primary" onclick="addCat()">+ Añadir Categoría</button>
 
           <h3 style="font-size:12px; color:var(--red); margin-top:20px; margin-bottom:5px;">4. Cuenta</h3>
+          
+          <!-- NUEVO: Cambio de contraseña -->
+          <div style="background: rgba(59,130,246,0.1); padding: 10px; border-radius: 6px; border: 1px solid var(--border); margin-bottom: 15px;">
+            <label style="font-size:11px; color:var(--muted);">Cambiar Contraseña</label>
+            <input type="password" id="new-password" placeholder="Nueva contraseña (mín. 6 caracteres)" style="margin-bottom: 5px;">
+            <button class="warning" onclick="changePassword()" style="width: 100%;">Actualizar Contraseña</button>
+          </div>
+
           <button class="danger" onclick="logout()">Cerrar Sesión</button>
         </div>
       </section>
@@ -268,7 +279,7 @@ th{color:var(--muted);font-size:11px}
 
 <script>
 // ==========================================
-// 1. CONFIGURACIÓN DE FIREBASE (CON TUS CLAVES)
+// 1. CONFIGURACIÓN DE FIREBASE
 // ==========================================
 const firebaseConfig = {
   apiKey: "AIzaSyDucnaKWbeWoZbZF4x6hoRemtBlNxXBYD8",
@@ -300,6 +311,7 @@ auth.onAuthStateChanged(user => {
 function login() {
     const email = document.getElementById('auth-email').value;
     const password = document.getElementById('auth-password').value;
+    document.getElementById('auth-error').innerText = ''; // Limpiar errores previos
     auth.signInWithEmailAndPassword(email, password)
         .catch(error => { document.getElementById('auth-error').innerText = error.message; });
 }
@@ -307,19 +319,73 @@ function login() {
 function signup() {
     const email = document.getElementById('auth-email').value;
     const password = document.getElementById('auth-password').value;
+    document.getElementById('auth-error').innerText = '';
     auth.createUserWithEmailAndPassword(email, password)
-        .then(() => { toast('¡Usuario creado! Ahora puedes iniciar sesión.'); })
+        .then(() => { toast('¡Usuario creado! Ya estás dentro.'); })
         .catch(error => { document.getElementById('auth-error').innerText = error.message; });
 }
 
 function loginWithGoogle() {
     const provider = new firebase.auth.GoogleAuthProvider();
+    document.getElementById('auth-error').innerText = '';
     auth.signInWithPopup(provider)
         .catch(error => { document.getElementById('auth-error').innerText = error.message; });
 }
 
 function logout() {
     auth.signOut();
+}
+
+// NUEVO: Función para recuperar contraseña olvidada
+function forgotPassword() {
+    const email = document.getElementById('auth-email').value.trim();
+    document.getElementById('auth-error').innerText = '';
+    
+    if (!email) {
+        document.getElementById('auth-error').innerText = 'Escribe tu correo arriba primero para enviarte el enlace.';
+        return;
+    }
+
+    auth.sendPasswordResetEmail(email)
+        .then(() => {
+            toast('📧 Te enviamos un correo para restablecer tu contraseña. Revisa tu bandeja de entrada (y spam).');
+        })
+        .catch(error => {
+            document.getElementById('auth-error').innerText = error.message;
+        });
+}
+
+// NUEVO: Función para cambiar contraseña dentro de la app
+function changePassword() {
+    const newPassword = document.getElementById('new-password').value;
+    const user = auth.currentUser;
+
+    if (!user) return;
+    
+    // Validar si el usuario entró con Google (no tiene contraseña local)
+    const isGoogleUser = user.providerData.some(provider => provider.providerId === 'google.com');
+    if (isGoogleUser) {
+        toast('⚠️ Iniciaste sesión con Google. La contraseña se gestiona desde tu cuenta de Google, no aquí.');
+        return;
+    }
+
+    if (newPassword.length < 6) {
+        toast('La contraseña debe tener al menos 6 caracteres.');
+        return;
+    }
+
+    user.updatePassword(newPassword)
+        .then(() => {
+            toast('✅ ¡Contraseña actualizada con éxito!');
+            document.getElementById('new-password').value = ''; // Limpiar campo
+        })
+        .catch(error => {
+            if (error.code === 'auth/requires-recent-login') {
+                alert('Por seguridad, debes cerrar sesión y volver a entrar antes de cambiar tu contraseña.');
+            } else {
+                toast('Error: ' + error.message);
+            }
+        });
 }
 
 // Sincronización en tiempo real
