@@ -57,13 +57,14 @@ th{color:var(--muted);font-size:11px}
 .row-item .locked-val{font-size:12px;color:var(--muted);width:35%;text-align:right; display:flex; justify-content:flex-end; align-items:center; gap:6px;}
 @media(max-width:600px){header h1{font-size:15px}}
 
-/* Estilos para la pantalla de Login */
-#auth-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+/* Estilos para la pantalla de Login y Bloqueo */
+#auth-screen, #lock-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
 .auth-card { background: var(--card); padding: 30px; border-radius: 10px; border: 1px solid var(--border); width: 100%; max-width: 400px; }
 .auth-card h2 { text-align: center; margin-bottom: 20px; color: var(--accent); }
 .auth-card input { margin-bottom: 15px; }
 .auth-card button { margin-top: 10px; }
 #auth-error { color: var(--red); text-align: center; margin-top: 10px; font-size: 13px; }
+#lock-screen { display: none; background: var(--bg); position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; }
 </style>
 </head>
 <body>
@@ -81,6 +82,16 @@ th{color:var(--muted);font-size:11px}
         <div style="text-align: center; margin-top: 15px;">
             <a href="#" onclick="forgotPassword()" style="color: var(--muted); font-size: 13px; text-decoration: none;">¿Olvidaste tu contraseña?</a>
         </div>
+    </div>
+</div>
+
+<!-- PANTALLA DE BLOQUEO BIOMÉTRICO -->
+<div id="lock-screen">
+    <div class="auth-card" style="text-align: center;">
+        <h2>🔒 App Bloqueada</h2>
+        <p style="color: var(--muted); margin-bottom: 20px; font-size: 14px;">Usa tu huella o PIN para desbloquear Mis Finanzas.</p>
+        <button class="primary" onclick="desbloquearHuella()" style="padding: 15px; font-size: 16px;">👆 Desbloquear con Huella/PIN</button>
+        <button class="danger" onclick="logout()" style="margin-top: 15px; padding: 10px;">Cerrar Sesión</button>
     </div>
 </div>
 
@@ -261,13 +272,16 @@ th{color:var(--muted);font-size:11px}
           <input type="text" id="newCatDesc" placeholder="Guía (ej. Cursos, libros)">
           <button class="primary" onclick="addCat()">+ Añadir Categoría</button>
 
-          <h3 style="font-size:12px; color:var(--red); margin-top:20px; margin-bottom:5px;">4. Cuenta</h3>
+          <h3 style="font-size:12px; color:var(--red); margin-top:20px; margin-bottom:5px;">4. Cuenta y Seguridad</h3>
           
-          <!-- NUEVO: Cambio de contraseña -->
           <div style="background: rgba(59,130,246,0.1); padding: 10px; border-radius: 6px; border: 1px solid var(--border); margin-bottom: 15px;">
             <label style="font-size:11px; color:var(--muted);">Cambiar Contraseña</label>
             <input type="password" id="new-password" placeholder="Nueva contraseña (mín. 6 caracteres)" style="margin-bottom: 5px;">
-            <button class="warning" onclick="changePassword()" style="width: 100%;">Actualizar Contraseña</button>
+            <button class="warning" onclick="changePassword()" style="width: 100%; margin-bottom: 15px;">Actualizar Contraseña</button>
+
+            <label style="font-size:11px; color:var(--muted);">Seguridad Biométrica (Huella/PIN)</label>
+            <div id="bio-status-text" style="font-size: 12px; margin-bottom: 5px; color: var(--muted);">Cargando estado...</div>
+            <button class="primary" id="btn-bio-toggle" onclick="toggleBiometric()" style="background: var(--purple);">Configurar Huella/PIN</button>
           </div>
 
           <button class="danger" onclick="logout()">Cerrar Sesión</button>
@@ -295,23 +309,34 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // ==========================================
-// 2. LÓGICA DE AUTENTICACIÓN Y SINCRONIZACIÓN
+// 2. LÓGICA DE AUTENTICACIÓN Y BIOMETRÍA
 // ==========================================
+let bioCredentialId = localStorage.getItem('bioCredentialId');
+
 auth.onAuthStateChanged(user => {
     if (user) {
         document.getElementById('auth-screen').style.display = 'none';
-        document.getElementById('app-screen').style.display = 'block';
-        syncData(); // Cargar datos del usuario
+        
+        // Si tiene la huella configurada, mostramos la pantalla de bloqueo
+        if (bioCredentialId) {
+            document.getElementById('app-screen').style.display = 'none';
+            document.getElementById('lock-screen').style.display = 'flex';
+        } else {
+            document.getElementById('lock-screen').style.display = 'none';
+            document.getElementById('app-screen').style.display = 'block';
+            syncData();
+        }
     } else {
         document.getElementById('auth-screen').style.display = 'flex';
         document.getElementById('app-screen').style.display = 'none';
+        document.getElementById('lock-screen').style.display = 'none';
     }
 });
 
 function login() {
     const email = document.getElementById('auth-email').value;
     const password = document.getElementById('auth-password').value;
-    document.getElementById('auth-error').innerText = ''; // Limpiar errores previos
+    document.getElementById('auth-error').innerText = '';
     auth.signInWithEmailAndPassword(email, password)
         .catch(error => { document.getElementById('auth-error').innerText = error.message; });
 }
@@ -336,7 +361,6 @@ function logout() {
     auth.signOut();
 }
 
-// NUEVO: Función para recuperar contraseña olvidada
 function forgotPassword() {
     const email = document.getElementById('auth-email').value.trim();
     document.getElementById('auth-error').innerText = '';
@@ -347,25 +371,18 @@ function forgotPassword() {
     }
 
     auth.sendPasswordResetEmail(email)
-        .then(() => {
-            toast('📧 Te enviamos un correo para restablecer tu contraseña. Revisa tu bandeja de entrada (y spam).');
-        })
-        .catch(error => {
-            document.getElementById('auth-error').innerText = error.message;
-        });
+        .then(() => { toast('📧 Te enviamos un correo para restablecer tu contraseña.'); })
+        .catch(error => { document.getElementById('auth-error').innerText = error.message; });
 }
 
-// NUEVO: Función para cambiar contraseña dentro de la app
 function changePassword() {
     const newPassword = document.getElementById('new-password').value;
     const user = auth.currentUser;
-
     if (!user) return;
     
-    // Validar si el usuario entró con Google (no tiene contraseña local)
     const isGoogleUser = user.providerData.some(provider => provider.providerId === 'google.com');
     if (isGoogleUser) {
-        toast('⚠️ Iniciaste sesión con Google. La contraseña se gestiona desde tu cuenta de Google, no aquí.');
+        toast('⚠️ Iniciaste sesión con Google. La contraseña se gestiona desde Google.');
         return;
     }
 
@@ -377,7 +394,7 @@ function changePassword() {
     user.updatePassword(newPassword)
         .then(() => {
             toast('✅ ¡Contraseña actualizada con éxito!');
-            document.getElementById('new-password').value = ''; // Limpiar campo
+            document.getElementById('new-password').value = '';
         })
         .catch(error => {
             if (error.code === 'auth/requires-recent-login') {
@@ -386,6 +403,118 @@ function changePassword() {
                 toast('Error: ' + error.message);
             }
         });
+}
+
+// ==========================================
+// 3. LÓGICA DE SEGURIDAD BIOMÉTRICA (WEB AUTHN)
+// ==========================================
+function b64urlToBuf(b64url) {
+    return Uint8Array.from(atob(b64url.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0)).buffer;
+}
+function bufToB64url(buf) {
+    return btoa(String.fromCharCode(...new Uint8Array(buf)))
+        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
+
+async function toggleBiometric() {
+    if (bioCredentialId) {
+        // Desactivar
+        localStorage.removeItem('bioCredentialId');
+        bioCredentialId = null;
+        actualizarEstadoBio();
+        toast('Bloqueo biométrico desactivado.');
+    } else {
+        // Activar (Registrar huella)
+        if (!window.PublicKeyCredential) {
+            return toast('Tu dispositivo no soporta autenticación biométrica.');
+        }
+
+        try {
+            const challenge = new Uint8Array(32);
+            window.crypto.getRandomValues(challenge);
+            const userId = new Uint8Array(16);
+            window.crypto.getRandomValues(userId);
+
+            const publicKeyCredentialCreationOptions = {
+                challenge: challenge,
+                rp: { name: "Mis Finanzas" },
+                user: {
+                    id: userId,
+                    name: auth.currentUser.email,
+                    displayName: auth.currentUser.email,
+                },
+                pubKeyCredParams: [{ alg: -7, type: "public-key" }],
+                authenticatorSelection: {
+                    authenticatorAttachment: "platform", // Fuerza huella/PIN local
+                    userVerification: "required",
+                },
+                timeout: 60000
+            };
+
+            const credential = await navigator.credentials.create({ publicKey: publicKeyCredentialCreationOptions });
+            
+            // Guardamos el ID de esta credencial en el dispositivo
+            bioCredentialId = bufToB64url(credential.rawId);
+            localStorage.setItem('bioCredentialId', bioCredentialId);
+            
+            actualizarEstadoBio();
+            toast('✅ ¡Huella/PIN configurado con éxito!');
+
+        } catch (error) {
+            console.error(error);
+            toast('Error al configurar: ' + error.message);
+        }
+    }
+}
+
+async function desbloquearHuella() {
+    if (!bioCredentialId) return;
+    
+    try {
+        const challenge = new Uint8Array(32);
+        window.crypto.getRandomValues(challenge);
+
+        const publicKeyCredentialRequestOptions = {
+            challenge: challenge,
+            allowCredentials: [{
+                id: b64urlToBuf(bioCredentialId),
+                type: 'public-key',
+                transports: ['internal']
+            }],
+            userVerification: "required",
+            timeout: 60000
+        };
+
+        await navigator.credentials.get({ publicKey: publicKeyCredentialRequestOptions });
+        
+        // Si llega aquí, la huella fue correcta
+        document.getElementById('lock-screen').style.display = 'none';
+        document.getElementById('app-screen').style.display = 'block';
+        syncData();
+        toast('🔓 Desbloqueado');
+
+    } catch (error) {
+        console.error(error);
+        toast('❌ Huella/PIN incorrecto o cancelado.');
+    }
+}
+
+function actualizarEstadoBio() {
+    const btn = document.getElementById('btn-bio-toggle');
+    const txt = document.getElementById('bio-status-text');
+    if (!btn || !txt) return;
+
+    if (bioCredentialId) {
+        txt.innerText = '✅ Bloqueo biométrico ACTIVADO en este dispositivo.';
+        txt.style.color = 'var(--green)';
+        btn.innerText = 'Desactivar Huella/PIN';
+        btn.style.background = 'var(--red)';
+    } else {
+        txt.innerText = '❌ No configurado en este dispositivo.';
+        txt.style.color = 'var(--muted)';
+        btn.innerText = 'Configurar Huella/PIN';
+        btn.style.background = 'var(--purple)';
+    }
 }
 
 // Sincronización en tiempo real
@@ -406,14 +535,13 @@ function syncData() {
                 toast('Datos sincronizados');
             }
         } else {
-            // Primera vez: Subir los datos locales a la nube
             db.collection('finanzas').doc(user.uid).set({ state: state });
         }
     });
 }
 
 // ==========================================
-// 3. LÓGICA DE LA APP
+// 4. LÓGICA DE LA APP
 // ==========================================
 const KEY = 'fin_v12_0'; 
 let state = JSON.parse(localStorage.getItem(KEY) || 'null') || {
@@ -930,6 +1058,7 @@ function renderAll() {
   document.getElementById('fType').dispatchEvent(new Event('change'));
 
   renderAnalisis();
+  actualizarEstadoBio(); // Actualiza el botón de huella al cargar
 }
 
 let flowChartInstance = null;
