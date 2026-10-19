@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
-<title>Mis Finanzas v8.0</title>
+<title>Mis Finanzas v6.1</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
@@ -53,7 +53,7 @@ th{color:var(--muted);font-size:11px}
 </head>
 <body>
 <header>
-  <h1>💰 Mis Finanzas v8.0</h1>
+  <h1>💰 Mis Finanzas v6.1</h1>
   <div class="year-nav" id="yearNav"></div>
 </header>
 <nav id="mainNav">
@@ -132,18 +132,6 @@ th{color:var(--muted);font-size:11px}
       <h2>Promedios Mensuales</h2>
       <div class="grid" id="analisisPromedios"></div>
     </div>
-
-    <div class="card">
-      <div class="card-header">
-        <h2>📊 Proyección de Patrimonio a Fin de Año</h2>
-        <select class="chart-selector" id="projChartType" onchange="changeProjChart()">
-          <option value="line">Líneas</option>
-          <option value="bar">Barras</option>
-        </select>
-      </div>
-      <canvas id="projChart" height="100"></canvas>
-    </div>
-
     <div class="card">
       <h2>Balance por Mes</h2>
       <div style="overflow-x:auto">
@@ -156,6 +144,7 @@ th{color:var(--muted);font-size:11px}
   </section>
 
   <section class="view" id="view-cuentas">
+    <!-- TARJETA DE GASTOS PLACER -->
     <div class="card" id="placerCard">
       <h2>🎯 Límite de Gastos Placer del Mes</h2>
       <div id="placerCardContent"></div>
@@ -187,8 +176,6 @@ th{color:var(--muted);font-size:11px}
       <div style="margin-top:10px">
         <input type="text" id="newDebtName" placeholder="Nombre (ej. ADDI)">
         <input type="number" id="newDebtAmount" placeholder="Monto total de la deuda">
-        <label style="font-size:11px; color:var(--muted);">Fecha Límite de Pago (Opcional)</label>
-        <input type="date" id="newDebtDate">
         <select id="newDebtType">
             <option value="mala">Mala (Consumo)</option>
             <option value="buena">Buena (Activo)</option>
@@ -225,22 +212,18 @@ th{color:var(--muted);font-size:11px}
       <input type="text" id="newCatName" placeholder="Nombre Categoría (ej. Educación)">
       <input type="text" id="newCatDesc" placeholder="Guía (ej. Cursos, libros)">
       <button class="primary" onclick="addCat()">+ Añadir Categoría</button>
-      
-      <h3 style="font-size:12px; color:var(--red); margin-top:20px; margin-bottom:5px;">4. Reparación de la App</h3>
-      <button class="danger" onclick="forceReset()">⚠️ Borrar Memoria y Reiniciar App</button>
     </div>
   </section>
 </main>
 <div id="toastWrap"></div>
 
 <script>
-const KEY = 'fin_v8_0'; 
+const KEY = 'fin_v6'; 
 let state = JSON.parse(localStorage.getItem(KEY) || 'null') || {
   config: { 
     placer: 30, 
     chartType: 'bar',
     pieType: 'doughnut',
-    projChartType: 'line',
     cats: [
       {id:'fijo', name:'Fijo (mensual)', desc:'Arriendo, mercado, servicios', color:'#3b82f6'},
       {id:'necesario', name:'Necesario', desc:'Imprevistos, reparaciones, salud', color:'#eab308'},
@@ -268,7 +251,6 @@ if(!state.hidden.stats) state.hidden.stats = {};
 if(!state.hidden.locks) state.hidden.locks = {};
 if(!state.config.chartType) state.config.chartType = 'bar';
 if(!state.config.pieType) state.config.pieType = 'doughnut';
-if(!state.config.projChartType) state.config.projChartType = 'line';
 if(!state.placerLimits) state.placerLimits = {};
 
 if(!state.years[state.active]) {
@@ -281,12 +263,6 @@ function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
 function fmt(n){ return new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0}).format(n||0); }
 function genId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 function toast(m){ const d=document.createElement('div'); d.className='toast'; d.textContent=m; document.body.appendChild(d); setTimeout(()=>d.remove(),3000); }
-
-function forceReset() {
-    if(!confirm('¿Borrar TODOS los datos guardados?')) return;
-    localStorage.clear();
-    location.reload();
-}
 
 function toggleGlobalHide() {
     state.hidden.global = !state.hidden.global;
@@ -362,50 +338,39 @@ function getDebtBal(debtId) {
   return debt.total - paid;
 }
 
-function checkDebtAlerts() {
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    let alertsHtml = '';
-
-    state.debts.forEach(d => {
-        const saldo = getDebtBal(d.id);
-        if(saldo > 0 && d.dateLimit) {
-            const limitDate = new Date(d.dateLimit + 'T00:00:00');
-            const diffTime = limitDate - today;
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-            if(diffDays < 0) {
-                alertsHtml += `<div class="alert danger">🚨 ¡ALERTA! La deuda <strong>${d.name}</strong> venció hace ${Math.abs(diffDays)} días y aún debes ${fmt(saldo)}.</div>`;
-            } else if(diffDays <= 5) {
-                alertsHtml += `<div class="alert warn">⚠️ Atención: La deuda <strong>${d.name}</strong> vence en ${diffDays} días (${d.dateLimit}) y debes ${fmt(saldo)}.</div>`;
-            }
-        }
-    });
-    return alertsHtml;
-}
-
 function canEdit(){ return !state.years[state.active].locked; }
 function canEditInit(){ return !state.years[state.active].lockedInit; }
 function tieneMovimientos(id) { return state.years[state.active].txs.some(t => t.from === id || t.to === id); }
 
+// NUEVA LÓGICA: Gestión del Límite de Placer Mensual
 function getPlacerLimitInfo() {
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
-    const key = `${currentYear}-${currentMonth}`;
+    const key = `${currentYear}-${currentMonth}`; // Ej: 2026-0 (Enero)
+
     const yr = state.years[state.active];
 
+    // Gastos de placer del mes actual
     const monthPlacerSpent = yr.txs.filter(t => {
         const d = new Date(t.date);
         return d.getMonth() === currentMonth && d.getFullYear() === currentYear && (t.type === 'Gasto' || t.type === 'PagoDeuda') && t.cat === 'placer';
     }).reduce((s, t) => s + t.amount, 0);
 
+    // ¿Ya hay un límite guardado para este mes?
     const isLocked = state.placerLimits[key] !== undefined;
     const limit = state.placerLimits[key] || 0;
 
-    return { key, limit, spent: monthPlacerSpent, available: limit - monthPlacerSpent, isLocked };
+    return {
+        key: key,
+        limit: limit,
+        spent: monthPlacerSpent,
+        available: limit - monthPlacerSpent,
+        isLocked: isLocked
+    };
 }
 
+// Función para calcular y bloquear el límite
 function calculateAndLockPlacer() {
     const pct = parseFloat(document.getElementById('placerPercentageInput').value);
     if(isNaN(pct) || pct < 1 || pct > 100) return toast('Porcentaje inválido (1-100)');
@@ -424,11 +389,13 @@ function calculateAndLockPlacer() {
     const newLimit = monthIncome * (pct / 100);
     
     state.placerLimits[key] = newLimit;
+    // Guardamos también el porcentaje usado para este mes
     state.placerLimits[key + '_pct'] = pct;
     save(); renderAll();
-    toast(`Límite de Placer bloqueado: ${fmt(newLimit)}`);
+    toast(`Límite de Placer definido y bloqueado: ${fmt(newLimit)}`);
 }
 
+// Función para desbloquear desde admin
 function unlockPlacerLimit() {
     const now = new Date();
     const key = `${now.getFullYear()}-${now.getMonth()}`;
@@ -456,9 +423,11 @@ function renderTable() {
     if(t.type==='PagoDeuda') ruta = (getAccName(t.from)||getPocName(t.from)) + ' ➔ Deuda: ' + getDebtName(t.debtId);
 
     let catStr = t.cat ? `<br><small style="color:var(--accent)">${getCatName(t.cat)}</small>` : '';
+
     let colorMonto = 'var(--red)'; 
     if(t.type === 'Ingreso') colorMonto = 'var(--green)'; 
     if(t.type === 'Transferencia') colorMonto = 'var(--yellow)'; 
+    if(t.type === 'PagoDeuda') colorMonto = 'var(--red)'; 
 
     return `
     <tr>
@@ -503,7 +472,7 @@ function renderAll() {
   const flow = getFlow(state.active);
   const balanceAnual = flow.inc - flow.exp;
   
-  let al = checkDebtAlerts();
+  let al='';
   if(flow.exp > flow.inc && flow.inc > 0) {
     al+=`<div class="alert danger">🚨 ¡ALERTA! Estás gastando más de lo que ganas este año. Déficit: ${fmt(flow.exp - flow.inc)}.</div>`;
   }
@@ -551,6 +520,7 @@ function renderAll() {
     </div>
   `;
 
+  // --- RENDERIZAR LÍMITE DE PLACER EN CUENTAS Y BOLSILLOS ---
   const placerInfo = getPlacerLimitInfo();
   const pctUsado = state.placerLimits[placerInfo.key + '_pct'] || state.config.placer;
   const placerPct = placerInfo.limit > 0 ? (placerInfo.spent / placerInfo.limit) * 100 : 0;
@@ -564,7 +534,7 @@ function renderAll() {
 
     placerHtml = `
       <div style="margin-bottom:10px;">
-        <div style="font-size:12px; color:var(--muted); margin-bottom:5px;">Límite calculado con el ${pctUsado}% de tus ingresos.</div>
+        <div style="font-size:12px; color:var(--muted); margin-bottom:5px;">Límite del mes calculado con el ${pctUsado}% de tus ingresos.</div>
         <div class="stat" style="border-color:${barColor}; padding:15px;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <div>
@@ -579,6 +549,7 @@ function renderAll() {
           <div class="bar" style="height:12px; margin-top:10px;">
             <div class="bar-fill" style="width:${Math.min(placerPct,100)}%; background:${barColor}"></div>
           </div>
+          ${placerInfo.available <= 0 ? '<div style="text-align:center; color:var(--red); font-weight:bold; margin-top:10px;">🛑 ¡LÍMITE ALCANZADO! No puedes gastar más en Placer este mes.</div>' : ''}
         </div>
       </div>
     `;
@@ -601,12 +572,13 @@ function renderAll() {
   }
   document.getElementById('placerCardContent').innerHTML = placerHtml;
 
+  // El resto de la lógica original del Placer para el panel principal
   let budgetHtml = `
     <div class="stat ${placerInfo.available>=0?'green':'red'}">
       <span class="eye-btn" onclick="toggleHideIndividual('plac')">${state.hidden.global||state.hidden.stats['plac']?'👁️':'👁️‍🗨️'}</span>
-      <div class="label">Gastos Placer (${pctUsado}%)</div>
+      <div class="label">Gastos Placer del Mes (${pctUsado}%)</div>
       <div class="value">${renderVal('plac', placerInfo.available)}</div>
-      <div style="font-size:10px;color:var(--muted);margin-top:4px">Gastado: ${fmt(placerInfo.spent)} de ${fmt(placerInfo.limit)}</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:4px">Gastado: ${renderVal('placg', placerInfo.spent)} de ${fmt(placerInfo.limit)}</div>
       <div class="bar"><div class="bar-fill" style="width:${Math.min(placerPct,100)}%;background:${placerPct>100?'var(--red)':'var(--purple)'}"></div></div>
     </div>
   `;
@@ -616,14 +588,15 @@ function renderAll() {
       const balPoc = getPocBal(p.id);
       const pctMeta = (balPoc / p.meta) * 100;
       let barColor = 'var(--red)';
-      if(pctMeta >= 100) barColor = 'var(--green)';
-      else if(pctMeta >= 33) barColor = 'var(--yellow)';
+      let textColor = 'var(--red)';
+      if(pctMeta >= 100) { barColor = 'var(--green)'; textColor = 'var(--green)'; }
+      else if(pctMeta >= 33) { barColor = 'var(--yellow)'; textColor = 'var(--yellow)'; }
       
       budgetHtml += `
         <div class="stat" style="border-color:${barColor}">
           <div class="label">Meta: ${p.name}</div>
-          <div class="value" style="color:${barColor}">${pctMeta.toFixed(1)}%</div>
-          <div style="font-size:10px;color:var(--muted);margin-top:4px">${renderVal('meta_'+p.id, balPoc)} / ${fmt(p.meta)}</div>
+          <div class="value" style="color:${textColor}">${pctMeta.toFixed(1)}%</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px">${renderVal('meta_'+p.id, balPoc)} / ${renderVal('metam_'+p.id, p.meta)}</div>
           <div class="bar"><div class="bar-fill" style="width:${Math.min(pctMeta,100)}%;background:${barColor}"></div></div>
         </div>
       `;
@@ -634,6 +607,13 @@ function renderAll() {
   if(placerInfo.available<0) al+=`<div class="alert danger">🚨 ¡Has superado el límite de Gastos Placer este mes! Por ${fmt(Math.abs(placerInfo.available))}.</div>`;
   else if(placerPct>80) al+=`<div class="alert warn">⚠️ Estás al ${placerPct.toFixed(1)}% de tu límite de Placer mensual. Te quedan ${fmt(placerInfo.available)}.</div>`;
   
+  const fijoGastado = flow.catTotals['fijo'] || 0;
+  if(flow.inc > 0) {
+    const fijoPct = (fijoGastado / flow.inc) * 100;
+    if(fijoPct > 50) {
+      al += `<div class="alert warn">⚠️ Salud Financiera: Tus gastos fijos representan el ${fijoPct.toFixed(1)}% de tus ingresos anuales. Lo ideal es que no superen el 50%.</div>`;
+    }
+  }
   document.getElementById('alerts').innerHTML=al;
 
   const months=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
@@ -648,8 +628,8 @@ function renderAll() {
   drawPieChart(flow);
 
   renderTable();
-  
-  // CRUCIAL: Renderizar cuentas y bolsillos ANTES de renderAnalisis para que no se congelen si el gráfico falla
+  renderAnalisis();
+
   if(isLocked) {
     document.getElementById('accountsList').innerHTML=state.accounts.map(a=>{
       const isHidden = state.hidden.locks[a.id];
@@ -701,18 +681,6 @@ function renderAll() {
     const pct = d.total > 0 ? ((d.total-saldo)/d.total)*100 : 0;
     const isPaid = saldo <= 0;
     
-    let dateInfo = '';
-    if(!isPaid && d.dateLimit) {
-        const limitDate = new Date(d.dateLimit + 'T00:00:00');
-        const today = new Date();
-        today.setHours(0,0,0,0);
-        const diffDays = Math.ceil((limitDate - today) / (1000 * 60 * 60 * 24));
-        
-        if(diffDays < 0) dateInfo = `<span style="color:var(--red); font-size:11px; font-weight:bold;">🔴 Vencida hace ${Math.abs(diffDays)} días</span>`;
-        else if(diffDays <= 5) dateInfo = `<span style="color:var(--yellow); font-size:11px; font-weight:bold;">🟡 Vence en ${diffDays} días (${d.dateLimit})</span>`;
-        else dateInfo = `<span style="color:var(--muted); font-size:11px;">📅 Vence: ${d.dateLimit}</span>`;
-    }
-
     return `
     <div class="row-item" style="flex-direction:column;align-items:flex-start">
       <div style="display:flex;width:100%;justify-content:space-between;margin-bottom:5px;">
@@ -720,7 +688,6 @@ function renderAll() {
         <span style="color:${isPaid?'var(--green)':'var(--red)'}">${isPaid?'¡PAGADA!':fmt(saldo)+' restante'}</span>
         ${canEdit() && !isPaid || (canEdit() && d.adminUnlock) ?`<button class="danger" onclick="delDebt('${d.id}')">X</button>`:''}
       </div>
-      ${dateInfo}
       <div class="bar" style="width:100%"><div class="bar-fill" style="width:${pct}%;background:${isPaid?'var(--green)':'var(--yellow)'}"></div></div>
       ${isPaid?'<small style="color:var(--green); font-size:10px;">Historial guardado (bloqueada)</small>':''}
     </div>`;
@@ -755,94 +722,60 @@ function renderAll() {
   
   document.getElementById('flowChartType').value = state.config.chartType;
   document.getElementById('pieChartType').value = state.config.pieType;
-  document.getElementById('projChartType').value = state.config.projChartType;
 
   document.getElementById('fType').dispatchEvent(new Event('change'));
-
-  // Al final, intentamos renderizar el análisis (con try-catch para evitar congelamientos)
-  try {
-    renderAnalisis();
-  } catch (e) {
-    console.warn('El gráfico de análisis falló, pero la app sigue funcionando.', e);
-  }
 }
 
-function renderProjection() {
-    const yr = state.years[state.active];
-    const currentMonth = new Date().getMonth();
-    
-    let totalEfectivo = 0, totalAhorros = 0;
-    state.accounts.forEach(a => { if(a.id !== 'billetera') totalEfectivo += getAccBal(a.id); });
-    state.pockets.forEach(p => totalAhorros += getPocBal(p.id));
-    const totalDeudas = state.debts.reduce((s,d)=>s+getDebtBal(d.id),0);
-    const cashBilletera = getAccBal('billetera');
-    const patrimonioActual = totalEfectivo + totalAhorros + cashBilletera - totalDeudas;
+let flowChartInstance = null;
+let pieChartInstance = null;
 
-    let monthsWithData = 0;
-    let totalInc = 0, totalExp = 0;
-    for(let i=0; i<12; i++) {
-        let hasTx = yr.txs.some(t => new Date(t.date).getMonth() === i);
-        if(hasTx) {
-            monthsWithData++;
-            yr.txs.forEach(t => {
-                if(new Date(t.date).getMonth() === i) {
-                    if(t.type==='Ingreso') totalInc += t.amount;
-                    if(t.type==='Gasto' || t.type==='PagoDeuda') totalExp += t.amount;
-                }
-            });
-        }
-    }
-    const avgInc = monthsWithData > 0 ? totalInc / monthsWithData : 0;
-    const avgExp = monthsWithData > 0 ? totalExp / monthsWithData : 0;
-    const avgBalance = avgInc - avgExp;
+function drawFlowChart(incM, gasM) {
+  if(flowChartInstance) flowChartInstance.destroy();
+  const type = state.config.chartType || 'bar';
+  flowChartInstance = new Chart(document.getElementById('flowChart'), {
+    type: type, 
+    data:{labels:['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'], datasets:[
+      {label:'Ingresos',data:incM,backgroundColor: type==='line'?'#22c55e':'rgba(34,197,94,0.7)', borderColor: '#22c55e', fill: false},
+      {label:'Gastos',data:gasM,backgroundColor: type==='line'?'#ef4444':'rgba(239,68,68,0.7)', borderColor: '#ef4444', fill: false}
+    ]}, 
+    options:{plugins:{legend:{labels:{color:'#e2e8f0'}}}, scales:{x:{ticks:{color:'#94a3b8'}},y:{ticks:{color:'#94a3b8'}}}}
+  });
+}
 
-    const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-    const projectionData = [];
-    let currentBalance = patrimonioActual;
+function drawPieChart(flow) {
+  if(pieChartInstance) pieChartInstance.destroy();
+  const cats = {};
+  state.config.cats.forEach(c => cats[c.name] = flow.catTotals[c.id] || 0);
+  const catColors = state.config.cats.map(c => c.color || '#3b82f6');
+  const type = state.config.pieType || 'doughnut';
+  
+  pieChartInstance = new Chart(document.getElementById('pieChart'), {
+    type:type, 
+    data:{labels:Object.keys(cats), datasets:[{data:Object.values(cats), backgroundColor:catColors}]}, 
+    options:{plugins:{legend:{labels:{color:'#e2e8f0'}}}}
+  });
+}
 
-    for(let i=0; i<12; i++) {
-        if(i < currentMonth) {
-            projectionData.push(null); 
-        } else if(i === currentMonth) {
-            projectionData.push(currentBalance);
-        } else {
-            currentBalance += avgBalance;
-            projectionData.push(currentBalance);
-        }
-    }
+function changeFlowChart() {
+  state.config.chartType = document.getElementById('flowChartType').value;
+  save();
+  const yr = state.years[state.active];
+  const incM=Array(12).fill(0), gasM=Array(12).fill(0);
+  yr.txs.forEach(t => {
+    const m=new Date(t.date).getMonth();
+    if(t.type==='Ingreso') incM[m]+=t.amount;
+    if(t.type==='Gasto'||t.type==='PagoDeuda') gasM[m]+=t.amount;
+  });
+  drawFlowChart(incM, gasM);
+  toast('Gráfico de flujo actualizado');
+}
 
-    const canvas = document.getElementById('projChart');
-    if(!canvas) return;
-
-    if(window.projChartInstance) window.projChartInstance.destroy();
-    const type = state.config.projChartType || 'line';
-    window.projChartInstance = new Chart(canvas, {
-        type: type,
-        data: {
-            labels: months,
-            datasets: [{
-                label: 'Proyección de Patrimonio',
-                data: projectionData,
-                backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                borderColor: '#3b82f6',
-                borderWidth: 3,
-                fill: true,
-                tension: 0.3,
-                pointBackgroundColor: '#3b82f6',
-                pointRadius: 4
-            }]
-        },
-        options: {
-            plugins: {
-                legend: { display: false },
-                tooltip: { callbacks: { label: (ctx) => ctx.parsed.y ? fmt(ctx.parsed.y) : 'Sin datos' } }
-            },
-            scales: {
-                x: { ticks: { color: '#94a3b8' } },
-                y: { ticks: { color: '#94a3b8', callback: v => fmt(v) } }
-            }
-        }
-    });
+function changePieChart() {
+  state.config.pieType = document.getElementById('pieChartType').value;
+  save();
+  const flow = getFlow(state.active);
+  drawPieChart(flow);
+  toast('Gráfico de gastos actualizado');
 }
 
 function renderAnalisis() {
@@ -915,11 +848,9 @@ function renderAnalisis() {
       <div class="label">Promedio Gastos Mensual</div><div class="value">${renderVal('avg_exp', avgExp)}</div>
     </div>
     <div class="stat yellow">
-      <div class="label">Promedio Ahorro Real Mensual</div><div class="value">${renderVal('avg_ahorro', avgAhorro)}</div>
+      <div class="label">Promedio Ahorro Real Mensual (Solo Bolsillos)</div><div class="value">${renderVal('avg_ahorro', avgAhorro)}</div>
     </div>
   `;
-
-  renderProjection();
 }
 
 function unlockOpeningBalances() {
@@ -1025,16 +956,7 @@ function delCat(id) {
     save(); renderAll();
 }
 
-function addDebt(){ 
-    const n=document.getElementById('newDebtName').value; 
-    const a=parseFloat(document.getElementById('newDebtAmount').value); 
-    const date = document.getElementById('newDebtDate').value;
-    const type=document.getElementById('newDebtType').value;
-    if(!n||!a)return toast('Faltan datos'); 
-    state.debts.push({id:genId(),name:n,total:a,type:type,dateLimit: date || null}); 
-    save(); renderAll(); 
-    document.getElementById('newDebtName').value=''; document.getElementById('newDebtAmount').value=''; document.getElementById('newDebtDate').value='';
-}
+function addDebt(){ const n=document.getElementById('newDebtName').value; const a=parseFloat(document.getElementById('newDebtAmount').value); if(!n||!a)return toast('Faltan datos'); state.debts.push({id:genId(),name:n,total:a,type:document.getElementById('newDebtType').value}); save(); renderAll(); document.getElementById('newDebtName').value=''; document.getElementById('newDebtAmount').value=''; }
 function renameDebt(id, n){ if(!n)return; const d=state.debts.find(x=>x.id===id); if(d){d.name=n;save();} }
 function delDebt(id){ 
     const d = state.debts.find(x=>x.id===id);
