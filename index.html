@@ -3,7 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
-<title>Mis Finanzas v10.0</title>
+<title>Mis Finanzas v10.1</title>
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
@@ -53,7 +56,7 @@ th{color:var(--muted);font-size:11px}
 </head>
 <body>
 <header>
-  <h1>💰 Mis Finanzas v10.0</h1>
+  <h1>💰 Mis Finanzas v10.1</h1>
   <div class="year-nav" id="yearNav"></div>
 </header>
 <nav id="mainNav">
@@ -1109,7 +1112,6 @@ document.querySelectorAll('#mainNav button').forEach(b=>{
     b.classList.add('active'); 
     document.getElementById('view-'+b.dataset.view).classList.add('active'); 
     
-    // Si entramos al Panel, dibujamos sus gráficos
     if(b.dataset.view === 'dashboard') {
         const yr=state.years[state.active];
         const incM=Array(12).fill(0), gasM=Array(12).fill(0);
@@ -1122,7 +1124,6 @@ document.querySelectorAll('#mainNav button').forEach(b=>{
         drawPieChart(getFlow(state.active));
     }
     
-    // Si entramos a Análisis, dibujamos la proyección
     if(b.dataset.view === 'analisis') {
         renderProjection();
     }
@@ -1144,6 +1145,15 @@ setTimeout(() => {
     drawFlowChart(incM, gasM);
     drawPieChart(getFlow(state.active));
 }, 200);
+
+// REGISTRAR SERVICE WORKER PARA PWA
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+            .then(reg => console.log('Service Worker registrado', reg))
+            .catch(err => console.log('Error al registrar Service Worker', err));
+    });
+}
 </script>
 </body>
 </html>
