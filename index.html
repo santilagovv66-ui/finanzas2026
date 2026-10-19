@@ -245,36 +245,41 @@ th{color:var(--muted);font-size:11px}
         </div>
       </section>
 
+      <!-- SECCIÓN DE CONFIGURACIÓN TOTALMENTE ORDENADA -->
       <section class="view" id="view-config">
+        
+        <!-- 1. Metas Individuales de Bolsillos -->
         <div class="card">
-          <h2>Metas Individuales de Bolsillos</h2>
+          <h2>1. Metas Individuales de Bolsillos</h2>
           <div id="goalsConfigList"></div>
         </div>
 
+        <!-- 2. Categorías de Gasto -->
         <div class="card">
-          <h2>Gestión de Años</h2>
-          <button class="primary" onclick="createNextYear()">+ Crear año siguiente (Arrastra todo)</button>
-          <button class="primary" onclick="toggleLock()" id="lockBtn">🔒 Cerrar año actual</button>
+          <h2>2. Categorías de Gasto</h2>
+          <div id="configCatsList"></div>
+          <div style="margin-top: 10px;">
+            <input type="text" id="newCatName" placeholder="Nombre Categoría (ej. Educación)">
+            <input type="text" id="newCatDesc" placeholder="Guía (ej. Cursos, libros)">
+            <button class="primary" onclick="addCat()">+ Añadir Categoría</button>
+          </div>
         </div>
 
+        <!-- 3. Zona de Administrador -->
         <div class="card">
-          <h2>🔧 Zona de Administrador</h2>
-          <h3 style="font-size:12px; color:var(--accent); margin-top:10px; margin-bottom:5px;">1. Desbloqueo de Saldos y Placer</h3>
+          <h2>3. Zona de Administrador</h2>
+          <h3 style="font-size:12px; color:var(--accent); margin-top:10px; margin-bottom:5px;">Desbloqueo de Saldos y Placer</h3>
           <button class="warning" onclick="unlockOpeningBalances()">🔓 Desbloquear Saldos Iniciales</button>
           <button class="warning" onclick="unlockPlacerLimit()">🔓 Desbloquear Límite de Placer</button>
 
-          <h3 style="font-size:12px; color:var(--accent); margin-top:15px; margin-bottom:5px;">2. Desbloqueo de Deudas Pagadas</h3>
+          <h3 style="font-size:12px; color:var(--accent); margin-top:15px; margin-bottom:5px;">Desbloqueo de Deudas Pagadas</h3>
           <button class="warning" onclick="unlockDebts()">🔓 Desbloquear Deudas Pagadas</button>
-          
-          <h3 style="font-size:12px; color:var(--accent); margin-top:15px; margin-bottom:5px;">3. Categorías de Gasto</h3>
-          <div id="configCatsList"></div>
-          <input type="text" id="newCatName" placeholder="Nombre Categoría (ej. Educación)">
-          <input type="text" id="newCatDesc" placeholder="Guía (ej. Cursos, libros)">
-          <button class="primary" onclick="addCat()">+ Añadir Categoría</button>
+        </div>
 
-          <h3 style="font-size:12px; color:var(--red); margin-top:20px; margin-bottom:5px;">4. Cuenta y Seguridad</h3>
-          
-          <div style="background: rgba(59,130,246,0.1); padding: 10px; border-radius: 6px; border: 1px solid var(--border); margin-bottom: 15px;">
+        <!-- 4. Cuenta y Seguridad -->
+        <div class="card">
+          <h2>4. Cuenta y Seguridad</h2>
+          <div style="background: rgba(59,130,246,0.1); padding: 10px; border-radius: 6px; border: 1px solid var(--border);">
             <label style="font-size:11px; color:var(--muted);">Cambiar Contraseña</label>
             <input type="password" id="new-password" placeholder="Nueva contraseña (mín. 6 caracteres)" style="margin-bottom: 5px;">
             <button class="warning" onclick="changePassword()" style="width: 100%; margin-bottom: 15px;">Actualizar Contraseña</button>
@@ -283,9 +288,20 @@ th{color:var(--muted);font-size:11px}
             <div id="bio-status-text" style="font-size: 12px; margin-bottom: 5px; color: var(--muted);">Cargando estado...</div>
             <button class="primary" id="btn-bio-toggle" onclick="toggleBiometric()" style="background: var(--purple);">Configurar Huella/PIN</button>
           </div>
-
-          <button class="danger" onclick="logout()">Cerrar Sesión</button>
         </div>
+
+        <!-- 5. Gestión de Años -->
+        <div class="card">
+          <h2>5. Gestión de Años</h2>
+          <button class="primary" onclick="createNextYear()">+ Crear año siguiente (Arrastra todo)</button>
+          <button class="primary" onclick="toggleLock()" id="lockBtn">🔒 Cerrar año actual</button>
+        </div>
+
+        <!-- 6. Cerrar Sesión (Botón separado al final) -->
+        <div style="margin-top: 30px; margin-bottom: 50px;">
+          <button class="danger" onclick="logout()" style="padding: 15px; font-size: 16px; width: 100%;">Cerrar Sesión</button>
+        </div>
+
       </section>
     </main>
     <div id="toastWrap"></div>
@@ -406,7 +422,7 @@ function changePassword() {
 }
 
 // ==========================================
-// 3. LÓGICA DE SEGURIDAD BIOMÉTRICA (WEB AUTHN)
+// 3. LÓGICA DE SEGURIDAD BIOMÉTRICA (WEB AUTHN CORREGIDO)
 // ==========================================
 function b64urlToBuf(b64url) {
     return Uint8Array.from(atob(b64url.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0)).buffer;
@@ -424,39 +440,43 @@ async function toggleBiometric() {
         actualizarEstadoBio();
         toast('Bloqueo biométrico desactivado.');
     } else {
-        // Activar (Registrar huella)
+        // Activar (Registrar huella o PIN)
         if (!window.PublicKeyCredential) {
-            return toast('Tu dispositivo no soporta autenticación biométrica.');
+            return alert('Tu navegador o dispositivo no soporta autenticación biométrica.');
         }
 
         try {
             const challenge = new Uint8Array(32);
             window.crypto.getRandomValues(challenge);
+            
             const userId = new Uint8Array(16);
             window.crypto.getRandomValues(userId);
 
             const publicKeyCredentialCreationOptions = {
                 challenge: challenge,
-                rp: { name: "Mis Finanzas", id: window.location.hostname },
+                rp: { 
+                    name: "Mis Finanzas" 
+                    // Al quitar 'id', el navegador usará el dominio actual automáticamente
+                },
                 user: {
                     id: userId,
                     name: auth.currentUser.email,
                     displayName: auth.currentUser.email,
                 },
                 pubKeyCredParams: [
-                    { alg: -7, type: "public-key" },  // ES256
-                    { alg: -257, type: "public-key" } // RS256
+                    { type: "public-key", alg: -7 },  // ES256 (el más compatible)
+                    { type: "public-key", alg: -257 } // RS256
                 ],
                 authenticatorSelection: {
-                    authenticatorAttachment: "platform", // Fuerza huella/PIN local
-                    userVerification: "required",
+                    authenticatorAttachment: "platform", // Fuerza el uso del PIN/Huella del dispositivo
+                    userVerification: "required",        // Exige verificación (PIN o Huella)
+                    residentKey: "preferred"
                 },
                 timeout: 60000
             };
 
             const credential = await navigator.credentials.create({ publicKey: publicKeyCredentialCreationOptions });
             
-            // Guardamos el ID de esta credencial en el dispositivo
             bioCredentialId = bufToB64url(credential.rawId);
             localStorage.setItem('bioCredentialId', bioCredentialId);
             
@@ -465,7 +485,13 @@ async function toggleBiometric() {
 
         } catch (error) {
             console.error(error);
-            toast('Error al configurar: ' + error.message);
+            if (error.name === 'NotAllowedError') {
+                alert('❌ Acción cancelada o tiempo agotado.\n\nAsegúrate de hacer clic en "Aceptar" en la ventanita de Windows Hello o del teléfono. Si no sale ninguna ventanita, revisa que tengas configurado un PIN en Windows o bloqueo de pantalla en tu celular.');
+            } else if (error.name === 'InvalidStateError') {
+                alert('❌ Este dispositivo ya tiene una huella registrada para esta app. Si quieres cambiarla, primero desactívala.');
+            } else {
+                alert('❌ Error del sistema: ' + error.name + '\n' + error.message);
+            }
         }
     }
 }
