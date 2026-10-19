@@ -1292,15 +1292,23 @@ function renderAnalisis() {
   const avgInc = sumInc / activeMonths;
   const avgExp = sumExp / activeMonths;
   const avgAhorro = sumAhorro / activeMonths;
+  const avgDiff = avgInc - avgExp; // <--- NUEVA MÉTRICA CALCULADA
 
   document.getElementById('analisisPromedios').innerHTML=`
     <div class="stat green">
+      <span class="eye-btn" onclick="toggleHideIndividual('avg_inc')">${state.hidden.global||state.hidden.stats['avg_inc']?'👁️':'👁️‍🗨️'}</span>
       <div class="label">Promedio Ingresos Mensual</div><div class="value">${renderVal('avg_inc', avgInc)}</div>
     </div>
     <div class="stat red">
+      <span class="eye-btn" onclick="toggleHideIndividual('avg_exp')">${state.hidden.global||state.hidden.stats['avg_exp']?'👁️':'👁️‍🗨️'}</span>
       <div class="label">Promedio Gastos Mensual</div><div class="value">${renderVal('avg_exp', avgExp)}</div>
     </div>
+    <div class="stat ${avgDiff>=0?'green':'red'}">
+      <span class="eye-btn" onclick="toggleHideIndividual('avg_diff')">${state.hidden.global||state.hidden.stats['avg_diff']?'👁️':'👁️‍🗨️'}</span>
+      <div class="label">Diferencia Promedio (Ing - Gas)</div><div class="value">${renderVal('avg_diff', avgDiff)}</div>
+    </div>
     <div class="stat yellow">
+      <span class="eye-btn" onclick="toggleHideIndividual('avg_ahorro')">${state.hidden.global||state.hidden.stats['avg_ahorro']?'👁️':'👁️‍🗨️'}</span>
       <div class="label">Promedio Ahorro Real Mensual</div><div class="value">${renderVal('avg_ahorro', avgAhorro)}</div>
     </div>
   `;
