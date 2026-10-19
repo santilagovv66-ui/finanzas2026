@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
-<title>Mis Finanzas v7.0</title>
+<title>Mis Finanzas v7.1</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
@@ -53,7 +53,7 @@ th{color:var(--muted);font-size:11px}
 </head>
 <body>
 <header>
-  <h1>💰 Mis Finanzas v7.0</h1>
+  <h1>💰 Mis Finanzas v7.1</h1>
   <div class="year-nav" id="yearNav"></div>
 </header>
 <nav id="mainNav">
@@ -234,7 +234,7 @@ th{color:var(--muted);font-size:11px}
 <div id="toastWrap"></div>
 
 <script>
-const KEY = 'fin_v7_0'; 
+const KEY = 'fin_v7_1'; 
 let state = JSON.parse(localStorage.getItem(KEY) || 'null') || {
   config: { 
     placer: 30, 
