@@ -3,12 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
-<title>Mis Finanzas v10.1</title>
+<title>Mis Finanzas v12.0</title>
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<!-- FIREBASE SCRIPTS -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <style>
 :root{--bg:#0f172a;--card:#1e293b;--border:#334155;--text:#e2e8f0;--muted:#94a3b8;--accent:#3b82f6;--green:#22c55e;--red:#ef4444;--yellow:#eab308;--purple:#a855f7}
 *{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,sans-serif}
@@ -52,190 +56,300 @@ th{color:var(--muted);font-size:11px}
 .row-item .locked-text{font-size:14px;font-weight:500;width:35%}
 .row-item .locked-val{font-size:12px;color:var(--muted);width:35%;text-align:right; display:flex; justify-content:flex-end; align-items:center; gap:6px;}
 @media(max-width:600px){header h1{font-size:15px}}
+
+/* Estilos para la pantalla de Login */
+#auth-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+.auth-card { background: var(--card); padding: 30px; border-radius: 10px; border: 1px solid var(--border); width: 100%; max-width: 400px; }
+.auth-card h2 { text-align: center; margin-bottom: 20px; color: var(--accent); }
+.auth-card input { margin-bottom: 15px; }
+.auth-card button { margin-top: 10px; }
+#auth-error { color: var(--red); text-align: center; margin-top: 10px; font-size: 13px; }
 </style>
 </head>
 <body>
-<header>
-  <h1>💰 Mis Finanzas v10.1</h1>
-  <div class="year-nav" id="yearNav"></div>
-</header>
-<nav id="mainNav">
-  <button data-view="dashboard" class="active">📊 Panel</button>
-  <button data-view="movimientos">💸 Movimientos</button>
-  <button data-view="analisis">📈 Análisis</button>
-  <button data-view="cuentas">🏦 Cuentas y Bolsillos</button>
-  <button data-view="deudas">💳 Deudas</button>
-  <button data-view="config">⚙️ Configuración</button>
-</nav>
-<main>
-  <section class="view active" id="view-dashboard">
-    <div id="alerts"></div>
-    <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
-      <button class="primary" style="width:auto; background:var(--border); color:var(--text); font-size:12px;" onclick="toggleGlobalHide()" id="globalHideBtn">👁️ Ocultar todos los números</button>
-    </div>
-    <div class="card"><h2>📈 Flujo del Año (Ingresos - Gastos)</h2><div class="grid" id="flowStats"></div></div>
-    <div class="card"><h2>💼 Mi Patrimonio Total (Lo que tengo hoy)</h2><div class="grid" id="patrimonyStats"></div></div>
-    <div class="card"><h2>Presupuestos y Metas</h2><div class="grid" id="budgetGrid"></div></div>
-    
-    <div class="card">
-      <div class="card-header">
-        <h2>Flujo por mes</h2>
-        <select class="chart-selector" id="flowChartType" onchange="changeFlowChart()">
-          <option value="bar">Barras</option>
-          <option value="line">Líneas</option>
-          <option value="radar">Radar</option>
-        </select>
-      </div>
-      <canvas id="flowChart" height="90"></canvas>
-    </div>
 
-    <div class="card">
-      <div class="card-header">
-        <h2>Distribución de gastos</h2>
-        <select class="chart-selector" id="pieChartType" onchange="changePieChart()">
-          <option value="doughnut">Dona</option>
-          <option value="pie">Torta</option>
-          <option value="bar">Barras</option>
-          <option value="polarArea">Polar</option>
-        </select>
-      </div>
-      <canvas id="pieChart" height="200"></canvas>
+<!-- PANTALLA DE LOGIN -->
+<div id="auth-screen">
+    <div class="auth-card">
+        <h2>💰 Mis Finanzas</h2>
+        <input type="email" id="auth-email" placeholder="Correo electrónico">
+        <input type="password" id="auth-password" placeholder="Contraseña (mínimo 6 caracteres)">
+        <button class="primary" onclick="login()">Iniciar Sesión</button>
+        <button class="warning" onclick="signup()">Registrarse</button>
+        <button class="primary" style="background: #db4437;" onclick="loginWithGoogle()">Iniciar sesión con Google</button>
+        <p id="auth-error"></p>
     </div>
-  </section>
-  
-  <section class="view" id="view-movimientos">
-    <div class="card" id="addCard">
-      <h2>Nuevo movimiento</h2>
-      <div class="grid">
-        <div><label>Fecha</label><input type="date" id="fDate"></div>
-        <div><label>Detalle</label><input type="text" id="fDetail" placeholder="Ej: Mercado"></div>
-        <div><label>Monto COP</label><input type="number" id="fAmount" placeholder="0"></div>
-        <div><label>Tipo de Movimiento</label><select id="fType">
-            <option value="Ingreso">Ingreso (Suma a cuenta/bolsillo)</option>
-            <option value="Gasto">Gasto (Resta de cuenta/bolsillo)</option>
-            <option value="Transferencia">Movimiento Interno de mi dinero</option>
-            <option value="PagoDeuda">Pago de Deuda</option>
-        </select></div>
-        <div id="wrapFrom"><label>De dónde sale (Origen)</label><select id="fFrom"></select></div>
-        <div id="wrapTo"><label>A dónde va (Destino)</label><select id="fTo"></select></div>
-        <div id="wrapCat"><label>Categoría de Gasto</label><select id="fCategory"></select></div>
-        <div id="wrapDebt" style="display:none"><label>Deuda a Pagar</label><select id="fDebtSelect"></select></div>
-      </div>
-      <button class="primary" onclick="addTx()">Guardar Movimiento</button>
-    </div>
-    <div class="card">
-      <h2>Historial <span id="txCount" style="float:right;color:var(--muted)"></span></h2>
-      <input type="text" id="txSearch" placeholder="🔍 Buscar..." oninput="renderTable()">
-      <div style="overflow-x:auto"><table id="txTable"><thead><tr><th>Fecha</th><th>Detalle</th><th>Acción</th><th style="text-align:right">Monto</th><th></th></tr></thead><tbody></tbody></table></div>
-    </div>
-  </section>
+</div>
 
-  <section class="view" id="view-analisis">
-    <div class="card">
-      <h2>Promedios Mensuales</h2>
-      <div class="grid" id="analisisPromedios"></div>
-    </div>
+<!-- APLICACIÓN (Oculta hasta iniciar sesión) -->
+<div id="app-screen" style="display:none;">
+    <header>
+      <h1>💰 Mis Finanzas v12.0</h1>
+      <div class="year-nav" id="yearNav"></div>
+    </header>
+    <nav id="mainNav">
+      <button data-view="dashboard" class="active">📊 Panel</button>
+      <button data-view="movimientos">💸 Movimientos</button>
+      <button data-view="analisis">📈 Análisis</button>
+      <button data-view="cuentas">🏦 Cuentas y Bolsillos</button>
+      <button data-view="deudas">💳 Deudas</button>
+      <button data-view="config">⚙️ Configuración</button>
+    </nav>
+    <main>
+      <section class="view active" id="view-dashboard">
+        <div id="alerts"></div>
+        <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+          <button class="primary" style="width:auto; background:var(--border); color:var(--text); font-size:12px;" onclick="toggleGlobalHide()" id="globalHideBtn">👁️ Ocultar todos los números</button>
+        </div>
+        <div class="card"><h2>📈 Flujo del Año (Ingresos - Gastos)</h2><div class="grid" id="flowStats"></div></div>
+        <div class="card"><h2>💼 Mi Patrimonio Total (Lo que tengo hoy)</h2><div class="grid" id="patrimonyStats"></div></div>
+        <div class="card"><h2>Presupuestos y Metas</h2><div class="grid" id="budgetGrid"></div></div>
+        
+        <div class="card">
+          <div class="card-header">
+            <h2>Flujo por mes</h2>
+            <select class="chart-selector" id="flowChartType" onchange="changeFlowChart()">
+              <option value="bar">Barras</option>
+              <option value="line">Líneas</option>
+              <option value="radar">Radar</option>
+            </select>
+          </div>
+          <canvas id="flowChart" height="90"></canvas>
+        </div>
 
-    <div class="card">
-      <div class="card-header">
-        <h2>📊 Proyección de Patrimonio a Fin de Año</h2>
-        <select class="chart-selector" id="projChartType" onchange="changeProjChart()">
-          <option value="line">Líneas</option>
-          <option value="bar">Barras</option>
-          <option value="radar">Radar</option>
-        </select>
-      </div>
-      <canvas id="projChart" height="100"></canvas>
-    </div>
-
-    <div class="card">
-      <h2>Balance por Mes</h2>
-      <div style="overflow-x:auto">
-        <table id="analisisTable">
-          <thead><tr><th>Mes</th><th>Ingresos</th><th>Gastos</th><th>Ahorro Real</th><th>Balance</th><th>Desglose de Gastos</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
-  </section>
-
-  <section class="view" id="view-cuentas">
-    <div class="card" id="placerCard">
-      <h2>🎯 Límite de Gastos Placer del Mes</h2>
-      <div id="placerCardContent"></div>
-    </div>
-
-    <div class="card">
-      <h2>Mis Cuentas (Dinero real)</h2>
-      <div id="initAlert"></div>
-      <div id="accountsList"></div>
-      <div id="addAccWrap" style="margin-top:10px">
-        <input type="text" id="newAccName" placeholder="Nueva cuenta (ej. Daviplata)">
-        <button class="primary" onclick="addAcc()">+ Añadir Cuenta</button>
-      </div>
-    </div>
-    <div class="card">
-      <h2>Bolsillos de Ahorro (Dinero apartado)</h2>
-      <div id="pocketsList"></div>
-      <div id="addPocWrap" style="margin-top:10px">
-        <input type="text" id="newPocketName" placeholder="Nuevo bolsillo (ej. Ahorro Viaje)">
-        <button class="primary" onclick="addPocket()">+ Añadir Bolsillo</button>
-      </div>
-    </div>
-  </section>
-
-  <section class="view" id="view-deudas">
-    <div class="card">
-      <h2>Mis Deudas</h2>
-      <div id="debtsList"></div>
-      <div style="margin-top:10px">
-        <input type="text" id="newDebtName" placeholder="Nombre (ej. ADDI)">
-        <input type="number" id="newDebtAmount" placeholder="Monto total de la deuda">
-        <label style="font-size:11px; color:var(--muted);">Fecha Límite de Pago (Opcional)</label>
-        <input type="date" id="newDebtDate">
-        <select id="newDebtType">
-            <option value="mala">Mala (Consumo)</option>
-            <option value="buena">Buena (Activo)</option>
-            <option value="necesaria">Necesaria</option>
-        </select>
-        <button class="primary" onclick="addDebt()">+ Añadir Deuda</button>
-      </div>
-    </div>
-  </section>
-
-  <section class="view" id="view-config">
-    <div class="card">
-      <h2>Metas Individuales de Bolsillos</h2>
-      <div id="goalsConfigList"></div>
-    </div>
-
-    <div class="card">
-      <h2>Gestión de Años</h2>
-      <button class="primary" onclick="createNextYear()">+ Crear año siguiente (Arrastra todo)</button>
-      <button class="primary" onclick="toggleLock()" id="lockBtn">🔒 Cerrar año actual</button>
-    </div>
-
-    <div class="card">
-      <h2>🔧 Zona de Administrador</h2>
-      <h3 style="font-size:12px; color:var(--accent); margin-top:10px; margin-bottom:5px;">1. Desbloqueo de Saldos y Placer</h3>
-      <button class="warning" onclick="unlockOpeningBalances()">🔓 Desbloquear Saldos Iniciales</button>
-      <button class="warning" onclick="unlockPlacerLimit()">🔓 Desbloquear Límite de Placer</button>
-
-      <h3 style="font-size:12px; color:var(--accent); margin-top:15px; margin-bottom:5px;">2. Desbloqueo de Deudas Pagadas</h3>
-      <button class="warning" onclick="unlockDebts()">🔓 Desbloquear Deudas Pagadas</button>
+        <div class="card">
+          <div class="card-header">
+            <h2>Distribución de gastos</h2>
+            <select class="chart-selector" id="pieChartType" onchange="changePieChart()">
+              <option value="doughnut">Dona</option>
+              <option value="pie">Torta</option>
+              <option value="bar">Barras</option>
+              <option value="polarArea">Polar</option>
+            </select>
+          </div>
+          <canvas id="pieChart" height="200"></canvas>
+        </div>
+      </section>
       
-      <h3 style="font-size:12px; color:var(--accent); margin-top:15px; margin-bottom:5px;">3. Categorías de Gasto</h3>
-      <div id="configCatsList"></div>
-      <input type="text" id="newCatName" placeholder="Nombre Categoría (ej. Educación)">
-      <input type="text" id="newCatDesc" placeholder="Guía (ej. Cursos, libros)">
-      <button class="primary" onclick="addCat()">+ Añadir Categoría</button>
-    </div>
-  </section>
-</main>
-<div id="toastWrap"></div>
+      <section class="view" id="view-movimientos">
+        <div class="card" id="addCard">
+          <h2>Nuevo movimiento</h2>
+          <div class="grid">
+            <div><label>Fecha</label><input type="date" id="fDate"></div>
+            <div><label>Detalle</label><input type="text" id="fDetail" placeholder="Ej: Mercado"></div>
+            <div><label>Monto COP</label><input type="number" id="fAmount" placeholder="0"></div>
+            <div><label>Tipo de Movimiento</label><select id="fType">
+                <option value="Ingreso">Ingreso (Suma a cuenta/bolsillo)</option>
+                <option value="Gasto">Gasto (Resta de cuenta/bolsillo)</option>
+                <option value="Transferencia">Movimiento Interno de mi dinero</option>
+                <option value="PagoDeuda">Pago de Deuda</option>
+            </select></div>
+            <div id="wrapFrom"><label>De dónde sale (Origen)</label><select id="fFrom"></select></div>
+            <div id="wrapTo"><label>A dónde va (Destino)</label><select id="fTo"></select></div>
+            <div id="wrapCat"><label>Categoría de Gasto</label><select id="fCategory"></select></div>
+            <div id="wrapDebt" style="display:none"><label>Deuda a Pagar</label><select id="fDebtSelect"></select></div>
+          </div>
+          <button class="primary" onclick="addTx()">Guardar Movimiento</button>
+        </div>
+        <div class="card">
+          <h2>Historial <span id="txCount" style="float:right;color:var(--muted)"></span></h2>
+          <input type="text" id="txSearch" placeholder="🔍 Buscar..." oninput="renderTable()">
+          <div style="overflow-x:auto"><table id="txTable"><thead><tr><th>Fecha</th><th>Detalle</th><th>Acción</th><th style="text-align:right">Monto</th><th></th></tr></thead><tbody></tbody></table></div>
+        </div>
+      </section>
+
+      <section class="view" id="view-analisis">
+        <div class="card">
+          <h2>Promedios Mensuales</h2>
+          <div class="grid" id="analisisPromedios"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2>📊 Proyección de Patrimonio a Fin de Año</h2>
+            <select class="chart-selector" id="projChartType" onchange="changeProjChart()">
+              <option value="line">Líneas</option>
+              <option value="bar">Barras</option>
+              <option value="radar">Radar</option>
+            </select>
+          </div>
+          <canvas id="projChart" height="100"></canvas>
+        </div>
+
+        <div class="card">
+          <h2>Balance por Mes</h2>
+          <div style="overflow-x:auto">
+            <table id="analisisTable">
+              <thead><tr><th>Mes</th><th>Ingresos</th><th>Gastos</th><th>Ahorro Real</th><th>Balance</th><th>Desglose de Gastos</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="view-cuentas">
+        <div class="card" id="placerCard">
+          <h2>🎯 Límite de Gastos Placer del Mes</h2>
+          <div id="placerCardContent"></div>
+        </div>
+
+        <div class="card">
+          <h2>Mis Cuentas (Dinero real)</h2>
+          <div id="initAlert"></div>
+          <div id="accountsList"></div>
+          <div id="addAccWrap" style="margin-top:10px">
+            <input type="text" id="newAccName" placeholder="Nueva cuenta (ej. Daviplata)">
+            <button class="primary" onclick="addAcc()">+ Añadir Cuenta</button>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Bolsillos de Ahorro (Dinero apartado)</h2>
+          <div id="pocketsList"></div>
+          <div id="addPocWrap" style="margin-top:10px">
+            <input type="text" id="newPocketName" placeholder="Nuevo bolsillo (ej. Ahorro Viaje)">
+            <button class="primary" onclick="addPocket()">+ Añadir Bolsillo</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="view-deudas">
+        <div class="card">
+          <h2>Mis Deudas</h2>
+          <div id="debtsList"></div>
+          <div style="margin-top:10px">
+            <input type="text" id="newDebtName" placeholder="Nombre (ej. ADDI)">
+            <input type="number" id="newDebtAmount" placeholder="Monto total de la deuda">
+            <label style="font-size:11px; color:var(--muted);">Fecha Límite de Pago (Opcional)</label>
+            <input type="date" id="newDebtDate">
+            <select id="newDebtType">
+                <option value="mala">Mala (Consumo)</option>
+                <option value="buena">Buena (Activo)</option>
+                <option value="necesaria">Necesaria</option>
+            </select>
+            <button class="primary" onclick="addDebt()">+ Añadir Deuda</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="view-config">
+        <div class="card">
+          <h2>Metas Individuales de Bolsillos</h2>
+          <div id="goalsConfigList"></div>
+        </div>
+
+        <div class="card">
+          <h2>Gestión de Años</h2>
+          <button class="primary" onclick="createNextYear()">+ Crear año siguiente (Arrastra todo)</button>
+          <button class="primary" onclick="toggleLock()" id="lockBtn">🔒 Cerrar año actual</button>
+        </div>
+
+        <div class="card">
+          <h2>🔧 Zona de Administrador</h2>
+          <h3 style="font-size:12px; color:var(--accent); margin-top:10px; margin-bottom:5px;">1. Desbloqueo de Saldos y Placer</h3>
+          <button class="warning" onclick="unlockOpeningBalances()">🔓 Desbloquear Saldos Iniciales</button>
+          <button class="warning" onclick="unlockPlacerLimit()">🔓 Desbloquear Límite de Placer</button>
+
+          <h3 style="font-size:12px; color:var(--accent); margin-top:15px; margin-bottom:5px;">2. Desbloqueo de Deudas Pagadas</h3>
+          <button class="warning" onclick="unlockDebts()">🔓 Desbloquear Deudas Pagadas</button>
+          
+          <h3 style="font-size:12px; color:var(--accent); margin-top:15px; margin-bottom:5px;">3. Categorías de Gasto</h3>
+          <div id="configCatsList"></div>
+          <input type="text" id="newCatName" placeholder="Nombre Categoría (ej. Educación)">
+          <input type="text" id="newCatDesc" placeholder="Guía (ej. Cursos, libros)">
+          <button class="primary" onclick="addCat()">+ Añadir Categoría</button>
+
+          <h3 style="font-size:12px; color:var(--red); margin-top:20px; margin-bottom:5px;">4. Cuenta</h3>
+          <button class="danger" onclick="logout()">Cerrar Sesión</button>
+        </div>
+      </section>
+    </main>
+    <div id="toastWrap"></div>
+</div>
 
 <script>
-const KEY = 'fin_v10_0'; 
+// ==========================================
+// 1. CONFIGURACIÓN DE FIREBASE (CON TUS CLAVES)
+// ==========================================
+const firebaseConfig = {
+  apiKey: "AIzaSyDucnaKWbeWoZbZF4x6hoRemtBlNxXBYD8",
+  authDomain: "misfinanzasapp-ac4b8.firebaseapp.com",
+  projectId: "misfinanzasapp-ac4b8",
+  storageBucket: "misfinanzasapp-ac4b8.firebasestorage.app",
+  messagingSenderId: "185036971217",
+  appId: "1:185036971217:web:efa30eacdcd1df993eb9f0"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// ==========================================
+// 2. LÓGICA DE AUTENTICACIÓN Y SINCRONIZACIÓN
+// ==========================================
+auth.onAuthStateChanged(user => {
+    if (user) {
+        document.getElementById('auth-screen').style.display = 'none';
+        document.getElementById('app-screen').style.display = 'block';
+        syncData(); // Cargar datos del usuario
+    } else {
+        document.getElementById('auth-screen').style.display = 'flex';
+        document.getElementById('app-screen').style.display = 'none';
+    }
+});
+
+function login() {
+    const email = document.getElementById('auth-email').value;
+    const password = document.getElementById('auth-password').value;
+    auth.signInWithEmailAndPassword(email, password)
+        .catch(error => { document.getElementById('auth-error').innerText = error.message; });
+}
+
+function signup() {
+    const email = document.getElementById('auth-email').value;
+    const password = document.getElementById('auth-password').value;
+    auth.createUserWithEmailAndPassword(email, password)
+        .then(() => { toast('¡Usuario creado! Ahora puedes iniciar sesión.'); })
+        .catch(error => { document.getElementById('auth-error').innerText = error.message; });
+}
+
+function loginWithGoogle() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithPopup(provider)
+        .catch(error => { document.getElementById('auth-error').innerText = error.message; });
+}
+
+function logout() {
+    auth.signOut();
+}
+
+// Sincronización en tiempo real
+let unsubscribeSnapshot = null;
+function syncData() {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    if (unsubscribeSnapshot) unsubscribeSnapshot();
+
+    unsubscribeSnapshot = db.collection('finanzas').doc(user.uid).onSnapshot(doc => {
+        if (doc.exists) {
+            const cloudData = doc.data();
+            if (cloudData.state) {
+                state = cloudData.state;
+                localStorage.setItem(KEY, JSON.stringify(state));
+                renderAll();
+                toast('Datos sincronizados');
+            }
+        } else {
+            // Primera vez: Subir los datos locales a la nube
+            db.collection('finanzas').doc(user.uid).set({ state: state });
+        }
+    });
+}
+
+// ==========================================
+// 3. LÓGICA DE LA APP
+// ==========================================
+const KEY = 'fin_v12_0'; 
 let state = JSON.parse(localStorage.getItem(KEY) || 'null') || {
   config: { 
     placer: 30, 
@@ -278,7 +392,14 @@ if(!state.years[state.active]) {
     state.pockets.forEach(p => state.years[state.active].openingBalances[p.id] = 0);
 }
 
-function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
+function save(){ 
+    localStorage.setItem(KEY, JSON.stringify(state)); 
+    const user = auth.currentUser;
+    if (user) {
+        db.collection('finanzas').doc(user.uid).set({ state: state })
+          .catch(e => console.error('Error al guardar en la nube:', e));
+    }
+}
 function fmt(n){ return new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0}).format(n||0); }
 function genId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 function toast(m){ const d=document.createElement('div'); d.className='toast'; d.textContent=m; document.body.appendChild(d); setTimeout(()=>d.remove(),3000); }
@@ -1131,20 +1252,6 @@ document.querySelectorAll('#mainNav button').forEach(b=>{
 });
 
 document.getElementById('fDate').value=new Date().toISOString().slice(0,10);
-renderAll();
-
-// Forzar el dibujo inicial del panel
-setTimeout(() => {
-    const yr=state.years[state.active];
-    const incM=Array(12).fill(0), gasM=Array(12).fill(0);
-    yr.txs.forEach(t => {
-        const m=new Date(t.date).getMonth();
-        if(t.type==='Ingreso') incM[m]+=t.amount;
-        if(t.type==='Gasto'||t.type==='PagoDeuda') gasM[m]+=t.amount;
-    });
-    drawFlowChart(incM, gasM);
-    drawPieChart(getFlow(state.active));
-}, 200);
 
 // REGISTRAR SERVICE WORKER PARA PWA
 if ('serviceWorker' in navigator) {
