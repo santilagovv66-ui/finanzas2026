@@ -964,34 +964,35 @@ function createNextYear(){ const y=Math.max(...Object.keys(state.years).map(Numb
 function toggleLock(){ state.years[state.active].locked=!state.years[state.active].locked; save(); renderAll(); }
 
 function renderAll() {
-  try { renderDashboard(); } catch(e) { console.error("Error en Dashboard:", e); }
-  try { renderCuentas(); } catch(e) { console.error("Error en Cuentas:", e); }
-  try { renderDeudas(); } catch(e) { console.error("Error en Deudas:", e); }
-  try { renderConfig(); } catch(e) { console.error("Error en Config:", e); }
-  try { renderAnalisis(); } catch(e) { console.error("Error en Analisis:", e); }
-  try { renderExpertAnalysis(); } catch(e) { console.error("Error en Expert:", e); }
-  try { renderMonthlySummaries(); } catch(e) { console.error("Error en Resumenes:", e); }
-  try { actualizarEstadoBio(); actualizarBadgeDeudas(); } catch(e) {}
-}
-
-function renderDashboard() {
   document.getElementById('toggleAdvisor').checked = state.config.advisorEnabled;
+  document.getElementById('toggleAutoSave').checked = state.config.autoSave.enabled;
+  document.getElementById('autoSaveConfig').style.display = state.config.autoSave.enabled ? 'block' : 'none';
+  document.getElementById('autoSavePct').value = state.config.autoSave.pct;
+
   const yn=document.getElementById('yearNav'); yn.innerHTML='';
   Object.keys(state.years).sort((a,b)=>b-a).forEach(y => {
     const b=document.createElement('button'); b.textContent=(state.years[y].locked?'🔒 ':'')+y;
     if(y==state.active) b.classList.add('active'); b.onclick=()=>{state.active=parseInt(y);save();renderAll();}; yn.appendChild(b);
   });
   
-  const yr=state.years[state.active]; 
-  document.getElementById('addCard').style.display=canEdit()?'block':'none';
+  const yr=state.years[state.active]; document.getElementById('addCard').style.display=canEdit()?'block':'none';
   document.getElementById('lockBtn').textContent=yr.locked?'🔓 Reabrir Año':'🔒 Cerrar Año';
-  
+  const isLocked = !canEditInit();
+  document.getElementById('globalHideBtn').textContent = state.hidden.global ? '👁️ Mostrar todos los números' : '👁️‍🗨️ Ocultar todos los números';
+
+  if(isLocked) {
+    document.getElementById('initAlert').innerHTML = `<div class="alert warn">🔒 Saldos iniciales bloqueados. Ve a Configuración > Zona de Administrador para corregir.</div>`;
+    document.getElementById('addAccWrap').style.display='none'; document.getElementById('addPocWrap').style.display='none';
+  } else {
+    document.getElementById('initAlert').innerHTML = `<div class="alert info" style="background:rgba(59,130,246,.1); border-color:var(--accent); color:var(--accent); margin-bottom:10px;"><strong>Paso 1:</strong> Escribe tus saldos iniciales abajo.<br><strong>Paso 2:</strong> Bloquéalos.<button class="warning" style="margin-top:8px; width:100%" onclick="lockOpeningBalances()">🔒 Guardar y Bloquear Saldos</button></div>`;
+    document.getElementById('addAccWrap').style.display='block'; document.getElementById('addPocWrap').style.display='block';
+  }
+
   generateAdvice();
-  const flow = getFlow(state.active); 
-  const balanceAnual = flow.inc - flow.exp;
+
+  const flow = getFlow(state.active); const balanceAnual = flow.inc - flow.exp;
   let al = checkDebtAlerts();
   if(flow.exp > flow.inc && flow.inc > 0) al+=`<div class="alert danger">🚨 ¡ALERTA! Estás gastando más de lo que ganas este año. Déficit: ${fmt(flow.exp - flow.inc)}.</div>`;
-  document.getElementById('alerts').innerHTML=al;
 
   document.getElementById('flowStats').innerHTML=`
     <div class="stat green"><span class="eye-btn" onclick="toggleHideIndividual('inc')">${state.hidden.global||state.hidden.stats['inc']?'👁️':'👁️‍🗨️'}</span><div class="label">Ingresos Totales</div><div class="value">${renderVal('inc', flow.inc)}</div></div>
@@ -1033,26 +1034,11 @@ function renderDashboard() {
     }
   });
   document.getElementById('budgetGrid').innerHTML = budgetHtml;
-  
+
   if(placerInfo.available<0) al+=`<div class="alert danger">🚨 ¡Superaste el límite de Gastos Placer! Por ${fmt(Math.abs(placerInfo.available))}.</div>`;
   else if(placerPct>80) al+=`<div class="alert warn">⚠️ Estás al ${placerPct.toFixed(1)}% de tu límite de Placer.</div>`;
-  document.getElementById('alerts').innerHTML=al; 
+  document.getElementById('alerts').innerHTML=al; renderTable();
   
-  renderTable();
-}
-
-function renderCuentas() {
-  const isLocked = !canEditInit();
-  document.getElementById('globalHideBtn').textContent = state.hidden.global ? '👁️ Mostrar todos los números' : '👁️‍🗨️ Ocultar todos los números';
-
-  if(isLocked) {
-    document.getElementById('initAlert').innerHTML = `<div class="alert warn">🔒 Saldos iniciales bloqueados. Ve a Configuración > Zona de Administrador para corregir.</div>`;
-    document.getElementById('addAccWrap').style.display='none'; document.getElementById('addPocWrap').style.display='none';
-  } else {
-    document.getElementById('initAlert').innerHTML = `<div class="alert info" style="background:rgba(59,130,246,.1); border-color:var(--accent); color:var(--accent); margin-bottom:10px;"><strong>Paso 1:</strong> Escribe tus saldos iniciales abajo.<br><strong>Paso 2:</strong> Bloquéalos.<button class="warning" style="margin-top:8px; width:100%" onclick="lockOpeningBalances()">🔒 Guardar y Bloquear Saldos</button></div>`;
-    document.getElementById('addAccWrap').style.display='block'; document.getElementById('addPocWrap').style.display='block';
-  }
-
   if(isLocked) {
     document.getElementById('accountsList').innerHTML=state.accounts.map(a=>{ const isHidden = state.hidden.locks[a.id]; return `<div class="row-item"><div class="locked-text">${a.name}</div><div class="locked-val"><span>Inició con: <strong>${isHidden?'***':fmt(state.years[state.active].openingBalances[a.id]||0)}</strong></span><span style="cursor:pointer; font-size:16px;" onclick="toggleLockHide('${a.id}')">${isHidden?'👁️':'👁️‍🗨️'}</span></div><strong style="color:var(--accent); width:20%; text-align:right">${renderVal('acc_'+a.id, getAccBal(a.id))}</strong></div>`; }).join('');
   } else {
@@ -1064,9 +1050,7 @@ function renderCuentas() {
   } else {
     document.getElementById('pocketsList').innerHTML=state.pockets.map(p=>`<div class="row-item"><input value="${p.name}" onchange="renamePoc('${p.id}', this.value)" style="border:none; width:40%"><input type="number" value="${state.years[state.active].openingBalances[p.id]||0}" onchange="setOpeningBal('${p.id}', this.value)" placeholder="Saldo Inicial $" style="text-align:right; width:35%"><strong style="color:var(--green); width:20%; text-align:right">${fmt(getPocBal(p.id))}</strong>${canEdit() ?`<button class="danger" onclick="delPoc('${p.id}')">X</button>`:''}</div>`).join('');
   }
-}
 
-function renderDeudas() {
   document.getElementById('debtsList').innerHTML=state.debts.map(d=>{
     const saldo = getDebtBal(d.id); const isPaid = saldo <= 0;
     let scheduleHtml = '';
@@ -1085,12 +1069,6 @@ function renderDeudas() {
     if (d.rate > 0) infoInteres = `<div style="font-size:11px; color:var(--red); margin-top:3px;">💸 Interés: ${d.rate}% mensual. Pagas ${fmt(d.total - d.baseAmount)} extra en total.</div>`;
     return `<div class="row-item" style="flex-direction:column;align-items:flex-start; padding-bottom:15px; margin-bottom:15px;"><div style="display:flex;width:100%;justify-content:space-between;margin-bottom:5px;"><input value="${d.name}" onchange="renameDebt('${d.id}', this.value)" style="width:50%; font-weight:bold;" ${isPaid?'disabled':''}><span style="color:${isPaid?'var(--green)':'var(--red)'}">${isPaid?'¡PAGADA!':fmt(saldo)+' restante'}</span>${canEdit() && !isPaid ?`<button class="danger" onclick="delDebt('${d.id}')">X</button>`:''}</div>${infoInteres}${scheduleHtml}</div>`;
   }).join('')||'<p style="text-align:center;color:var(--muted)">No hay deudas registradas</p>';
-}
-
-function renderConfig() {
-  document.getElementById('toggleAutoSave').checked = state.config.autoSave.enabled;
-  document.getElementById('autoSaveConfig').style.display = state.config.autoSave.enabled ? 'block' : 'none';
-  document.getElementById('autoSavePct').value = state.config.autoSave.pct;
 
   document.getElementById('goalsConfigList').innerHTML=state.pockets.map(p=>`<div class="row-item"><span style="width:50%">${p.name}</span><input type="number" value="${p.meta||0}" onchange="setMetaPoc('${p.id}', this.value)" placeholder="Meta $" style="width:40%; text-align:right;"></div>`).join('');
   document.getElementById('configCatsList').innerHTML=state.config.cats.map(c=>`<div class="row-item"><input value="${c.name}" onchange="renameCat('${c.id}', 'name', this.value)" style="border:none; width:30%; font-weight:bold;"><input value="${c.desc||''}" onchange="renameCat('${c.id}', 'desc', this.value)" style="border:none; width:45%; font-size:11px; color:var(--muted);" placeholder="Guía..."><span style="background:${c.color}; width:15px; height:15px; border-radius:50%;"></span><button class="danger" onclick="delCat('${c.id}')">X</button></div>`).join('');
@@ -1114,22 +1092,57 @@ function renderConfig() {
   document.getElementById('pieChartType').value = state.config.pieType; 
   document.getElementById('projChartType').value = state.config.projChartType;
   document.getElementById('fType').dispatchEvent(new Event('change'));
+
+  renderAnalisis();
+  renderExpertAnalysis();
+  renderMonthlySummaries();
+  actualizarEstadoBio();
+  actualizarBadgeDeudas();
 }
 
-function renderTable() {
-  const tb=document.querySelector('#txTable tbody'); const q=document.getElementById('txSearch').value.toLowerCase();
-  const list=state.years[state.active].txs.filter(t=>t.detail.toLowerCase().includes(q)).sort((a,b)=>b.date.localeCompare(a.date));
-  document.getElementById('txCount').textContent=list.length+' registros';
-  tb.innerHTML=list.map(t=>{
-    let ruta = ''; if(t.type==='Ingreso') ruta = '➔ ' + (getAccName(t.to) || getPocName(t.to));
-    if(t.type==='Gasto') ruta = (getAccName(t.from) || getPocName(t.from)) + ' ➔ Gasto';
-    if(t.type==='Transferencia') ruta = (getAccName(t.from)||getPocName(t.from)) + ' ➔ ' + (getAccName(t.to) || getPocName(t.to));
-    if(t.type==='PagoDeuda') ruta = (getAccName(t.from)||getPocName(t.from)) + ' ➔ Deuda: ' + getDebtName(t.debtId);
-    let catStr = t.cat ? `<br><small style="color:var(--accent)">${getCatName(t.cat)}</small>` : '';
-    let colorMonto = 'var(--red)'; if(t.type === 'Ingreso') colorMonto = 'var(--green)'; if(t.type === 'Transferencia') colorMonto = 'var(--yellow)'; 
-    return `<tr><td>${t.date}</td><td>${t.detail}</td><td>${t.type}${catStr}<br><small style="color:var(--muted)">${ruta}</small></td><td style="text-align:right; color:${colorMonto}; font-weight:bold;">${fmt(t.amount)}</td><td>${canEdit()?`<button class="danger" onclick="delTx('${t.id}')">X</button>`:''}</td></tr>`;
-  }).join('')||'<tr><td colspan="5" style="text-align:center">Sin datos</td></tr>';
+function renderMonthlySummaries() {
+    const box = document.getElementById('monthlySummariesList');
+    const keys = Object.keys(state.summaries).sort().reverse();
+    if (keys.length === 0) { box.innerHTML = '<p style="color:var(--muted); font-size:13px;">Los resúmenes aparecerán aquí al finalizar cada mes.</p>'; return; }
+    const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    box.innerHTML = keys.map(k => {
+        const s = state.summaries[k]; const balance = s.inc - s.exp; const color = balance >= 0 ? 'var(--green)' : 'var(--red)';
+        return `<div style="background: var(--bg); padding: 12px; border-radius: 8px; border-left: 4px solid ${color}; margin-bottom:10px;"><h4 style="font-size: 14px; margin-bottom: 8px;">${monthNames[s.mes]} ${s.anio}</h4><div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;"><span>Ingresos: <span style="color:var(--green)">${fmt(s.inc)}</span></span><span>Gastos: <span style="color:var(--red)">${fmt(s.exp)}</span></span><span>Ahorro: <span style="color:var(--yellow)">${fmt(s.ahorro)}</span></span></div><div style="font-size:11px; color:var(--muted); background:rgba(255,255,255,0.05); padding:8px; border-radius:4px; margin-top:8px;"><strong>🤖 Resumen:</strong> ${s.advice}</div></div>`;
+    }).join('');
 }
+
+function renderExpertAnalysis() {
+    const box = document.getElementById('expertAnalysis');
+    const yr = state.years[state.active]; const now = new Date();
+    let inc = 0, expFijo = 0, expPlacer = 0;
+    yr.txs.forEach(t => {
+        const d = new Date(t.date);
+        if(d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
+            if(t.type === 'Ingreso') inc += t.amount;
+            if(t.type === 'Gasto' || t.type === 'PagoDeuda') { if(t.cat === 'fijo') expFijo += t.amount; if(t.cat === 'placer') expPlacer += t.amount; }
+        }
+    });
+    const ahorroPots = state.pockets.reduce((s,p)=>s+getPocBal(p.id),0);
+    if (inc === 0) { box.innerHTML = '<p style="color:var(--muted); font-size:13px;">Registra ingresos este mes para calcular tu regla 50/30/20.</p>'; return; }
+    const pctFijo = (expFijo / inc) * 100; const pctPlacer = (expPlacer / inc) * 100; const pctAhorro = (ahorroPots / inc) * 100;
+    const createBar = (label, pct, target, color) => {
+        let actualColor = color; if (pct > target) actualColor = 'var(--red)'; else if (pct > target * 0.9) actualColor = 'var(--yellow)';
+        return `<div style="margin-bottom:12px;"><div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;"><span>${label} <span style="color:var(--muted)">(Ideal: ${target}%)</span></span><strong style="color:${actualColor}">${pct.toFixed(1)}% (${fmt(pct === 0 ? 0 : (pct/100)*inc)})</strong></div><div class="bar" style="height:10px; position:relative;"><div class="bar-fill" style="width:${Math.min(pct,100)}%; background:${actualColor};"></div><div style="position:absolute; left:${target}%; top:0; bottom:0; width:2px; background:white; z-index:10; opacity:0.8;"></div></div></div>`;
+    };
+    box.innerHTML = createBar('Gastos Fijos', pctFijo, 50, 'var(--accent)') + createBar('Gastos Placer', pctPlacer, 30, 'var(--purple)') + createBar('Ahorro', pctAhorro, 20, 'var(--green)');
+}
+
+function downloadExcel() {
+    const yr = state.years[state.active]; if (yr.txs.length === 0) return toast('No hay movimientos para exportar.');
+    const data = yr.txs.map(t => {
+        let origen = t.from ? (getAccName(t.from) || getPocName(t.from)) : ''; let destino = t.to ? (getAccName(t.to) || getPocName(t.to)) : '';
+        if(t.type === 'Gasto') destino = 'Gasto'; if(t.type === 'Ingreso') origen = 'Ingreso'; if(t.type === 'PagoDeuda') destino = 'Deuda: ' + getDebtName(t.debtId);
+        return { "Fecha": t.date, "Detalle": t.detail, "Tipo": t.type, "Categoría": t.cat ? getCatName(t.cat) : '', "Origen": origen, "Destino": destino, "Monto ($)": t.amount };
+    });
+    const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Movimientos"); XLSX.writeFile(wb, `Mis_Finanzas_${state.active}.xlsx`); toast('📥 Archivo descargado.');
+}
+
+function toggleAdvisor() { state.config.advisorEnabled = document.getElementById('toggleAdvisor').checked; save(); renderAll(); toast(state.config.advisorEnabled ? 'Asesor Activado' : 'Asesor Desactivado'); }
 
 let flowChartInstance = null;
 let pieChartInstance = null;
@@ -1354,50 +1367,6 @@ function renderAnalisis() {
     </div>
   `;
 }
-
-function renderExpertAnalysis() {
-    const box = document.getElementById('expertAnalysis');
-    const yr = state.years[state.active]; const now = new Date();
-    let inc = 0, expFijo = 0, expPlacer = 0;
-    yr.txs.forEach(t => {
-        const d = new Date(t.date);
-        if(d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
-            if(t.type === 'Ingreso') inc += t.amount;
-            if(t.type === 'Gasto' || t.type === 'PagoDeuda') { if(t.cat === 'fijo') expFijo += t.amount; if(t.cat === 'placer') expPlacer += t.amount; }
-        }
-    });
-    const ahorroPots = state.pockets.reduce((s,p)=>s+getPocBal(p.id),0);
-    if (inc === 0) { box.innerHTML = '<p style="color:var(--muted); font-size:13px;">Registra ingresos este mes para calcular tu regla 50/30/20.</p>'; return; }
-    const pctFijo = (expFijo / inc) * 100; const pctPlacer = (expPlacer / inc) * 100; const pctAhorro = (ahorroPots / inc) * 100;
-    const createBar = (label, pct, target, color) => {
-        let actualColor = color; if (pct > target) actualColor = 'var(--red)'; else if (pct > target * 0.9) actualColor = 'var(--yellow)';
-        return `<div style="margin-bottom:12px;"><div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;"><span>${label} <span style="color:var(--muted)">(Ideal: ${target}%)</span></span><strong style="color:${actualColor}">${pct.toFixed(1)}% (${fmt(pct === 0 ? 0 : (pct/100)*inc)})</strong></div><div class="bar" style="height:10px; position:relative;"><div class="bar-fill" style="width:${Math.min(pct,100)}%; background:${actualColor};"></div><div style="position:absolute; left:${target}%; top:0; bottom:0; width:2px; background:white; z-index:10; opacity:0.8;"></div></div></div>`;
-    };
-    box.innerHTML = createBar('Gastos Fijos', pctFijo, 50, 'var(--accent)') + createBar('Gastos Placer', pctPlacer, 30, 'var(--purple)') + createBar('Ahorro', pctAhorro, 20, 'var(--green)');
-}
-
-function renderMonthlySummaries() {
-    const box = document.getElementById('monthlySummariesList');
-    const keys = Object.keys(state.summaries).sort().reverse();
-    if (keys.length === 0) { box.innerHTML = '<p style="color:var(--muted); font-size:13px;">Los resúmenes aparecerán aquí al finalizar cada mes.</p>'; return; }
-    const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-    box.innerHTML = keys.map(k => {
-        const s = state.summaries[k]; const balance = s.inc - s.exp; const color = balance >= 0 ? 'var(--green)' : 'var(--red)';
-        return `<div style="background: var(--bg); padding: 12px; border-radius: 8px; border-left: 4px solid ${color}; margin-bottom:10px;"><h4 style="font-size: 14px; margin-bottom: 8px;">${monthNames[s.mes]} ${s.anio}</h4><div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;"><span>Ingresos: <span style="color:var(--green)">${fmt(s.inc)}</span></span><span>Gastos: <span style="color:var(--red)">${fmt(s.exp)}</span></span><span>Ahorro: <span style="color:var(--yellow)">${fmt(s.ahorro)}</span></span></div><div style="font-size:11px; color:var(--muted); background:rgba(255,255,255,0.05); padding:8px; border-radius:4px; margin-top:8px;"><strong>🤖 Resumen:</strong> ${s.advice}</div></div>`;
-    }).join('');
-}
-
-function downloadExcel() {
-    const yr = state.years[state.active]; if (yr.txs.length === 0) return toast('No hay movimientos para exportar.');
-    const data = yr.txs.map(t => {
-        let origen = t.from ? (getAccName(t.from) || getPocName(t.from)) : ''; let destino = t.to ? (getAccName(t.to) || getPocName(t.to)) : '';
-        if(t.type === 'Gasto') destino = 'Gasto'; if(t.type === 'Ingreso') origen = 'Ingreso'; if(t.type === 'PagoDeuda') destino = 'Deuda: ' + getDebtName(t.debtId);
-        return { "Fecha": t.date, "Detalle": t.detail, "Tipo": t.type, "Categoría": t.cat ? getCatName(t.cat) : '', "Origen": origen, "Destino": destino, "Monto ($)": t.amount };
-    });
-    const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Movimientos"); XLSX.writeFile(wb, `Mis_Finanzas_${state.active}.xlsx`); toast('📥 Archivo descargado.');
-}
-
-function toggleAdvisor() { state.config.advisorEnabled = document.getElementById('toggleAdvisor').checked; save(); renderAll(); toast(state.config.advisorEnabled ? 'Asesor Activado' : 'Asesor Desactivado'); }
 
 document.querySelectorAll('#mainNav button').forEach(b=>{
   b.onclick=()=>{ document.querySelectorAll('#mainNav button').forEach(x=>x.classList.remove('active')); document.querySelectorAll('.view').forEach(v=>v.classList.remove('active')); b.classList.add('active'); document.getElementById('view-'+b.dataset.view).classList.add('active'); 
