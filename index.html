@@ -537,10 +537,10 @@ function migrateState() {
     if(!state.summaries) state.summaries = {};
     
     // BLINDAJE EXTREMO: Solo crear por defecto si NO EXISTEN en absoluto.
-    if(state.accounts === undefined || state.accounts === null) {
+    if(state.accounts === undefined || state.accounts === null || state.accounts.length === 0) {
         state.accounts = [{id:'nequi', name:'Nequi'},{id:'banco', name:'Bancolombia'},{id:'billetera', name:'Billetera (Efectivo)'}];
     }
-    if(state.pockets === undefined || state.pockets === null) {
+    if(state.pockets === undefined || state.pockets === null || state.pockets.length === 0) {
         state.pockets = [{id:'ahorro_gen', name:'Ahorro General', meta: 0},{id:'ahorro_emg', name:'Ahorro Emergencias', meta: 0},{id:'ahorro_car', name:'Ahorro Carro', meta: 0}];
     }
     
@@ -582,7 +582,6 @@ function syncData() {
         if (doc.exists) {
             const cloudData = doc.data();
             if (cloudData.state) { 
-                // FUSIÓN SEGURA: No sobreescribir cuentas/bolsillos si la nube viene vacía
                 let localState = JSON.parse(JSON.stringify(state));
                 state = cloudData.state;
                 
@@ -711,7 +710,6 @@ function addDebt() {
     save(); 
     renderAll(); 
     
-    // LIMPIAR CASILLAS AUTOMÁTICAMENTE
     document.getElementById('newDebtName').value=''; 
     document.getElementById('newDebtAmount').value=''; 
     document.getElementById('newDebtRate').value='';
@@ -770,7 +768,6 @@ function confirmPayInstallment() {
     save(); 
     renderAll();
     
-    // CERRAR EL MODAL
     document.getElementById('payModal').style.display = 'none';
     currentPayDebtId = null;
     currentPayCuotaNum = null;
@@ -1024,7 +1021,7 @@ function delDebt(id){ const d = state.debts.find(x=>x.id===id); if(!d) return; i
 function createNextYear(){ const y=Math.max(...Object.keys(state.years).map(Number)); if(!state.years[y].locked)return toast('Cierra el año primero'); const newYear = y+1; state.years[newYear] = { locked:false, lockedInit: false, openingBalances: {}, txs:[] }; state.accounts.forEach(a => { state.years[newYear].openingBalances[a.id] = getAccBal(a.id); }); state.pockets.forEach(p => { state.years[newYear].openingBalances[p.id] = getPocBal(p.id); }); state.active = newYear; save(); renderAll(); toast(`¡Año ${newYear} creado!`); }
 function toggleLock(){ state.years[state.active].locked=!state.years[state.active].locked; save(); renderAll(); }
 
-// GRÁFICOS (AÑADIDOS DE NUEVO)
+// GRÁFICOS
 let flowChartInstance = null;
 let pieChartInstance = null;
 let projChartInstance = null;
