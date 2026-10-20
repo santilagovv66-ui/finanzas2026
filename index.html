@@ -456,7 +456,6 @@ async function toggleBiometric() {
                 challenge: challenge,
                 rp: { 
                     name: "Mis Finanzas" 
-                    // Al quitar 'id', el navegador usará el dominio actual automáticamente
                 },
                 user: {
                     id: userId,
@@ -464,12 +463,12 @@ async function toggleBiometric() {
                     displayName: auth.currentUser.email,
                 },
                 pubKeyCredParams: [
-                    { type: "public-key", alg: -7 },  // ES256 (el más compatible)
+                    { type: "public-key", alg: -7 },  // ES256
                     { type: "public-key", alg: -257 } // RS256
                 ],
                 authenticatorSelection: {
-                    authenticatorAttachment: "platform", // Fuerza el uso del PIN/Huella del dispositivo
-                    userVerification: "required",        // Exige verificación (PIN o Huella)
+                    authenticatorAttachment: "platform",
+                    userVerification: "required",
                     residentKey: "preferred"
                 },
                 timeout: 60000
@@ -516,7 +515,6 @@ async function desbloquearHuella() {
 
         await navigator.credentials.get({ publicKey: publicKeyCredentialRequestOptions });
         
-        // Si llega aquí, la huella fue correcta
         document.getElementById('lock-screen').style.display = 'none';
         document.getElementById('app-screen').style.display = 'block';
         syncData();
@@ -546,6 +544,38 @@ function actualizarEstadoBio() {
     }
 }
 
+// ==========================================
+// 4. NUEVA FUNCIÓN: PUNTO DE ALERTA EN EL ÍCONO (BADGE)
+// ==========================================
+function actualizarBadgeDeudas() {
+    // Si el navegador no soporta la API, salimos silenciosamente
+    if (!navigator.setAppBadge) return;
+
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    let alertas = 0;
+
+    state.debts.forEach(d => {
+        const saldo = getDebtBal(d.id);
+        if(saldo > 0 && d.dateLimit) {
+            const limitDate = new Date(d.dateLimit + 'T00:00:00');
+            const diffTime = limitDate - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            // Sumar alerta si ya venció (días negativos) o si vence en los próximos 5 días
+            if(diffDays <= 5) {
+                alertas++;
+            }
+        }
+    });
+
+    if (alertas > 0) {
+        navigator.setAppBadge(alertas).catch(err => console.log('Badge no soportado:', err));
+    } else {
+        navigator.clearAppBadge().catch(err => console.log('Badge no soportado:', err));
+    }
+}
+
 // Sincronización en tiempo real
 let unsubscribeSnapshot = null;
 function syncData() {
@@ -570,7 +600,7 @@ function syncData() {
 }
 
 // ==========================================
-// 4. LÓGICA DE LA APP
+// 5. LÓGICA DE LA APP
 // ==========================================
 const KEY = 'fin_v12_0'; 
 let state = JSON.parse(localStorage.getItem(KEY) || 'null') || {
@@ -1087,7 +1117,10 @@ function renderAll() {
   document.getElementById('fType').dispatchEvent(new Event('change'));
 
   renderAnalisis();
-  actualizarEstadoBio(); // Actualiza el botón de huella al cargar
+  actualizarEstadoBio(); 
+  
+  // Llamada para actualizar el punto rojo en el ícono de la app
+  actualizarBadgeDeudas();
 }
 
 let flowChartInstance = null;
@@ -1292,7 +1325,7 @@ function renderAnalisis() {
   const avgInc = sumInc / activeMonths;
   const avgExp = sumExp / activeMonths;
   const avgAhorro = sumAhorro / activeMonths;
-  const avgDiff = avgInc - avgExp; // <--- NUEVA MÉTRICA CALCULADA
+  const avgDiff = avgInc - avgExp;
 
   document.getElementById('analisisPromedios').innerHTML=`
     <div class="stat green">
