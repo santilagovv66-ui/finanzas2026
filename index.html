@@ -462,7 +462,6 @@ function changePassword() {
 function b64urlToBuf(b64url) { return Uint8Array.from(atob(b64url.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0)).buffer; }
 function bufToB64url(buf) { return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, ''); }
 
-// ✅ FUNCIÓN CORREGIDA PARA ANDROID Y PC
 async function toggleBiometric() {
     if (bioCredentialId) { 
         localStorage.removeItem('bioCredentialId'); 
@@ -482,24 +481,21 @@ async function toggleBiometric() {
 
             const publicKeyCredentialCreationOptions = {
                 challenge: challenge,
-                rp: { 
-                    name: "Mis Finanzas Pro", 
-                    id: window.location.hostname // 👈 CRUCIAL PARA ANDROID
-                },
+                rp: { name: "Mis Finanzas Pro", id: window.location.hostname },
                 user: {
                     id: userId,
                     name: auth.currentUser.email,
                     displayName: auth.currentUser.email,
                 },
                 pubKeyCredParams: [
-                    { type: "public-key", alg: -7 },  // ES256
-                    { type: "public-key", alg: -257 } // RS256
+                    { type: "public-key", alg: -7 },
+                    { type: "public-key", alg: -257 }
                 ],
                 authenticatorSelection: {
-                    userVerification: "required", // 👈 Obliga a pedir PIN/Huella
+                    userVerification: "required",
                     residentKey: "preferred"
                 },
-                timeout: 120000 // 2 minutos de margen
+                timeout: 120000
             };
 
             const credential = await navigator.credentials.create({ publicKey: publicKeyCredentialCreationOptions });
@@ -789,7 +785,14 @@ function confirmPayInstallment() {
 
     const fromAcc = document.getElementById('payModalAcc').value;
     
-    const currentBalance = (getAccBal(fromAcc) || 0) + (getPocBal(fromAcc) || 0);
+    // ✅ CORRECCIÓN: Validar saldo de la cuenta específica sin duplicar
+    let currentBalance = 0;
+    if (state.accounts.some(a => a.id === fromAcc)) {
+        currentBalance = getAccBal(fromAcc);
+    } else if (state.pockets.some(p => p.id === fromAcc)) {
+        currentBalance = getPocBal(fromAcc);
+    }
+
     if (currentBalance < cuota.amount) {
         return toast(`❌ Saldo insuficiente en ${getAccName(fromAcc) || getPocName(fromAcc)}. Tienes ${fmt(currentBalance)} y necesitas ${fmt(cuota.amount)}.`);
     }
@@ -1016,8 +1019,17 @@ function addTx() {
   if(ty === 'PagoDeuda') { 
       const debtId = document.getElementById('fDebtSelect').value;
       if(a > getDebtBal(debtId)) return toast('El monto a pagar supera la deuda total.');
+      
       const fromAcc = document.getElementById('fFrom').value;
-      const currentBalance = (getAccBal(fromAcc) || 0) + (getPocBal(fromAcc) || 0);
+      
+      // ✅ CORRECCIÓN: Validar saldo de la cuenta específica sin duplicar
+      let currentBalance = 0;
+      if (state.accounts.some(acc => acc.id === fromAcc)) {
+          currentBalance = getAccBal(fromAcc);
+      } else if (state.pockets.some(poc => poc.id === fromAcc)) {
+          currentBalance = getPocBal(fromAcc);
+      }
+
       if (currentBalance < a) return toast(`Saldo insuficiente en ${getAccName(fromAcc) || getPocName(fromAcc)}. Tienes ${fmt(currentBalance)}.`);
   }
   
