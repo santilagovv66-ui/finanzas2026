@@ -371,6 +371,16 @@ input:checked + .slider:before { transform: translateX(20px); }
 </div>
 
 <script>
+// ==========================================
+// 🚨 LIMPIADOR AUTOMÁTICO DE MEMORIA (LA SOLUCIÓN REAL)
+// ==========================================
+localStorage.removeItem('fin_v12_0');
+localStorage.removeItem('fin_v12_1');
+localStorage.removeItem('fin_v12_2');
+localStorage.removeItem('fin_v12_3');
+localStorage.removeItem('fin_v12_4');
+// ==========================================
+
 const firebaseConfig = {
   apiKey: "AIzaSyDucnaKWbeWoZbZF4x6hoRemtBlNxXBYD8",
   authDomain: "misfinanzasapp-ac4b8.firebaseapp.com",
@@ -480,7 +490,7 @@ function actualizarBadgeDeudas() {
     if (alertas > 0) navigator.setAppBadge(alertas).catch(()=>{}); else navigator.clearAppBadge().catch(()=>{});
 }
 
-const KEY = 'fin_v12_0'; 
+const KEY = 'fin_v13_0'; // NUEVA LLAVE PARA EMPEZAR DE CERO
 let state = JSON.parse(localStorage.getItem(KEY) || 'null') || {};
 
 function migrateState() {
