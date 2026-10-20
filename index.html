@@ -75,6 +75,9 @@ th{color:var(--muted);font-size:11px}
 .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
 input:checked + .slider { background-color: var(--green); }
 input:checked + .slider:before { transform: translateX(20px); }
+
+/* Modal de Pago de Cuota */
+#payModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; align-items: center; justify-content: center; padding: 20px; }
 </style>
 </head>
 <body>
@@ -102,6 +105,20 @@ input:checked + .slider:before { transform: translateX(20px); }
         <p style="color: var(--muted); margin-bottom: 20px; font-size: 14px;">Usa tu huella o PIN para desbloquear Mis Finanzas Pro.</p>
         <button class="primary" onclick="desbloquearHuella()" style="padding: 15px; font-size: 16px; margin-bottom: 10px;">👆 Desbloquear con Huella/PIN</button>
         <button class="danger" onclick="logout()" style="padding: 10px;">Cerrar Sesión</button>
+    </div>
+</div>
+
+<!-- MODAL PARA PAGAR CUOTA -->
+<div id="payModal">
+    <div class="auth-card" style="max-width: 350px;">
+        <h3 style="margin-bottom:15px; color:var(--accent); text-align:center;">💳 Pagar Cuota</h3>
+        <p style="font-size:14px; margin-bottom:10px;">Deuda: <strong id="payModalDebtName"></strong></p>
+        <p style="font-size:14px; margin-bottom:10px;">Cuota #<span id="payModalCuotaNum"></span> - <span id="payModalCuotaDate"></span></p>
+        <p style="font-size:16px; margin-bottom:15px; color:var(--red);">Monto: <strong id="payModalAmount"></strong></p>
+        <label style="font-size:11px; color:var(--muted);">Pagar desde (Cuenta o Bolsillo):</label>
+        <select id="payModalAcc" style="margin-bottom:15px;"></select>
+        <button class="primary" onclick="confirmPayInstallment()" style="margin-bottom:5px;">Confirmar Pago</button>
+        <button class="danger" onclick="document.getElementById('payModal').style.display='none'" style="width:100%; padding:10px;">Cancelar</button>
     </div>
 </div>
 
@@ -167,7 +184,7 @@ input:checked + .slider:before { transform: translateX(20px); }
                 <option value="Ingreso">Ingreso (Suma a cuenta/bolsillo)</option>
                 <option value="Gasto">Gasto (Resta de cuenta/bolsillo)</option>
                 <option value="Transferencia">Movimiento Interno de mi dinero</option>
-                <option value="PagoDeuda">Pago de Deuda</option>
+                <option value="PagoDeuda">Pago de Deuda (Abono libre)</option>
             </select></div>
             <div id="wrapFrom"><label>De dónde sale (Origen)</label><select id="fFrom"></select></div>
             <div id="wrapTo"><label>A dónde va (Destino)</label><select id="fTo"></select></div>
@@ -250,22 +267,23 @@ input:checked + .slider:before { transform: translateX(20px); }
 
       <section class="view" id="view-deudas">
         <div class="card">
-          <h2>Mis Deudas</h2>
+          <h2>Mis Deudas Activas</h2>
           <div id="debtsList"></div>
+          
           <div style="margin-top:20px; border-top: 1px solid var(--border); padding-top: 15px;">
-            <h3 style="font-size: 14px; margin-bottom: 10px;">Registrar Nueva Deuda</h3>
+            <h3 style="font-size: 14px; margin-bottom: 10px; color: var(--accent);">Registrar Nueva Deuda</h3>
             <input type="text" id="newDebtName" placeholder="Nombre (ej. Crédito Vehículo)">
             <input type="number" id="newDebtAmount" placeholder="Monto prestado ($)">
-            <input type="number" id="newDebtInterest" placeholder="Interés total (%) - Opcional">
-            <input type="number" id="newDebtInstallments" placeholder="Número de cuotas (ej. 12) - Opcional">
-            <label style="font-size:11px; color:var(--muted);">Fecha Límite de Pago Final (Opcional)</label>
-            <input type="date" id="newDebtDate">
+            <input type="number" id="newDebtRate" placeholder="Interés Mensual (%) - Ej: 2">
+            <input type="number" id="newDebtInstallments" placeholder="Número de cuotas (ej. 24)">
+            <label style="font-size:11px; color:var(--muted);">Fecha de la Primera Cuota</label>
+            <input type="date" id="newDebtStartDate">
             <select id="newDebtType">
                 <option value="mala">Mala (Consumo)</option>
                 <option value="buena">Buena (Activo)</option>
                 <option value="necesaria">Necesaria</option>
             </select>
-            <button class="primary" onclick="addDebt()">+ Añadir Deuda</button>
+            <button class="primary" onclick="addDebt()">+ Registrar Deuda y Generar Cuotas</button>
           </div>
         </div>
       </section>
@@ -298,6 +316,7 @@ input:checked + .slider:before { transform: translateX(20px); }
             <div style="border-top: 1px dashed var(--border); padding-top: 10px;">
               <input type="text" id="recDetail" placeholder="Detalle (ej. Arriendo)">
               <input type="number" id="recAmount" placeholder="Monto ($)">
+              <label style="font-size:11px; color:var(--muted);">De dónde sale el dinero</label>
               <select id="recAcc"></select>
               <input type="number" id="recDay" placeholder="Día del mes que se cobra (1-31)" min="1" max="31">
               <button class="primary" onclick="addRecurring()" style="font-size: 12px;">+ Añadir Recurrente</button>
@@ -348,9 +367,6 @@ input:checked + .slider:before { transform: translateX(20px); }
           <p style="font-size:11px; color:var(--accent); margin-top:10px; margin-bottom:5px;">Desbloqueo de Saldos y Placer</p>
           <button class="warning" onclick="unlockOpeningBalances()">🔓 Desbloquear Saldos Iniciales</button>
           <button class="warning" onclick="unlockPlacerLimit()">🔓 Desbloquear Límite de Placer</button>
-
-          <p style="font-size:11px; color:var(--accent); margin-top:15px; margin-bottom:5px;">Desbloqueo de Deudas Pagadas</p>
-          <button class="warning" onclick="unlockDebts()">🔓 Desbloquear Deudas Pagadas</button>
         </div>
 
         <!-- 7. Seguridad -->
@@ -486,33 +502,16 @@ function actualizarBadgeDeudas() {
     if (!navigator.setAppBadge) return;
     const today = new Date(); today.setHours(0,0,0,0); let alertas = 0;
     state.debts.forEach(d => {
-        const saldo = getDebtBal(d.id);
-        if(saldo > 0 && d.dateLimit) {
-            const diffDays = Math.ceil((new Date(d.dateLimit + 'T00:00:00') - today) / (1000 * 60 * 60 * 24));
-            if(diffDays <= 5) alertas++;
+        if (d.schedule) {
+            d.schedule.forEach(c => {
+                if (!c.paid) {
+                    const diffDays = Math.ceil((new Date(c.date + 'T00:00:00') - today) / (1000 * 60 * 60 * 24));
+                    if(diffDays <= 5) alertas++;
+                }
+            });
         }
     });
     if (alertas > 0) navigator.setAppBadge(alertas).catch(()=>{}); else navigator.clearAppBadge().catch(()=>{});
-}
-
-let unsubscribeSnapshot = null;
-function syncData() {
-    const user = auth.currentUser; if (!user) return;
-    if (unsubscribeSnapshot) unsubscribeSnapshot();
-    unsubscribeSnapshot = db.collection('finanzas').doc(user.uid).onSnapshot(doc => {
-        if (doc.exists) {
-            const cloudData = doc.data();
-            if (cloudData.state) { 
-                state = cloudData.state; 
-                migrateState(); 
-                localStorage.setItem(KEY, JSON.stringify(state)); 
-                processRecurring(); 
-                checkMonthlySummary(); 
-                renderAll(); 
-                toast('Datos sincronizados'); 
-            }
-        } else { db.collection('finanzas').doc(user.uid).set({ state: state }); }
-    });
 }
 
 // ==========================================
@@ -529,14 +528,9 @@ function migrateState() {
     if(!state.config.pieType) state.config.pieType = 'doughnut';
     if(!state.config.projChartType) state.config.projChartType = 'line';
     if(state.config.advisorEnabled === undefined) state.config.advisorEnabled = true;
-    
-    // AUTO SAVE
     if(!state.config.autoSave) state.config.autoSave = { enabled: false, pct: 10, pocketId: '' };
-    
-    // RECURRENTES Y RESUMENES
     if(!state.recurring) state.recurring = [];
     if(!state.summaries) state.summaries = {};
-    
     if(!state.accounts) state.accounts = [{id:'nequi', name:'Nequi'},{id:'banco', name:'Bancolombia'},{id:'billetera', name:'Billetera (Efectivo)'}];
     if(!state.pockets) state.pockets = [{id:'ahorro_gen', name:'Ahorro General', meta: 0},{id:'ahorro_emg', name:'Ahorro Emergencias', meta: 0},{id:'ahorro_car', name:'Ahorro Carro', meta: 0}];
     if(!state.debts) state.debts = [];
@@ -565,7 +559,35 @@ function genId(){ return Date.now().toString(36)+Math.random().toString(36).slic
 function toast(m){ const d=document.createElement('div'); d.className='toast'; d.textContent=m; document.body.appendChild(d); setTimeout(()=>d.remove(),3000); }
 
 // ==========================================
-// 4. AUTOMATIZACIONES (RECURRENTES Y AHORRO)
+// 4. GENERADOR DE CRONOGRAMA DE CUOTAS
+// ==========================================
+function addMonths(dateStr, months) {
+    let d = new Date(dateStr + 'T12:00:00');
+    d.setMonth(d.getMonth() + months);
+    return d.toISOString().slice(0,10);
+}
+
+function generateSchedule(amount, rate, months, startDateStr) {
+    let schedule = [];
+    let i = rate / 100;
+    let payment = 0;
+    
+    // Fórmula de amortización francesa (cuota fija)
+    if (i === 0) {
+        payment = amount / months;
+    } else {
+        payment = (amount * i) / (1 - Math.pow(1 + i, -months));
+    }
+
+    for (let m = 0; m < months; m++) {
+        let dateStr = addMonths(startDateStr, m);
+        schedule.push({ num: m + 1, date: dateStr, amount: payment, paid: false });
+    }
+    return schedule;
+}
+
+// ==========================================
+// 5. AUTOMATIZACIONES (RECURRENTES Y AHORRO)
 // ==========================================
 function processRecurring() {
     const today = new Date();
@@ -575,21 +597,30 @@ function processRecurring() {
     if (!state.recurring) return;
 
     state.recurring.forEach(r => {
-        // Si el día de hoy es mayor o igual al día de cobro, y no se ha ejecutado este mes
+        const createdDate = new Date(r.createdAt);
+        const createdThisMonth = createdDate.getMonth() === today.getMonth() && createdDate.getFullYear() === today.getFullYear();
+        const createdBeforeDueDate = createdDate.getDate() <= r.day;
+
         if (today.getDate() >= r.day && r.lastRun !== currentMonthStr) {
-            const tx = {
-                id: genId(),
-                date: new Date().toISOString().slice(0, 10),
-                detail: r.detail,
-                amount: r.amount,
-                type: 'Gasto',
-                from: r.from,
-                cat: 'fijo' // Forzamos categoría fijo para recurrentes
-            };
-            state.years[state.active].txs.push(tx);
-            r.lastRun = currentMonthStr;
-            changed = true;
-            toast(`Gasto recurrente aplicado: ${r.detail}`);
+            if (createdThisMonth && !createdBeforeDueDate) {
+                // Se creó este mes pero después del día de cobro. No aplicar hasta el próximo mes.
+                r.lastRun = currentMonthStr; // Marcar para evitar bucle este mes
+                changed = true;
+            } else {
+                const tx = {
+                    id: genId(),
+                    date: new Date().toISOString().slice(0, 10),
+                    detail: r.detail,
+                    amount: r.amount,
+                    type: 'Gasto',
+                    from: r.from,
+                    cat: 'fijo'
+                };
+                state.years[state.active].txs.push(tx);
+                r.lastRun = currentMonthStr;
+                changed = true;
+                toast(`Gasto recurrente aplicado: ${r.detail}`);
+            }
         }
     });
 
@@ -614,7 +645,8 @@ function addRecurring() {
     const from = document.getElementById('recAcc').value;
     const day = parseInt(document.getElementById('recDay').value);
     if (!detail || !amount || !from || !day) return toast('Completa todos los campos.');
-    state.recurring.push({ id: genId(), detail, amount, from, day, lastRun: null });
+    
+    state.recurring.push({ id: genId(), detail, amount, from, day, createdAt: Date.now(), lastRun: null });
     save(); renderAll(); toast('Recurrente añadido.');
     document.getElementById('recDetail').value = ''; document.getElementById('recAmount').value = ''; document.getElementById('recDay').value = '';
 }
@@ -626,7 +658,118 @@ function delRecurring(id) {
 }
 
 // ==========================================
-// 5. ASESOR INTELIGENTE Y RESUMEN MENSUAL
+// 6. DEUDAS Y PAGOS DE CUOTAS
+// ==========================================
+function addDebt() { 
+    const n = document.getElementById('newDebtName').value; 
+    const a = parseFloat(document.getElementById('newDebtAmount').value); 
+    const rate = parseFloat(document.getElementById('newDebtRate').value) || 0;
+    const installments = parseInt(document.getElementById('newDebtInstallments').value) || 1;
+    const startDate = document.getElementById('newDebtStartDate').value;
+    const type = document.getElementById('newDebtType').value;
+    
+    if(!n || !a || !startDate) return toast('Faltan datos (Nombre, Monto y Fecha de inicio son obligatorios)'); 
+    
+    const schedule = generateSchedule(a, rate, installments, startDate);
+    const totalWithInterest = schedule.reduce((sum, c) => sum + c.amount, 0);
+    
+    state.debts.push({
+        id: genId(), name: n, total: totalWithInterest, baseAmount: a, rate: rate, 
+        installments: installments, type: type, schedule: schedule
+    }); 
+    
+    save(); renderAll(); 
+    document.getElementById('newDebtName').value=''; 
+    document.getElementById('newDebtAmount').value=''; 
+    document.getElementById('newDebtRate').value='';
+    document.getElementById('newDebtInstallments').value='';
+    document.getElementById('newDebtStartDate').value=''; 
+    toast('Deuda registrada con cronograma de cuotas.');
+}
+
+let currentPayDebtId = null;
+let currentPayCuotaNum = null;
+
+function openPayModal(debtId, cuotaNum) {
+    const debt = state.debts.find(d => d.id === debtId);
+    if (!debt) return;
+    const cuota = debt.schedule.find(c => c.num === cuotaNum);
+    if (!cuota || cuota.paid) return;
+
+    currentPayDebtId = debtId;
+    currentPayCuotaNum = cuotaNum;
+
+    document.getElementById('payModalDebtName').innerText = debt.name;
+    document.getElementById('payModalCuotaNum').innerText = cuota.num;
+    document.getElementById('payModalCuotaDate').innerText = cuota.date;
+    document.getElementById('payModalAmount').innerText = fmt(cuota.amount);
+    
+    const allOrigins = [...state.accounts.map(a=>({id:a.id, name:a.name})), ...state.pockets.map(p=>({id:p.id, name:p.name}))];
+    document.getElementById('payModalAcc').innerHTML = allOrigins.map(o=>`<option value="${o.id}">${o.name}</option>`).join('');
+    
+    document.getElementById('payModal').style.display = 'flex';
+}
+
+function confirmPayInstallment() {
+    if (!currentPayDebtId || !currentPayCuotaNum) return;
+    const debt = state.debts.find(d => d.id === currentPayDebtId);
+    if (!debt) return;
+    const cuota = debt.schedule.find(c => c.num === currentPayCuotaNum);
+    if (!cuota) return;
+
+    const fromAcc = document.getElementById('payModalAcc').value;
+
+    const tx = {
+        id: genId(),
+        date: new Date().toISOString().slice(0, 10),
+        detail: `Pago Cuota #${cuota.num} - ${debt.name}`,
+        amount: cuota.amount,
+        type: 'PagoDeuda',
+        from: fromAcc,
+        debtId: debt.id,
+        cat: debt.type === 'mala' ? 'necesario' : 'fijo'
+    };
+    state.years[state.active].txs.push(tx);
+    cuota.paid = true;
+    cuota.txId = tx.id;
+
+    save();
+    renderAll();
+    document.getElementById('payModal').style.display = 'none';
+    toast('✅ Cuota pagada con éxito');
+}
+
+function getDebtBal(debtId) {
+  const debt = state.debts.find(d=>d.id===debtId); if(!debt) return 0;
+  if (debt.schedule) {
+      return debt.schedule.filter(c => !c.paid).reduce((sum, c) => sum + c.amount, 0);
+  }
+  // Fallback
+  let paid=0; state.years[state.active].txs.forEach(t => { if(t.type==='PagoDeuda' && t.debtId===debtId) paid+=t.amount; });
+  return (debt.total || 0) - paid;
+}
+
+function checkDebtAlerts() {
+    const today = new Date(); today.setHours(0,0,0,0); let alertsHtml = '';
+    state.debts.forEach(d => {
+        if (d.schedule) {
+            d.schedule.forEach(c => {
+                if (!c.paid) {
+                    const diffDays = Math.ceil((new Date(c.date + 'T00:00:00') - today) / (1000 * 60 * 60 * 24));
+                    if (diffDays < 0) {
+                        alertsHtml += `<div class="alert danger">🚨 ¡ALERTA! La cuota #${c.num} de <strong>${d.name}</strong> venció hace ${Math.abs(diffDays)} días (${c.date}). Monto: ${fmt(c.amount)}.</div>`;
+                    } else if (diffDays <= 5) {
+                        alertsHtml += `<div class="alert warn">⚠️ La cuota #${c.num} de <strong>${d.name}</strong> vence en ${diffDays} días (${c.date}). Monto: ${fmt(c.amount)}.</div>`;
+                    }
+                }
+            });
+        }
+    });
+    return alertsHtml;
+}
+
+// ==========================================
+// 7. ASESOR INTELIGENTE Y RESUMEN MENSUAL
 // ==========================================
 function generateAdvice() {
     const box = document.getElementById('advisorBox');
@@ -673,7 +816,7 @@ function generateAdvice() {
             adviceHtml += `<div class="alert danger">🐖 <strong>Asesor:</strong> Te sugiero ahorrar al menos el 20% de tus ingresos. Aún te faltan ${fmt((inc*0.20) - ahorroPots)} para cumplir la meta de este mes.</div>`;
         }
         if (state.debts.some(d=>getDebtBal(d.id) > 0)) {
-            adviceHtml += `<div class="alert danger">💳 <strong>Asesor:</strong> Tienes deudas activas. Prioriza pagar las deudas "malas" (consumo) antes de darte gustos.</div>`;
+            adviceHtml += `<div class="alert danger">💳 <strong>Asesor:</strong> Tienes deudas activas. Prioriza pagar las cuotas pendientes antes de darte gustos.</div>`;
         }
         if (pctFijo <= 50 && pctPlacer <= 30 && ahorroPots >= (inc*0.20) && !state.debts.some(d=>getDebtBal(d.id) > 0)) {
             adviceHtml += `<div class="alert" style="background:rgba(34,197,94,.1); border-color:var(--green); color:var(--green);">🌟 <strong>¡Excelente!</strong> Tus finanzas están equilibradas este mes y estás cumpliendo tus metas de ahorro. ¡Sigue así!</div>`;
@@ -686,15 +829,13 @@ function generateAdvice() {
 
 function checkMonthlySummary() {
     const now = new Date();
-    // Revisamos el mes anterior
     let prevMonth = now.getMonth() - 1;
     let prevYear = now.getFullYear();
     if (prevMonth < 0) { prevMonth = 11; prevYear--; }
     
     const key = `${prevYear}-${prevMonth}`;
-    if (state.summaries[key]) return; // Ya existe
+    if (state.summaries[key]) return;
 
-    // Calcular datos del mes anterior
     const yr = state.years[prevYear];
     if (!yr) return;
 
@@ -705,15 +846,12 @@ function checkMonthlySummary() {
         const d = new Date(t.date);
         if (d.getMonth() === prevMonth && d.getFullYear() === prevYear) {
             if (t.type === 'Ingreso') inc += t.amount;
-            if (t.type === 'Gasto' || t.type === 'PagoDeuda') {
-                exp += t.amount;
-                details[t.detail] = (details[t.detail]||0) + t.amount;
-            }
+            if (t.type === 'Gasto' || t.type === 'PagoDeuda') { exp += t.amount; details[t.detail] = (details[t.detail]||0) + t.amount; }
             if (t.type === 'Transferencia' && state.pockets.some(p=>p.id===t.to)) ahorro += t.amount;
         }
     });
 
-    if (inc === 0 && exp === 0) return; // No hubo movimientos, no guardamos resumen.
+    if (inc === 0 && exp === 0) return;
 
     let topExpense = Object.keys(details).reduce((a, b) => details[a] > details[b] ? a : b, "");
     let advice = "";
@@ -721,87 +859,12 @@ function checkMonthlySummary() {
     else if (ahorro < (inc * 0.2)) advice = `Te fue bien, pero podrías ahorrar un poco más. Tu mayor gasto fue en <strong>${topExpense}</strong>.`;
     else advice = `¡Excelente mes! Ahorraste una buena cantidad. Tu mayor gasto fue en <strong>${topExpense}</strong>.`;
 
-    state.summaries[key] = {
-        mes: prevMonth, anio: prevYear, inc, exp, ahorro, topExpense, advice
-    };
+    state.summaries[key] = { mes: prevMonth, anio: prevYear, inc, exp, ahorro, topExpense, advice };
     save();
 }
 
 // ==========================================
-// 6. LÓGICA DE MOVIMIENTOS Y DEUDAS
-// ==========================================
-function addTx() {
-  if(!canEdit()) return toast('Año bloqueado'); 
-  const d=document.getElementById('fDate').value; 
-  const det=document.getElementById('fDetail').value; 
-  const a=parseFloat(document.getElementById('fAmount').value); 
-  const ty=document.getElementById('fType').value;
-  
-  if(!d || !det || isNaN(a) || a<=0) return toast('Completa bien los datos');
-  
-  if(ty === 'PagoDeuda') { if(a > getDebtBal(document.getElementById('fDebtSelect').value)) return toast('La deuda es menor.'); }
-  if(ty === 'Gasto' && document.getElementById('fCategory').value === 'placer') { 
-      const placerInfo = getPlacerLimitInfo(); 
-      if(placerInfo.isLocked && (placerInfo.spent + a) > placerInfo.limit) return toast(`¡Alto! Supera tu límite disponible de ${fmt(placerInfo.available)}.`); 
-  }
-
-  let tx = {id:genId(), date:d, detail:det, amount:a, type:ty};
-  if(ty==='Ingreso') tx.to = document.getElementById('fTo').value;
-  if(ty==='Gasto') { tx.from = document.getElementById('fFrom').value; tx.cat = document.getElementById('fCategory').value; }
-  if(ty==='Transferencia') { tx.from = document.getElementById('fFrom').value; tx.to = document.getElementById('fTo').value; }
-  if(ty==='PagoDeuda') { tx.from = document.getElementById('fFrom').value; tx.debtId = document.getElementById('fDebtSelect').value; tx.cat = document.getElementById('fCategory').value; }
-  
-  state.years[state.active].txs.push(tx); 
-
-  // Lógica de Ahorro Automático
-  if (ty === 'Ingreso' && state.config.autoSave.enabled && state.config.autoSave.pocketId && state.config.autoSave.pct > 0) {
-      const saveAmount = a * (state.config.autoSave.pct / 100);
-      const txAutoSave = {
-          id: genId(),
-          date: d,
-          detail: 'Ahorro Automático',
-          amount: saveAmount,
-          type: 'Transferencia',
-          from: tx.to,
-          to: state.config.autoSave.pocketId
-      };
-      state.years[state.active].txs.push(txAutoSave);
-      toast(`Se ahorraron ${fmt(saveAmount)} automáticamente.`);
-  }
-
-  save(); renderAll(); toast('Guardado');
-  document.getElementById('fDetail').value=''; document.getElementById('fAmount').value='';
-}
-
-function addDebt() { 
-    const n = document.getElementById('newDebtName').value; 
-    const a = parseFloat(document.getElementById('newDebtAmount').value); 
-    const interest = parseFloat(document.getElementById('newDebtInterest').value) || 0;
-    const installments = parseInt(document.getElementById('newDebtInstallments').value) || 0;
-    const date = document.getElementById('newDebtDate').value;
-    const type = document.getElementById('newDebtType').value;
-    
-    if(!n || !a) return toast('Faltan datos (Nombre y Monto son obligatorios)'); 
-    
-    // Calculamos el total con intereses
-    const totalWithInterest = a * (1 + (interest / 100));
-    
-    state.debts.push({
-        id: genId(), name: n, total: totalWithInterest, baseAmount: a, interest: interest, 
-        installments: installments, type: type, dateLimit: date || null
-    }); 
-    
-    save(); renderAll(); 
-    document.getElementById('newDebtName').value=''; 
-    document.getElementById('newDebtAmount').value=''; 
-    document.getElementById('newDebtInterest').value='';
-    document.getElementById('newDebtInstallments').value='';
-    document.getElementById('newDebtDate').value=''; 
-    toast('Deuda registrada');
-}
-
-// ==========================================
-// 7. RENDERIZADO GENERAL Y UTILIDADES
+// 8. RENDERIZADO GENERAL Y UTILIDADES
 // ==========================================
 function toggleGlobalHide() { state.hidden.global = !state.hidden.global; if(state.hidden.global) state.hidden.stats = {}; save(); renderAll(); }
 function toggleHideIndividual(key) { if(state.hidden.global) { state.hidden.global = false; state.hidden.stats[key] = false; } else { state.hidden.stats[key] = !state.hidden.stats[key]; } save(); renderAll(); }
@@ -844,25 +907,6 @@ function getPocBal(pocId) {
     if(t.type==='PagoDeuda' && t.from===pocId) b-=t.amount;
   });
   return b;
-}
-
-function getDebtBal(debtId) {
-  const debt = state.debts.find(d=>d.id===debtId); if(!debt) return 0;
-  let paid=0; state.years[state.active].txs.forEach(t => { if(t.type==='PagoDeuda' && t.debtId===debtId) paid+=t.amount; });
-  return debt.total - paid;
-}
-
-function checkDebtAlerts() {
-    const today = new Date(); today.setHours(0,0,0,0); let alertsHtml = '';
-    state.debts.forEach(d => {
-        const saldo = getDebtBal(d.id);
-        if(saldo > 0 && d.dateLimit) {
-            const diffDays = Math.ceil((new Date(d.dateLimit + 'T00:00:00') - today) / (1000 * 60 * 60 * 24));
-            if(diffDays < 0) alertsHtml += `<div class="alert danger">🚨 ¡ALERTA! La deuda <strong>${d.name}</strong> venció hace ${Math.abs(diffDays)} días y aún debes ${fmt(saldo)}.</div>`;
-            else if(diffDays <= 5) alertsHtml += `<div class="alert warn">⚠️ Atención: La deuda <strong>${d.name}</strong> vence en ${diffDays} días (${d.dateLimit}) y debes ${fmt(saldo)}.</div>`;
-        }
-    });
-    return alertsHtml;
 }
 
 function canEdit(){ return !state.years[state.active].locked; }
@@ -1004,26 +1048,47 @@ function renderAll() {
   }
 
   document.getElementById('debtsList').innerHTML=state.debts.map(d=>{
-    const saldo = getDebtBal(d.id); const pct = d.total > 0 ? ((d.total-saldo)/d.total)*100 : 0; const isPaid = saldo <= 0;
-    let dateInfo = '';
-    if(!isPaid && d.dateLimit) {
-        const diffDays = Math.ceil((new Date(d.dateLimit + 'T00:00:00') - new Date().setHours(0,0,0,0)) / (1000 * 60 * 60 * 24));
-        if(diffDays < 0) dateInfo = `<span style="color:var(--red); font-size:11px; font-weight:bold;">🔴 Vencida hace ${Math.abs(diffDays)} días</span>`;
-        else if(diffDays <= 5) dateInfo = `<span style="color:var(--yellow); font-size:11px; font-weight:bold;">🟡 Vence en ${diffDays} días</span>`;
-        else dateInfo = `<span style="color:var(--muted); font-size:11px;">📅 Vence: ${d.dateLimit}</span>`;
+    const saldo = getDebtBal(d.id); const isPaid = saldo <= 0;
+    
+    let scheduleHtml = '';
+    if (d.schedule) {
+        scheduleHtml = `<div style="margin-top:10px; display:flex; flex-direction:column; gap:5px;">`;
+        d.schedule.forEach(c => {
+            if (!c.paid) {
+                scheduleHtml += `
+                <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg); padding:6px; border-radius:4px; font-size:12px;">
+                    <span>Cuota #${c.num} - ${c.date}</span>
+                    <span style="color:var(--accent); font-weight:bold;">${fmt(c.amount)}</span>
+                    <button class="primary" onclick="openPayModal('${d.id}', ${c.num})" style="width:auto; padding:4px 8px; font-size:11px;">Pagar</button>
+                </div>`;
+            } else {
+                scheduleHtml += `
+                <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(34,197,94,0.1); padding:6px; border-radius:4px; font-size:12px; opacity:0.6;">
+                    <span>✅ Cuota #${c.num} - ${c.date}</span>
+                    <span style="color:var(--green); font-weight:bold;">Pagada</span>
+                </div>`;
+            }
+        });
+        scheduleHtml += `</div>`;
     }
-    let infoCuotas = '';
-    if (d.installments > 0) {
-        infoCuotas = `<div style="font-size:11px; color:var(--accent); margin-top:3px;">💳 Cuota aprox: ${fmt(d.total / d.installments)} x ${d.installments} meses</div>`;
-    }
-    let infoInteres = '';
-    if (d.interest > 0) {
-        infoInteres = `<div style="font-size:11px; color:var(--red); margin-top:3px;">💸 Interés: ${d.interest}% (Pagas ${fmt(d.total - d.baseAmount)} extra)</div>`;
-    }
-    return `<div class="row-item" style="flex-direction:column;align-items:flex-start"><div style="display:flex;width:100%;justify-content:space-between;margin-bottom:5px;"><input value="${d.name}" onchange="renameDebt('${d.id}', this.value)" style="width:50%" ${isPaid?'disabled':''}><span style="color:${isPaid?'var(--green)':'var(--red)'}">${isPaid?'¡PAGADA!':fmt(saldo)+' restante'}</span>${canEdit() && !isPaid || (canEdit() && d.adminUnlock) ?`<button class="danger" onclick="delDebt('${d.id}')">X</button>`:''}</div>${dateInfo}${infoInteres}${infoCuotas}<div class="bar" style="width:100%"><div class="bar-fill" style="width:${pct}%;background:${isPaid?'var(--green)':'var(--yellow)'}"></div></div>${isPaid?'<small style="color:var(--green); font-size:10px;">Historial guardado</small>':''}</div>`;
-  }).join('')||'<p style="text-align:center;color:var(--muted)">No hay deudas</p>';
 
-  // Renderizar Configuración y Automatizaciones
+    let infoInteres = '';
+    if (d.rate > 0) {
+        infoInteres = `<div style="font-size:11px; color:var(--red); margin-top:3px;">💸 Interés: ${d.rate}% mensual. Pagas ${fmt(d.total - d.baseAmount)} extra en total.</div>`;
+    }
+
+    return `<div class="row-item" style="flex-direction:column;align-items:flex-start; padding-bottom:15px; margin-bottom:15px;">
+        <div style="display:flex;width:100%;justify-content:space-between;margin-bottom:5px;">
+            <input value="${d.name}" onchange="renameDebt('${d.id}', this.value)" style="width:50%; font-weight:bold;" ${isPaid?'disabled':''}>
+            <span style="color:${isPaid?'var(--green)':'var(--red)'}">${isPaid?'¡PAGADA!':fmt(saldo)+' restante'}</span>
+            ${canEdit() && !isPaid ?`<button class="danger" onclick="delDebt('${d.id}')">X</button>`:''}
+        </div>
+        ${infoInteres}
+        ${scheduleHtml}
+    </div>`;
+  }).join('')||'<p style="text-align:center;color:var(--muted)">No hay deudas registradas</p>';
+
+  // Configuración
   document.getElementById('goalsConfigList').innerHTML=state.pockets.map(p=>`<div class="row-item"><span style="width:50%">${p.name}</span><input type="number" value="${p.meta||0}" onchange="setMetaPoc('${p.id}', this.value)" placeholder="Meta $" style="width:40%; text-align:right;"></div>`).join('');
   document.getElementById('configCatsList').innerHTML=state.config.cats.map(c=>`<div class="row-item"><input value="${c.name}" onchange="renameCat('${c.id}', 'name', this.value)" style="border:none; width:30%; font-weight:bold;"><input value="${c.desc||''}" onchange="renameCat('${c.id}', 'desc', this.value)" style="border:none; width:45%; font-size:11px; color:var(--muted);" placeholder="Guía..."><span style="background:${c.color}; width:15px; height:15px; border-radius:50%;"></span><button class="danger" onclick="delCat('${c.id}')">X</button></div>`).join('');
   
@@ -1031,7 +1096,7 @@ function renderAll() {
     <div class="row-item">
       <div style="width: 60%; font-size: 12px;">
         <strong>${r.detail}</strong> - ${fmt(r.amount)}<br>
-        <span style="color:var(--muted)">Los días ${r.day} de ${getAccName(r.from)}</span>
+        <span style="color:var(--muted)">Los días ${r.day} de ${getAccName(r.from) || getPocName(r.from)}</span>
       </div>
       <button class="danger" onclick="delRecurring('${r.id}')">X</button>
     </div>
@@ -1039,16 +1104,20 @@ function renderAll() {
 
   const allOrigins = [...state.accounts.map(a=>({id:a.id, name:a.name})), ...state.pockets.map(p=>({id:p.id, name:p.name}))];
   const allOpts = allOrigins.map(o=>`<option value="${o.id}">${o.name}</option>`).join('');
-  document.getElementById('fFrom').innerHTML = allOpts; document.getElementById('fTo').innerHTML = allOpts;
+  
+  document.getElementById('fFrom').innerHTML = allOpts; 
+  document.getElementById('fTo').innerHTML = allOpts;
+  document.getElementById('recAcc').innerHTML = allOpts; // Incluye bolsillos
+  document.getElementById('autoSavePocket').innerHTML = state.pockets.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  
   document.getElementById('fCategory').innerHTML = state.config.cats.map(c=>`<option value="${c.id}">${c.name} (${c.desc})</option>`).join('');
   document.getElementById('fDebtSelect').innerHTML = state.debts.filter(d=>getDebtBal(d.id)>0).map(d=>`<option value="${d.id}">${d.name} (Debe: ${fmt(getDebtBal(d.id))})</option>`).join('');
   
-  // Opciones para recurrentes y auto-save
-  document.getElementById('recAcc').innerHTML = state.accounts.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
-  document.getElementById('autoSavePocket').innerHTML = state.pockets.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
   if(state.config.autoSave.pocketId) document.getElementById('autoSavePocket').value = state.config.autoSave.pocketId;
 
-  document.getElementById('flowChartType').value = state.config.chartType; document.getElementById('pieChartType').value = state.config.pieType; document.getElementById('projChartType').value = state.config.projChartType;
+  document.getElementById('flowChartType').value = state.config.chartType; 
+  document.getElementById('pieChartType').value = state.config.pieType; 
+  document.getElementById('projChartType').value = state.config.projChartType;
   document.getElementById('fType').dispatchEvent(new Event('change'));
 
   renderAnalisis();
@@ -1060,35 +1129,15 @@ function renderAll() {
 
 function renderMonthlySummaries() {
     const box = document.getElementById('monthlySummariesList');
-    const keys = Object.keys(state.summaries).sort().reverse(); // Más recientes primero
-    if (keys.length === 0) {
-        box.innerHTML = '<p style="color:var(--muted); font-size:13px;">Los resúmenes aparecerán aquí al finalizar cada mes.</p>';
-        return;
-    }
-    
+    const keys = Object.keys(state.summaries).sort().reverse();
+    if (keys.length === 0) { box.innerHTML = '<p style="color:var(--muted); font-size:13px;">Los resúmenes aparecerán aquí al finalizar cada mes.</p>'; return; }
     const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-    
     box.innerHTML = keys.map(k => {
-        const s = state.summaries[k];
-        const balance = s.inc - s.exp;
-        const color = balance >= 0 ? 'var(--green)' : 'var(--red)';
-        return `
-        <div style="background: var(--bg); padding: 12px; border-radius: 8px; border-left: 4px solid ${color};">
-            <h4 style="font-size: 14px; margin-bottom: 8px;">${monthNames[s.mes]} ${s.anio}</h4>
-            <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
-                <span>Ingresos: <span style="color:var(--green)">${fmt(s.inc)}</span></span>
-                <span>Gastos: <span style="color:var(--red)">${fmt(s.exp)}</span></span>
-                <span>Ahorro: <span style="color:var(--yellow)">${fmt(s.ahorro)}</span></span>
-            </div>
-            <div style="font-size:11px; color:var(--muted); background:rgba(255,255,255,0.05); padding:8px; border-radius:4px; margin-top:8px;">
-                <strong>🤖 Resumen:</strong> ${s.advice}
-            </div>
-        </div>
-        `;
+        const s = state.summaries[k]; const balance = s.inc - s.exp; const color = balance >= 0 ? 'var(--green)' : 'var(--red)';
+        return `<div style="background: var(--bg); padding: 12px; border-radius: 8px; border-left: 4px solid ${color}; margin-bottom:10px;"><h4 style="font-size: 14px; margin-bottom: 8px;">${monthNames[s.mes]} ${s.anio}</h4><div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;"><span>Ingresos: <span style="color:var(--green)">${fmt(s.inc)}</span></span><span>Gastos: <span style="color:var(--red)">${fmt(s.exp)}</span></span><span>Ahorro: <span style="color:var(--yellow)">${fmt(s.ahorro)}</span></span></div><div style="font-size:11px; color:var(--muted); background:rgba(255,255,255,0.05); padding:8px; border-radius:4px; margin-top:8px;"><strong>🤖 Resumen:</strong> ${s.advice}</div></div>`;
     }).join('');
 }
 
-// ... (Resto de funciones de gráficos, 50/30/20, Excel, CRUD, etc.) ...
 function renderExpertAnalysis() {
     const box = document.getElementById('expertAnalysis');
     const yr = state.years[state.active]; const now = new Date();
@@ -1135,41 +1184,35 @@ function getFlow(y) {
   let inc=0, exp=0; const yr=state.years[y]; const catTotals = {};
   state.config.cats.forEach(c => catTotals[c.id] = 0);
   if(!yr) return {inc:0, exp:0, catTotals};
-  yr.txs.forEach(t => { if(t.type==='Ingreso') inc+=t.amount; if(t.type==='Gasto' || t.type==='PagoDeuda') { exp+=t.amount; if(t.cat && catTotals[t.cat] !== undefined) catTotals[t.cat] += t.amount; } });
+  yr.txs.forEach(t => {
+    if(t.type==='Ingreso') inc+=t.amount;
+    if(t.type==='Gasto' || t.type==='PagoDeuda') { exp+=t.amount; if(t.cat && catTotals[t.cat] !== undefined) catTotals[t.cat] += t.amount; }
+  });
   return {inc, exp, catTotals};
 }
 
 function getAccBal(accId) {
   let b = state.years[state.active].openingBalances[accId] || 0;
   state.years[state.active].txs.forEach(t => {
-    if(t.type==='Ingreso' && t.to===accId) b+=t.amount; if(t.type==='Gasto' && t.from===accId) b-=t.amount; if(t.type==='PagoDeuda' && t.from===accId) b-=t.amount; if(t.type==='Transferencia' && t.from===accId) b-=t.amount; if(t.type==='Transferencia' && t.to===accId) b+=t.amount;
+    if(t.type==='Ingreso' && t.to===accId) b+=t.amount;
+    if(t.type==='Gasto' && t.from===accId) b-=t.amount;
+    if(t.type==='PagoDeuda' && t.from===accId) b-=t.amount;
+    if(t.type==='Transferencia' && t.from===accId) b-=t.amount;
+    if(t.type==='Transferencia' && t.to===accId) b+=t.amount;
   });
   return b;
 }
+
 function getPocBal(pocId) {
   let b = state.years[state.active].openingBalances[pocId] || 0;
   state.years[state.active].txs.forEach(t => {
-    if(t.type==='Transferencia' && t.to===pocId) b+=t.amount; if(t.type==='Transferencia' && t.from===pocId) b-=t.amount; if(t.type==='PagoDeuda' && t.from===pocId) b-=t.amount;
+    if(t.type==='Transferencia' && t.to===pocId) b+=t.amount;
+    if(t.type==='Transferencia' && t.from===pocId) b-=t.amount;
+    if(t.type==='PagoDeuda' && t.from===pocId) b-=t.amount;
   });
   return b;
 }
-function getDebtBal(debtId) {
-  const debt = state.debts.find(d=>d.id===debtId); if(!debt) return 0;
-  let paid=0; state.years[state.active].txs.forEach(t => { if(t.type==='PagoDeuda' && t.debtId===debtId) paid+=t.amount; });
-  return debt.total - paid;
-}
-function checkDebtAlerts() {
-    const today = new Date(); today.setHours(0,0,0,0); let alertsHtml = '';
-    state.debts.forEach(d => {
-        const saldo = getDebtBal(d.id);
-        if(saldo > 0 && d.dateLimit) {
-            const diffDays = Math.ceil((new Date(d.dateLimit + 'T00:00:00') - today) / (1000 * 60 * 60 * 24));
-            if(diffDays < 0) alertsHtml += `<div class="alert danger">🚨 ¡ALERTA! La deuda <strong>${d.name}</strong> venció hace ${Math.abs(diffDays)} días y aún debes ${fmt(saldo)}.</div>`;
-            else if(diffDays <= 5) alertsHtml += `<div class="alert warn">⚠️ Atención: La deuda <strong>${d.name}</strong> vence en ${diffDays} días (${d.dateLimit}) y debes ${fmt(saldo)}.</div>`;
-        }
-    });
-    return alertsHtml;
-}
+
 function canEdit(){ return !state.years[state.active].locked; }
 function canEditInit(){ return !state.years[state.active].lockedInit; }
 function tieneMovimientos(id) { return state.years[state.active].txs.some(t => t.from === id || t.to === id); }
@@ -1205,7 +1248,6 @@ function renderTable() {
   }).join('')||'<tr><td colspan="5" style="text-align:center">Sin datos</td></tr>';
 }
 function unlockOpeningBalances() { if(!state.years[state.active].lockedInit) return toast('Ya desbloqueado.'); if(!confirm('⚠️ ¿Desbloquear saldos iniciales?')) return; state.years[state.active].lockedInit = false; save(); renderAll(); toast('Desbloqueado.'); }
-function unlockDebts() { if(!confirm('⚠️ ¿Desbloquear deudas pagadas?')) return; state.debts.forEach(d => d.adminUnlock = true); save(); renderAll(); toast('Desbloqueado.'); }
 function lockOpeningBalances() { if(!confirm('¿Seguro? No podrás modificar saldos iniciales.')) return; state.years[state.active].lockedInit = true; save(); renderAll(); toast('Saldos bloqueados.'); }
 function setOpeningBal(id, val) { if(!canEditInit()) return; state.years[state.active].openingBalances[id] = parseFloat(val) || 0; save(); renderAll(); }
 document.getElementById('fType').onchange = (e) => {
@@ -1215,6 +1257,39 @@ document.getElementById('fType').onchange = (e) => {
   if(v==='Transferencia') { document.getElementById('wrapFrom').style.display='block'; document.getElementById('wrapTo').style.display='block'; }
   if(v==='PagoDeuda') { document.getElementById('wrapFrom').style.display='block'; document.getElementById('wrapDebt').style.display='block'; document.getElementById('wrapCat').style.display='block'; }
 };
+function addTx() {
+  if(!canEdit()) return toast('Año bloqueado'); 
+  const d=document.getElementById('fDate').value; 
+  const det=document.getElementById('fDetail').value; 
+  const a=parseFloat(document.getElementById('fAmount').value); 
+  const ty=document.getElementById('fType').value;
+  
+  if(!d || !det || isNaN(a) || a<=0) return toast('Completa bien los datos');
+  
+  if(ty === 'PagoDeuda') { if(a > getDebtBal(document.getElementById('fDebtSelect').value)) return toast('La deuda es menor.'); }
+  if(ty === 'Gasto' && document.getElementById('fCategory').value === 'placer') { 
+      const placerInfo = getPlacerLimitInfo(); 
+      if(placerInfo.isLocked && (placerInfo.spent + a) > placerInfo.limit) return toast(`¡Alto! Supera tu límite disponible de ${fmt(placerInfo.available)}.`); 
+  }
+
+  let tx = {id:genId(), date:d, detail:det, amount:a, type:ty};
+  if(ty==='Ingreso') tx.to = document.getElementById('fTo').value;
+  if(ty==='Gasto') { tx.from = document.getElementById('fFrom').value; tx.cat = document.getElementById('fCategory').value; }
+  if(ty==='Transferencia') { tx.from = document.getElementById('fFrom').value; tx.to = document.getElementById('fTo').value; }
+  if(ty==='PagoDeuda') { tx.from = document.getElementById('fFrom').value; tx.debtId = document.getElementById('fDebtSelect').value; tx.cat = document.getElementById('fCategory').value; }
+  
+  state.years[state.active].txs.push(tx); 
+
+  if (ty === 'Ingreso' && state.config.autoSave.enabled && state.config.autoSave.pocketId && state.config.autoSave.pct > 0) {
+      const saveAmount = a * (state.config.autoSave.pct / 100);
+      const txAutoSave = { id: genId(), date: d, detail: 'Ahorro Automático', amount: saveAmount, type: 'Transferencia', from: tx.to, to: state.config.autoSave.pocketId };
+      state.years[state.active].txs.push(txAutoSave);
+      toast(`Se ahorraron ${fmt(saveAmount)} automáticamente.`);
+  }
+
+  save(); renderAll(); toast('Guardado');
+  document.getElementById('fDetail').value=''; document.getElementById('fAmount').value='';
+}
 function delTx(id){ if(!canEdit())return; state.years[state.active].txs=state.years[state.active].txs.filter(t=>t.id!==id); save(); renderAll(); }
 function addAcc(){ if(!canEditInit()) return toast('Bloquea primero los saldos para añadir cuentas.'); const n=document.getElementById('newAccName').value; if(!n)return; const id=genId(); state.accounts.push({id,name:n}); state.years[state.active].openingBalances[id]=0; save(); renderAll(); document.getElementById('newAccName').value=''; }
 function renameAcc(id, n){ if(!n)return; const a=state.accounts.find(x=>x.id===id); if(a){a.name=n;save();} }
@@ -1227,7 +1302,7 @@ function addCat() { const name = document.getElementById('newCatName').value; co
 function renameCat(id, field, val) { const c = state.config.cats.find(x=>x.id===id); if(c) { c[field] = val; save(); } }
 function delCat(id) { if(!confirm('¿Borrar categoría?')) return; state.config.cats = state.config.cats.filter(x=>x.id!==id); save(); renderAll(); }
 function renameDebt(id, n){ if(!n)return; const d=state.debts.find(x=>x.id===id); if(d){d.name=n;save();} }
-function delDebt(id){ const d = state.debts.find(x=>x.id===id); if(!d) return; if(!d.adminUnlock && getDebtBal(id) <= 0) return toast('No puedes borrar una deuda pagada. Usa la Zona de Administrador.'); if(!confirm('¿Borrar esta deuda?'))return; state.debts=state.debts.filter(x=>x.id!==id); save(); renderAll(); }
+function delDebt(id){ const d = state.debts.find(x=>x.id===id); if(!d) return; if(getDebtBal(id) <= 0) return toast('No puedes borrar una deuda pagada.'); if(!confirm('¿Borrar esta deuda?'))return; state.debts=state.debts.filter(x=>x.id!==id); save(); renderAll(); }
 function createNextYear(){ const y=Math.max(...Object.keys(state.years).map(Number)); if(!state.years[y].locked)return toast('Cierra el año primero'); const newYear = y+1; state.years[newYear] = { locked:false, lockedInit: false, openingBalances: {}, txs:[] }; state.accounts.forEach(a => { state.years[newYear].openingBalances[a.id] = getAccBal(a.id); }); state.pockets.forEach(p => { state.years[newYear].openingBalances[p.id] = getPocBal(p.id); }); state.active = newYear; save(); renderAll(); toast(`¡Año ${newYear} creado!`); }
 function toggleLock(){ state.years[state.active].locked=!state.years[state.active].locked; save(); renderAll(); }
 
