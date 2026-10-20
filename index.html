@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
-<title>Mis Finanzas v12.0</title>
+<title>Mis Finanzas Pro</title>
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -57,7 +57,7 @@ th{color:var(--muted);font-size:11px}
 .row-item .locked-val{font-size:12px;color:var(--muted);width:35%;text-align:right; display:flex; justify-content:flex-end; align-items:center; gap:6px;}
 @media(max-width:600px){header h1{font-size:15px}}
 
-/* Estilos para la pantalla de Login y Bloqueo */
+/* Estilos de Login y Bloqueo */
 #auth-screen, #lock-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
 .auth-card { background: var(--card); padding: 30px; border-radius: 10px; border: 1px solid var(--border); width: 100%; max-width: 400px; }
 .auth-card h2 { text-align: center; margin-bottom: 20px; color: var(--accent); }
@@ -65,6 +65,16 @@ th{color:var(--muted);font-size:11px}
 .auth-card button { margin-top: 10px; }
 #auth-error { color: var(--red); text-align: center; margin-top: 10px; font-size: 13px; }
 #lock-screen { display: none; background: var(--bg); position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; }
+
+/* Estilos mejorados Configuración PRO */
+.config-section { border-left: 4px solid var(--accent); padding-left: 15px; margin-bottom: 25px; }
+.config-section h3 { font-size: 15px; color: var(--text); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+.switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--border); transition: .4s; border-radius: 24px; }
+.slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+input:checked + .slider { background-color: var(--green); }
+input:checked + .slider:before { transform: translateX(20px); }
 </style>
 </head>
 <body>
@@ -72,7 +82,7 @@ th{color:var(--muted);font-size:11px}
 <!-- PANTALLA DE LOGIN -->
 <div id="auth-screen">
     <div class="auth-card">
-        <h2>💰 Mis Finanzas</h2>
+        <h2>💰 Mis Finanzas Pro</h2>
         <input type="email" id="auth-email" placeholder="Correo electrónico">
         <input type="password" id="auth-password" placeholder="Contraseña (mínimo 6 caracteres)">
         <button class="primary" onclick="login()">Iniciar Sesión</button>
@@ -89,16 +99,16 @@ th{color:var(--muted);font-size:11px}
 <div id="lock-screen">
     <div class="auth-card" style="text-align: center;">
         <h2>🔒 App Bloqueada</h2>
-        <p style="color: var(--muted); margin-bottom: 20px; font-size: 14px;">Usa tu huella o PIN para desbloquear Mis Finanzas.</p>
+        <p style="color: var(--muted); margin-bottom: 20px; font-size: 14px;">Usa tu huella o PIN para desbloquear Mis Finanzas Pro.</p>
         <button class="primary" onclick="desbloquearHuella()" style="padding: 15px; font-size: 16px; margin-bottom: 10px;">👆 Desbloquear con Huella/PIN</button>
         <button class="danger" onclick="logout()" style="padding: 10px;">Cerrar Sesión</button>
     </div>
 </div>
 
-<!-- APLICACIÓN (Oculta hasta iniciar sesión) -->
+<!-- APLICACIÓN PRINCIPAL -->
 <div id="app-screen" style="display:none;">
     <header>
-      <h1>💰 Mis Finanzas v12.0</h1>
+      <h1>💰 Mis Finanzas Pro</h1>
       <div class="year-nav" id="yearNav"></div>
     </header>
     <nav id="mainNav">
@@ -111,6 +121,9 @@ th{color:var(--muted);font-size:11px}
     </nav>
     <main>
       <section class="view active" id="view-dashboard">
+        <!-- ASESOR INTELIGENTE -->
+        <div id="advisorBox" style="display:none; margin-bottom: 14px;"></div>
+        
         <div id="alerts"></div>
         <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
           <button class="primary" style="width:auto; background:var(--border); color:var(--text); font-size:12px;" onclick="toggleGlobalHide()" id="globalHideBtn">👁️ Ocultar todos los números</button>
@@ -173,6 +186,13 @@ th{color:var(--muted);font-size:11px}
       </section>
 
       <section class="view" id="view-analisis">
+        <!-- ANÁLISIS EXPERTO 50/30/20 -->
+        <div class="card">
+          <h2>🏆 Regla de Oro Financiera (50/30/20)</h2>
+          <p style="font-size: 11px; color: var(--muted); margin-bottom: 15px;">Los expertos sugieren: 50% Gastos Fijos, 30% Placer y 20% Ahorro.</p>
+          <div id="expertAnalysis"></div>
+        </div>
+
         <div class="card">
           <h2>Promedios Mensuales</h2>
           <div class="grid" id="analisisPromedios"></div>
@@ -245,18 +265,38 @@ th{color:var(--muted);font-size:11px}
         </div>
       </section>
 
-      <!-- SECCIÓN DE CONFIGURACIÓN TOTALMENTE ORDENADA -->
+      <!-- CONFIGURACIÓN PRO -->
       <section class="view" id="view-config">
         
-        <!-- 1. Metas Individuales de Bolsillos -->
-        <div class="card">
-          <h2>1. Metas Individuales de Bolsillos</h2>
+        <!-- 1. Asesor Inteligente -->
+        <div class="card config-section">
+          <h3>🤖 Asesor Financiero IA</h3>
+          <p style="font-size: 12px; color: var(--muted); margin-bottom: 10px;">Muestra consejos automáticos en tu Panel Principal basados en tus gastos.</p>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:13px; font-weight:bold;">Activar Consejos</span>
+            <label class="switch">
+              <input type="checkbox" id="toggleAdvisor" onchange="toggleAdvisor()">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 2. Exportar Datos -->
+        <div class="card config-section" style="border-left-color: var(--green);">
+          <h3>📥 Exportar Información</h3>
+          <p style="font-size: 12px; color: var(--muted); margin-bottom: 10px;">Descarga un archivo Excel con todos los movimientos de este año.</p>
+          <button class="primary" onclick="downloadExcel()" style="background: var(--green);">📊 Descargar Historial en Excel</button>
+        </div>
+
+        <!-- 3. Metas Individuales -->
+        <div class="card config-section" style="border-left-color: var(--yellow);">
+          <h3>🎯 Metas de Bolsillos</h3>
           <div id="goalsConfigList"></div>
         </div>
 
-        <!-- 2. Categorías de Gasto -->
-        <div class="card">
-          <h2>2. Categorías de Gasto</h2>
+        <!-- 4. Categorías de Gasto -->
+        <div class="card config-section" style="border-left-color: var(--purple);">
+          <h3>🏷️ Categorías de Gasto</h3>
           <div id="configCatsList"></div>
           <div style="margin-top: 10px;">
             <input type="text" id="newCatName" placeholder="Nombre Categoría (ej. Educación)">
@@ -265,39 +305,38 @@ th{color:var(--muted);font-size:11px}
           </div>
         </div>
 
-        <!-- 3. Zona de Administrador -->
-        <div class="card">
-          <h2>3. Zona de Administrador</h2>
-          <h3 style="font-size:12px; color:var(--accent); margin-top:10px; margin-bottom:5px;">Desbloqueo de Saldos y Placer</h3>
+        <!-- 5. Zona de Administrador -->
+        <div class="card config-section" style="border-left-color: var(--red);">
+          <h3>🔧 Zona de Administrador</h3>
+          <p style="font-size:11px; color:var(--accent); margin-top:10px; margin-bottom:5px;">Desbloqueo de Saldos y Placer</p>
           <button class="warning" onclick="unlockOpeningBalances()">🔓 Desbloquear Saldos Iniciales</button>
           <button class="warning" onclick="unlockPlacerLimit()">🔓 Desbloquear Límite de Placer</button>
 
-          <h3 style="font-size:12px; color:var(--accent); margin-top:15px; margin-bottom:5px;">Desbloqueo de Deudas Pagadas</h3>
+          <p style="font-size:11px; color:var(--accent); margin-top:15px; margin-bottom:5px;">Desbloqueo de Deudas Pagadas</p>
           <button class="warning" onclick="unlockDebts()">🔓 Desbloquear Deudas Pagadas</button>
         </div>
 
-        <!-- 4. Cuenta y Seguridad -->
-        <div class="card">
-          <h2>4. Cuenta y Seguridad</h2>
-          <div style="background: rgba(59,130,246,0.1); padding: 10px; border-radius: 6px; border: 1px solid var(--border);">
-            <label style="font-size:11px; color:var(--muted);">Cambiar Contraseña</label>
-            <input type="password" id="new-password" placeholder="Nueva contraseña (mín. 6 caracteres)" style="margin-bottom: 5px;">
-            <button class="warning" onclick="changePassword()" style="width: 100%; margin-bottom: 15px;">Actualizar Contraseña</button>
+        <!-- 6. Cuenta y Seguridad -->
+        <div class="card config-section">
+          <h3>🔒 Cuenta y Seguridad</h3>
+          
+          <label style="font-size:11px; color:var(--muted);">Cambiar Contraseña</label>
+          <input type="password" id="new-password" placeholder="Nueva contraseña (mín. 6 caracteres)" style="margin-bottom: 5px;">
+          <button class="warning" onclick="changePassword()" style="width: 100%; margin-bottom: 15px;">Actualizar Contraseña</button>
 
-            <label style="font-size:11px; color:var(--muted);">Seguridad Biométrica (Huella/PIN)</label>
-            <div id="bio-status-text" style="font-size: 12px; margin-bottom: 5px; color: var(--muted);">Cargando estado...</div>
-            <button class="primary" id="btn-bio-toggle" onclick="toggleBiometric()" style="background: var(--purple);">Configurar Huella/PIN</button>
-          </div>
+          <label style="font-size:11px; color:var(--muted);">Seguridad Biométrica (Huella/PIN)</label>
+          <div id="bio-status-text" style="font-size: 12px; margin-bottom: 5px; color: var(--muted);">Cargando estado...</div>
+          <button class="primary" id="btn-bio-toggle" onclick="toggleBiometric()" style="background: var(--purple);">Configurar Huella/PIN</button>
         </div>
 
-        <!-- 5. Gestión de Años -->
-        <div class="card">
-          <h2>5. Gestión de Años</h2>
+        <!-- 7. Gestión de Años -->
+        <div class="card config-section">
+          <h3>📅 Gestión de Años</h3>
           <button class="primary" onclick="createNextYear()">+ Crear año siguiente (Arrastra todo)</button>
           <button class="primary" onclick="toggleLock()" id="lockBtn">🔒 Cerrar año actual</button>
         </div>
 
-        <!-- 6. Cerrar Sesión (Botón separado al final) -->
+        <!-- 8. Cerrar Sesión -->
         <div style="margin-top: 30px; margin-bottom: 50px;">
           <button class="danger" onclick="logout()" style="padding: 15px; font-size: 16px; width: 100%;">Cerrar Sesión</button>
         </div>
@@ -332,8 +371,6 @@ let bioCredentialId = localStorage.getItem('bioCredentialId');
 auth.onAuthStateChanged(user => {
     if (user) {
         document.getElementById('auth-screen').style.display = 'none';
-        
-        // Si tiene la huella configurada, mostramos la pantalla de bloqueo
         if (bioCredentialId) {
             document.getElementById('app-screen').style.display = 'none';
             document.getElementById('lock-screen').style.display = 'flex';
@@ -353,282 +390,114 @@ function login() {
     const email = document.getElementById('auth-email').value;
     const password = document.getElementById('auth-password').value;
     document.getElementById('auth-error').innerText = '';
-    auth.signInWithEmailAndPassword(email, password)
-        .catch(error => { document.getElementById('auth-error').innerText = error.message; });
+    auth.signInWithEmailAndPassword(email, password).catch(error => { document.getElementById('auth-error').innerText = error.message; });
 }
-
 function signup() {
     const email = document.getElementById('auth-email').value;
     const password = document.getElementById('auth-password').value;
     document.getElementById('auth-error').innerText = '';
-    auth.createUserWithEmailAndPassword(email, password)
-        .then(() => { toast('¡Usuario creado! Ya estás dentro.'); })
-        .catch(error => { document.getElementById('auth-error').innerText = error.message; });
+    auth.createUserWithEmailAndPassword(email, password).then(() => { toast('¡Usuario creado!'); }).catch(error => { document.getElementById('auth-error').innerText = error.message; });
 }
-
 function loginWithGoogle() {
     const provider = new firebase.auth.GoogleAuthProvider();
     document.getElementById('auth-error').innerText = '';
-    auth.signInWithPopup(provider)
-        .catch(error => { document.getElementById('auth-error').innerText = error.message; });
+    auth.signInWithPopup(provider).catch(error => { document.getElementById('auth-error').innerText = error.message; });
 }
-
-function logout() {
-    auth.signOut();
-}
-
+function logout() { auth.signOut(); }
 function forgotPassword() {
     const email = document.getElementById('auth-email').value.trim();
-    document.getElementById('auth-error').innerText = '';
-    
-    if (!email) {
-        document.getElementById('auth-error').innerText = 'Escribe tu correo arriba primero para enviarte el enlace.';
-        return;
-    }
-
-    auth.sendPasswordResetEmail(email)
-        .then(() => { toast('📧 Te enviamos un correo para restablecer tu contraseña.'); })
-        .catch(error => { document.getElementById('auth-error').innerText = error.message; });
+    if (!email) { document.getElementById('auth-error').innerText = 'Escribe tu correo primero.'; return; }
+    auth.sendPasswordResetEmail(email).then(() => { toast('📧 Correo enviado.'); }).catch(error => { document.getElementById('auth-error').innerText = error.message; });
 }
-
 function changePassword() {
     const newPassword = document.getElementById('new-password').value;
     const user = auth.currentUser;
     if (!user) return;
-    
-    const isGoogleUser = user.providerData.some(provider => provider.providerId === 'google.com');
-    if (isGoogleUser) {
-        toast('⚠️ Iniciaste sesión con Google. La contraseña se gestiona desde Google.');
-        return;
-    }
-
-    if (newPassword.length < 6) {
-        toast('La contraseña debe tener al menos 6 caracteres.');
-        return;
-    }
-
-    user.updatePassword(newPassword)
-        .then(() => {
-            toast('✅ ¡Contraseña actualizada con éxito!');
-            document.getElementById('new-password').value = '';
-        })
-        .catch(error => {
-            if (error.code === 'auth/requires-recent-login') {
-                alert('Por seguridad, debes cerrar sesión y volver a entrar antes de cambiar tu contraseña.');
-            } else {
-                toast('Error: ' + error.message);
-            }
-        });
+    if (user.providerData.some(p => p.providerId === 'google.com')) { toast('⚠️ Usas Google, la contraseña se cambia allá.'); return; }
+    if (newPassword.length < 6) { toast('Mínimo 6 caracteres.'); return; }
+    user.updatePassword(newPassword).then(() => { toast('✅ Contraseña actualizada.'); document.getElementById('new-password').value = ''; }).catch(error => { toast('Error: ' + error.message); });
 }
 
-// ==========================================
-// 3. LÓGICA DE SEGURIDAD BIOMÉTRICA (WEB AUTHN CORREGIDO)
-// ==========================================
-function b64urlToBuf(b64url) {
-    return Uint8Array.from(atob(b64url.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0)).buffer;
-}
-function bufToB64url(buf) {
-    return btoa(String.fromCharCode(...new Uint8Array(buf)))
-        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-}
-
+// BIOMETRÍA
+function b64urlToBuf(b64url) { return Uint8Array.from(atob(b64url.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0)).buffer; }
+function bufToB64url(buf) { return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, ''); }
 async function toggleBiometric() {
     if (bioCredentialId) {
-        // Desactivar
-        localStorage.removeItem('bioCredentialId');
-        bioCredentialId = null;
-        actualizarEstadoBio();
-        toast('Bloqueo biométrico desactivado.');
+        localStorage.removeItem('bioCredentialId'); bioCredentialId = null; actualizarEstadoBio(); toast('Desactivado.');
     } else {
-        // Activar (Registrar huella o PIN)
-        if (!window.PublicKeyCredential) {
-            return alert('Tu navegador o dispositivo no soporta autenticación biométrica.');
-        }
-
+        if (!window.PublicKeyCredential) return alert('No soportado.');
         try {
-            const challenge = new Uint8Array(32);
-            window.crypto.getRandomValues(challenge);
-            
-            const userId = new Uint8Array(16);
-            window.crypto.getRandomValues(userId);
-
-            const publicKeyCredentialCreationOptions = {
-                challenge: challenge,
-                rp: { 
-                    name: "Mis Finanzas" 
-                },
-                user: {
-                    id: userId,
-                    name: auth.currentUser.email,
-                    displayName: auth.currentUser.email,
-                },
-                pubKeyCredParams: [
-                    { type: "public-key", alg: -7 },  // ES256
-                    { type: "public-key", alg: -257 } // RS256
-                ],
-                authenticatorSelection: {
-                    authenticatorAttachment: "platform",
-                    userVerification: "required",
-                    residentKey: "preferred"
-                },
-                timeout: 60000
-            };
-
-            const credential = await navigator.credentials.create({ publicKey: publicKeyCredentialCreationOptions });
-            
-            bioCredentialId = bufToB64url(credential.rawId);
-            localStorage.setItem('bioCredentialId', bioCredentialId);
-            
-            actualizarEstadoBio();
-            toast('✅ ¡Huella/PIN configurado con éxito!');
-
-        } catch (error) {
-            console.error(error);
-            if (error.name === 'NotAllowedError') {
-                alert('❌ Acción cancelada o tiempo agotado.\n\nAsegúrate de hacer clic en "Aceptar" en la ventanita de Windows Hello o del teléfono. Si no sale ninguna ventanita, revisa que tengas configurado un PIN en Windows o bloqueo de pantalla en tu celular.');
-            } else if (error.name === 'InvalidStateError') {
-                alert('❌ Este dispositivo ya tiene una huella registrada para esta app. Si quieres cambiarla, primero desactívala.');
-            } else {
-                alert('❌ Error del sistema: ' + error.name + '\n' + error.message);
-            }
-        }
+            const challenge = new Uint8Array(32); window.crypto.getRandomValues(challenge);
+            const userId = new Uint8Array(16); window.crypto.getRandomValues(userId);
+            const credential = await navigator.credentials.create({ publicKey: {
+                challenge: challenge, rp: { name: "Mis Finanzas Pro" },
+                user: { id: userId, name: auth.currentUser.email, displayName: auth.currentUser.email },
+                pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
+                authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" }, timeout: 60000
+            }});
+            bioCredentialId = bufToB64url(credential.rawId); localStorage.setItem('bioCredentialId', bioCredentialId);
+            actualizarEstadoBio(); toast('✅ Huella/PIN configurado.');
+        } catch (error) { alert('Error: ' + error.message); }
     }
 }
-
 async function desbloquearHuella() {
     if (!bioCredentialId) return;
-    
     try {
-        const challenge = new Uint8Array(32);
-        window.crypto.getRandomValues(challenge);
-
-        const publicKeyCredentialRequestOptions = {
-            challenge: challenge,
-            allowCredentials: [{
-                id: b64urlToBuf(bioCredentialId),
-                type: 'public-key',
-                transports: ['internal']
-            }],
-            userVerification: "required",
-            timeout: 60000
-        };
-
-        await navigator.credentials.get({ publicKey: publicKeyCredentialRequestOptions });
-        
-        document.getElementById('lock-screen').style.display = 'none';
-        document.getElementById('app-screen').style.display = 'block';
-        syncData();
-        toast('🔓 Desbloqueado');
-
-    } catch (error) {
-        console.error(error);
-        toast('❌ Huella/PIN incorrecto o cancelado.');
-    }
+        const challenge = new Uint8Array(32); window.crypto.getRandomValues(challenge);
+        await navigator.credentials.get({ publicKey: { challenge: challenge, allowCredentials: [{ id: b64urlToBuf(bioCredentialId), type: 'public-key' }], userVerification: "required" }});
+        document.getElementById('lock-screen').style.display = 'none'; document.getElementById('app-screen').style.display = 'block'; syncData(); toast('🔓 Desbloqueado');
+    } catch (error) { toast('❌ Error o cancelado.'); }
 }
-
 function actualizarEstadoBio() {
-    const btn = document.getElementById('btn-bio-toggle');
-    const txt = document.getElementById('bio-status-text');
+    const btn = document.getElementById('btn-bio-toggle'), txt = document.getElementById('bio-status-text');
     if (!btn || !txt) return;
-
-    if (bioCredentialId) {
-        txt.innerText = '✅ Bloqueo biométrico ACTIVADO en este dispositivo.';
-        txt.style.color = 'var(--green)';
-        btn.innerText = 'Desactivar Huella/PIN';
-        btn.style.background = 'var(--red)';
-    } else {
-        txt.innerText = '❌ No configurado en este dispositivo.';
-        txt.style.color = 'var(--muted)';
-        btn.innerText = 'Configurar Huella/PIN';
-        btn.style.background = 'var(--purple)';
-    }
+    if (bioCredentialId) { txt.innerText = '✅ Activado.'; txt.style.color = 'var(--green)'; btn.innerText = 'Desactivar'; btn.style.background = 'var(--red)'; }
+    else { txt.innerText = '❌ No configurado.'; txt.style.color = 'var(--muted)'; btn.innerText = 'Configurar'; btn.style.background = 'var(--purple)'; }
 }
 
-// ==========================================
-// 4. NUEVA FUNCIÓN: PUNTO DE ALERTA EN EL ÍCONO (BADGE)
-// ==========================================
+// BADGE
 function actualizarBadgeDeudas() {
-    // Si el navegador no soporta la API, salimos silenciosamente
     if (!navigator.setAppBadge) return;
-
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    let alertas = 0;
-
+    const today = new Date(); today.setHours(0,0,0,0); let alertas = 0;
     state.debts.forEach(d => {
         const saldo = getDebtBal(d.id);
         if(saldo > 0 && d.dateLimit) {
-            const limitDate = new Date(d.dateLimit + 'T00:00:00');
-            const diffTime = limitDate - today;
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-            // Sumar alerta si ya venció (días negativos) o si vence en los próximos 5 días
-            if(diffDays <= 5) {
-                alertas++;
-            }
+            const diffDays = Math.ceil((new Date(d.dateLimit + 'T00:00:00') - today) / (1000 * 60 * 60 * 24));
+            if(diffDays <= 5) alertas++;
         }
     });
-
-    if (alertas > 0) {
-        navigator.setAppBadge(alertas).catch(err => console.log('Badge no soportado:', err));
-    } else {
-        navigator.clearAppBadge().catch(err => console.log('Badge no soportado:', err));
-    }
+    if (alertas > 0) navigator.setAppBadge(alertas).catch(()=>{}); else navigator.clearAppBadge().catch(()=>{});
 }
 
-// Sincronización en tiempo real
+// SYNC
 let unsubscribeSnapshot = null;
 function syncData() {
-    const user = auth.currentUser;
-    if (!user) return;
-
+    const user = auth.currentUser; if (!user) return;
     if (unsubscribeSnapshot) unsubscribeSnapshot();
-
     unsubscribeSnapshot = db.collection('finanzas').doc(user.uid).onSnapshot(doc => {
         if (doc.exists) {
             const cloudData = doc.data();
-            if (cloudData.state) {
-                state = cloudData.state;
-                localStorage.setItem(KEY, JSON.stringify(state));
-                renderAll();
-                toast('Datos sincronizados');
-            }
-        } else {
-            db.collection('finanzas').doc(user.uid).set({ state: state });
-        }
+            if (cloudData.state) { state = cloudData.state; localStorage.setItem(KEY, JSON.stringify(state)); renderAll(); toast('Datos sincronizados'); }
+        } else { db.collection('finanzas').doc(user.uid).set({ state: state }); }
     });
 }
 
 // ==========================================
-// 5. LÓGICA DE LA APP
+// 3. LÓGICA DE LA APP
 // ==========================================
 const KEY = 'fin_v12_0'; 
 let state = JSON.parse(localStorage.getItem(KEY) || 'null') || {
   config: { 
-    placer: 30, 
-    chartType: 'bar',
-    pieType: 'doughnut',
-    projChartType: 'line',
+    placer: 30, chartType: 'bar', pieType: 'doughnut', projChartType: 'line', advisorEnabled: true,
     cats: [
       {id:'fijo', name:'Fijo (mensual)', desc:'Arriendo, mercado, servicios', color:'#3b82f6'},
       {id:'necesario', name:'Necesario', desc:'Imprevistos, reparaciones, salud', color:'#eab308'},
       {id:'placer', name:'Placer', desc:'Ocio, salidas, gustos', color:'#a855f7'}
     ]
   },
-  accounts: [
-    {id:'nequi', name:'Nequi'},
-    {id:'banco', name:'Bancolombia'},
-    {id:'billetera', name:'Billetera (Efectivo)'}
-  ],
-  pockets: [
-    {id:'ahorro_gen', name:'Ahorro General', meta: 0},
-    {id:'ahorro_emg', name:'Ahorro Emergencias', meta: 0},
-    {id:'ahorro_car', name:'Ahorro Carro', meta: 0}
-  ],
-  debts: [], 
-  years: {}, active: new Date().getFullYear(),
-  hidden: { global: false, stats: {}, locks: {} },
-  placerLimits: {} 
+  accounts: [ {id:'nequi', name:'Nequi'}, {id:'banco', name:'Bancolombia'}, {id:'billetera', name:'Billetera (Efectivo)'} ],
+  pockets: [ {id:'ahorro_gen', name:'Ahorro General', meta: 0}, {id:'ahorro_emg', name:'Ahorro Emergencias', meta: 0}, {id:'ahorro_car', name:'Ahorro Carro', meta: 0} ],
+  debts: [], years: {}, active: new Date().getFullYear(), hidden: { global: false, stats: {}, locks: {} }, placerLimits: {} 
 };
 
 if(!state.hidden) state.hidden = { global: false, stats: {}, locks: {} };
@@ -637,6 +506,7 @@ if(!state.hidden.locks) state.hidden.locks = {};
 if(!state.config.chartType) state.config.chartType = 'bar';
 if(!state.config.pieType) state.config.pieType = 'doughnut';
 if(!state.config.projChartType) state.config.projChartType = 'line';
+if(state.config.advisorEnabled === undefined) state.config.advisorEnabled = true;
 if(!state.placerLimits) state.placerLimits = {};
 
 if(!state.years[state.active]) {
@@ -648,37 +518,160 @@ if(!state.years[state.active]) {
 function save(){ 
     localStorage.setItem(KEY, JSON.stringify(state)); 
     const user = auth.currentUser;
-    if (user) {
-        db.collection('finanzas').doc(user.uid).set({ state: state })
-          .catch(e => console.error('Error al guardar en la nube:', e));
-    }
+    if (user) db.collection('finanzas').doc(user.uid).set({ state: state }).catch(e => console.error('Error nube:', e));
 }
 function fmt(n){ return new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0}).format(n||0); }
 function genId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 function toast(m){ const d=document.createElement('div'); d.className='toast'; d.textContent=m; document.body.appendChild(d); setTimeout(()=>d.remove(),3000); }
 
+// LÓGICA DEL ASESOR INTELIGENTE Y 50/30/20
+function generateAdvice() {
+    const box = document.getElementById('advisorBox');
+    if (!state.config.advisorEnabled) { box.style.display = 'none'; return; }
+    
+    const yr = state.years[state.active];
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    let inc = 0, expFijo = 0, expNecesario = 0, expPlacer = 0;
+    yr.txs.forEach(t => {
+        const d = new Date(t.date);
+        if(d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
+            if(t.type === 'Ingreso') inc += t.amount;
+            if(t.type === 'Gasto' || t.type === 'PagoDeuda') {
+                if(t.cat === 'fijo') expFijo += t.amount;
+                else if(t.cat === 'necesario') expNecesario += t.amount;
+                else if(t.cat === 'placer') expPlacer += t.amount;
+            }
+        }
+    });
+
+    let adviceHtml = '';
+    if (inc === 0 && expFijo === 0 && expPlacer === 0) {
+        adviceHtml = `<div class="alert info" style="background:rgba(59,130,246,.1); border-color:var(--accent); color:var(--accent);">💡 <strong>Asesor:</strong> Registra tus ingresos y gastos de este mes para que pueda darte recomendaciones personalizadas.</div>`;
+    } else if (inc > 0) {
+        const pctFijo = (expFijo / inc) * 100;
+        const pctPlacer = (expPlacer / inc) * 100;
+        const ahorroPots = state.pockets.reduce((s,p)=>s+getPocBal(p.id),0);
+        const pctAhorro = (ahorroPots / inc) * 100;
+
+        if (pctFijo > 50) adviceHtml += `<div class="alert warn">📉 <strong>Asesor:</strong> Tus gastos fijos son el ${pctFijo.toFixed(0)}% de tus ingresos (lo ideal es <50%). Intenta recortar servicios o buscar alternativas más económicas.</div>`;
+        if (pctPlacer > 30) adviceHtml += `<div class="alert warn">🎉 <strong>Asesor:</strong> Has destinado el ${pctPlacer.toFixed(0)}% a Placer. Los expertos recomiendan máximo 30%. ¡Guarda un poco más!</div>`;
+        if (ahorroPots < (inc * 0.20)) adviceHtml += `<div class="alert danger">🐖 <strong>Asesor:</strong> Te sugiero ahorrar al menos el 20% de tus ingresos. Aún te faltan ${fmt((inc*0.20) - ahorroPots)} para cumplir la meta de este mes.</div>`;
+        if (state.debts.some(d=>getDebtBal(d.id) > 0)) adviceHtml += `<div class="alert danger">💳 <strong>Asesor:</strong> Tienes deudas activas. Prioriza pagar las deudas "malas" (consumo) antes de darte gustos.</div>`;
+        if (pctFijo <= 50 && pctPlacer <= 30 && ahorroPots >= (inc*0.20) && !state.debts.some(d=>getDebtBal(d.id) > 0)) {
+            adviceHtml += `<div class="alert" style="background:rgba(34,197,94,.1); border-color:var(--green); color:var(--green);">🌟 <strong>¡Excelente!</strong> Tus finanzas están equilibradas este mes. Sigue así.</div>`;
+        }
+    }
+
+    box.innerHTML = adviceHtml;
+    box.style.display = adviceHtml ? 'block' : 'none';
+}
+
+function renderExpertAnalysis() {
+    const box = document.getElementById('expertAnalysis');
+    const yr = state.years[state.active];
+    const now = new Date();
+    let inc = 0, expFijo = 0, expPlacer = 0;
+    
+    // Calculamos solo del mes actual para ser precisos
+    yr.txs.forEach(t => {
+        const d = new Date(t.date);
+        if(d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
+            if(t.type === 'Ingreso') inc += t.amount;
+            if(t.type === 'Gasto' || t.type === 'PagoDeuda') {
+                if(t.cat === 'fijo') expFijo += t.amount;
+                if(t.cat === 'placer') expPlacer += t.amount;
+            }
+        }
+    });
+    
+    const ahorroPots = state.pockets.reduce((s,p)=>s+getPocBal(p.id),0);
+
+    if (inc === 0) {
+        box.innerHTML = '<p style="color:var(--muted); font-size:13px;">Registra ingresos este mes para calcular tu regla 50/30/20.</p>';
+        return;
+    }
+
+    const pctFijo = (expFijo / inc) * 100;
+    const pctPlacer = (expPlacer / inc) * 100;
+    const pctAhorro = (ahorroPots / inc) * 100;
+
+    const createBar = (label, pct, target, color) => {
+        let actualColor = color;
+        if (pct > target) actualColor = 'var(--red)';
+        else if (pct > target * 0.9) actualColor = 'var(--yellow)';
+        
+        return `
+        <div style="margin-bottom:12px;">
+            <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
+                <span>${label} <span style="color:var(--muted)">(Ideal: ${target}%)</span></span>
+                <strong style="color:${actualColor}">${pct.toFixed(1)}% (${fmt(pct === 0 ? 0 : (pct/100)*inc)})</strong>
+            </div>
+            <div class="bar" style="height:10px; position:relative;">
+                <div class="bar-fill" style="width:${Math.min(pct,100)}%; background:${actualColor};"></div>
+                <div style="position:absolute; left:${target}%; top:0; bottom:0; width:2px; background:white; z-index:10; opacity:0.8;"></div>
+            </div>
+        </div>`;
+    };
+
+    box.innerHTML = 
+        createBar('Gastos Fijos', pctFijo, 50, 'var(--accent)') +
+        createBar('Gastos Placer', pctPlacer, 30, 'var(--purple)') +
+        createBar('Ahorro', pctAhorro, 20, 'var(--green)');
+}
+
+// EXPORTAR A EXCEL
+function downloadExcel() {
+    const yr = state.years[state.active];
+    if (yr.txs.length === 0) return toast('No hay movimientos para exportar.');
+    
+    const data = yr.txs.map(t => {
+        let origen = t.from ? (getAccName(t.from) || getPocName(t.from)) : '';
+        let destino = t.to ? (getAccName(t.to) || getPocName(t.to)) : '';
+        if(t.type === 'Gasto') destino = 'Gasto';
+        if(t.type === 'Ingreso') origen = 'Ingreso';
+        if(t.type === 'PagoDeuda') destino = 'Deuda: ' + getDebtName(t.debtId);
+
+        return {
+            "Fecha": t.date,
+            "Detalle": t.detail,
+            "Tipo": t.type,
+            "Categoría": t.cat ? getCatName(t.cat) : '',
+            "Origen": origen,
+            "Destino": destino,
+            "Monto ($)": t.amount
+        };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Movimientos");
+    XLSX.writeFile(wb, `Mis_Finanzas_${state.active}.xlsx`);
+    toast('📥 Archivo descargado.');
+}
+
+function toggleAdvisor() {
+    state.config.advisorEnabled = document.getElementById('toggleAdvisor').checked;
+    save();
+    renderAll();
+    toast(state.config.advisorEnabled ? 'Asesor Activado' : 'Asesor Desactivado');
+}
+
+// RENDERIZADO GENERAL
 function toggleGlobalHide() {
     state.hidden.global = !state.hidden.global;
     if(state.hidden.global) state.hidden.stats = {};
     save(); renderAll();
 }
 function toggleHideIndividual(key) {
-    if(state.hidden.global) {
-        state.hidden.global = false;
-        state.hidden.stats[key] = false; 
-    } else {
-        state.hidden.stats[key] = !state.hidden.stats[key];
-    }
+    if(state.hidden.global) { state.hidden.global = false; state.hidden.stats[key] = false; } 
+    else { state.hidden.stats[key] = !state.hidden.stats[key]; }
     save(); renderAll();
 }
-function toggleLockHide(id) {
-    state.hidden.locks[id] = !state.hidden.locks[id];
-    save(); renderAll();
-}
-function renderVal(key, val) {
-    if(state.hidden.global || state.hidden.stats[key]) return '***';
-    return fmt(val);
-}
+function toggleLockHide(id) { state.hidden.locks[id] = !state.hidden.locks[id]; save(); renderAll(); }
+function renderVal(key, val) { if(state.hidden.global || state.hidden.stats[key]) return '***'; return fmt(val); }
 
 function getAccName(id){ const a=state.accounts.find(x=>x.id===id); return a?a.name:'?'; }
 function getPocName(id){ const p=state.pockets.find(x=>x.id===id); return p?p.name:'?'; }
@@ -686,17 +679,12 @@ function getDebtName(id){ const d=state.debts.find(x=>x.id===id); return d?d.nam
 function getCatName(id){ const c=state.config.cats.find(x=>x.id===id); return c?c.name:id; }
 
 function getFlow(y) {
-  let inc=0, exp=0; const yr=state.years[y];
-  const catTotals = {};
+  let inc=0, exp=0; const yr=state.years[y]; const catTotals = {};
   state.config.cats.forEach(c => catTotals[c.id] = 0);
-
   if(!yr) return {inc:0, exp:0, catTotals};
   yr.txs.forEach(t => {
     if(t.type==='Ingreso') inc+=t.amount;
-    if(t.type==='Gasto' || t.type==='PagoDeuda') {
-      exp+=t.amount;
-      if(t.cat && catTotals[t.cat] !== undefined) catTotals[t.cat] += t.amount;
-    }
+    if(t.type==='Gasto' || t.type==='PagoDeuda') { exp+=t.amount; if(t.cat && catTotals[t.cat] !== undefined) catTotals[t.cat] += t.amount; }
   });
   return {inc, exp, catTotals};
 }
@@ -725,29 +713,18 @@ function getPocBal(pocId) {
 
 function getDebtBal(debtId) {
   const debt = state.debts.find(d=>d.id===debtId); if(!debt) return 0;
-  let paid=0; state.years[state.active].txs.forEach(t => {
-    if(t.type==='PagoDeuda' && t.debtId===debtId) paid+=t.amount;
-  });
+  let paid=0; state.years[state.active].txs.forEach(t => { if(t.type==='PagoDeuda' && t.debtId===debtId) paid+=t.amount; });
   return debt.total - paid;
 }
 
 function checkDebtAlerts() {
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    let alertsHtml = '';
-
+    const today = new Date(); today.setHours(0,0,0,0); let alertsHtml = '';
     state.debts.forEach(d => {
         const saldo = getDebtBal(d.id);
         if(saldo > 0 && d.dateLimit) {
-            const limitDate = new Date(d.dateLimit + 'T00:00:00');
-            const diffTime = limitDate - today;
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-            if(diffDays < 0) {
-                alertsHtml += `<div class="alert danger">🚨 ¡ALERTA! La deuda <strong>${d.name}</strong> venció hace ${Math.abs(diffDays)} días y aún debes ${fmt(saldo)}.</div>`;
-            } else if(diffDays <= 5) {
-                alertsHtml += `<div class="alert warn">⚠️ Atención: La deuda <strong>${d.name}</strong> vence en ${diffDays} días (${d.dateLimit}) y debes ${fmt(saldo)}.</div>`;
-            }
+            const diffDays = Math.ceil((new Date(d.dateLimit + 'T00:00:00') - today) / (1000 * 60 * 60 * 24));
+            if(diffDays < 0) alertsHtml += `<div class="alert danger">🚨 ¡ALERTA! La deuda <strong>${d.name}</strong> venció hace ${Math.abs(diffDays)} días y aún debes ${fmt(saldo)}.</div>`;
+            else if(diffDays <= 5) alertsHtml += `<div class="alert warn">⚠️ Atención: La deuda <strong>${d.name}</strong> vence en ${diffDays} días (${d.dateLimit}) y debes ${fmt(saldo)}.</div>`;
         }
     });
     return alertsHtml;
@@ -758,774 +735,263 @@ function canEditInit(){ return !state.years[state.active].lockedInit; }
 function tieneMovimientos(id) { return state.years[state.active].txs.some(t => t.from === id || t.to === id); }
 
 function getPlacerLimitInfo() {
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-    const key = `${currentYear}-${currentMonth}`;
+    const now = new Date(); const key = `${now.getFullYear()}-${now.getMonth()}`;
     const yr = state.years[state.active];
-
     const monthPlacerSpent = yr.txs.filter(t => {
         const d = new Date(t.date);
-        return d.getMonth() === currentMonth && d.getFullYear() === currentYear && (t.type === 'Gasto' || t.type === 'PagoDeuda') && t.cat === 'placer';
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() && (t.type === 'Gasto' || t.type === 'PagoDeuda') && t.cat === 'placer';
     }).reduce((s, t) => s + t.amount, 0);
-
     const isLocked = state.placerLimits[key] !== undefined;
     const limit = state.placerLimits[key] || 0;
-
     return { key, limit, spent: monthPlacerSpent, available: limit - monthPlacerSpent, isLocked };
 }
 
 function calculateAndLockPlacer() {
     const pct = parseFloat(document.getElementById('placerPercentageInput').value);
     if(isNaN(pct) || pct < 1 || pct > 100) return toast('Porcentaje inválido (1-100)');
-
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-    const key = `${currentYear}-${currentMonth}`;
-    
-    const yr = state.years[state.active];
-    const monthIncome = yr.txs.filter(t => {
+    const now = new Date(); const key = `${now.getFullYear()}-${now.getMonth()}`;
+    const monthIncome = state.years[state.active].txs.filter(t => {
         const d = new Date(t.date);
-        return d.getMonth() === currentMonth && d.getFullYear() === currentYear && t.type === 'Ingreso';
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() && t.type === 'Ingreso';
     }).reduce((s, t) => s + t.amount, 0);
-
-    const newLimit = monthIncome * (pct / 100);
-    
-    state.placerLimits[key] = newLimit;
-    state.placerLimits[key + '_pct'] = pct;
-    save(); renderAll();
-    toast(`Límite de Placer bloqueado: ${fmt(newLimit)}`);
+    state.placerLimits[key] = monthIncome * (pct / 100); state.placerLimits[key + '_pct'] = pct;
+    save(); renderAll(); toast(`Límite bloqueado: ${fmt(state.placerLimits[key])}`);
 }
 
 function unlockPlacerLimit() {
-    const now = new Date();
-    const key = `${now.getFullYear()}-${now.getMonth()}`;
-    if(state.placerLimits[key] === undefined) return toast('El límite de este mes no está bloqueado.');
-    if(!confirm('⚠️ ¿Estás seguro de desbloquear el límite de Placer de este mes?')) return;
-    delete state.placerLimits[key];
-    delete state.placerLimits[key + '_pct'];
-    save(); renderAll();
-    toast('Límite de Placer desbloqueado.');
+    const key = `${new Date().getFullYear()}-${new Date().getMonth()}`;
+    if(state.placerLimits[key] === undefined) return toast('No está bloqueado.');
+    if(!confirm('⚠️ ¿Desbloquear límite de Placer?')) return;
+    delete state.placerLimits[key]; delete state.placerLimits[key + '_pct']; save(); renderAll(); toast('Desbloqueado.');
 }
 
 function renderTable() {
-  const tb=document.querySelector('#txTable tbody');
-  const q=document.getElementById('txSearch').value.toLowerCase();
-  const yr=state.years[state.active];
-  
-  let list=yr.txs.filter(t=>t.detail.toLowerCase().includes(q)).sort((a,b)=>b.date.localeCompare(a.date));
+  const tb=document.querySelector('#txTable tbody'); const q=document.getElementById('txSearch').value.toLowerCase();
+  const list=state.years[state.active].txs.filter(t=>t.detail.toLowerCase().includes(q)).sort((a,b)=>b.date.localeCompare(a.date));
   document.getElementById('txCount').textContent=list.length+' registros';
-  
   tb.innerHTML=list.map(t=>{
-    let ruta = '';
-    if(t.type==='Ingreso') ruta = '➔ ' + (getAccName(t.to) || getPocName(t.to));
+    let ruta = ''; if(t.type==='Ingreso') ruta = '➔ ' + (getAccName(t.to) || getPocName(t.to));
     if(t.type==='Gasto') ruta = (getAccName(t.from) || getPocName(t.from)) + ' ➔ Gasto';
     if(t.type==='Transferencia') ruta = (getAccName(t.from)||getPocName(t.from)) + ' ➔ ' + (getAccName(t.to) || getPocName(t.to));
     if(t.type==='PagoDeuda') ruta = (getAccName(t.from)||getPocName(t.from)) + ' ➔ Deuda: ' + getDebtName(t.debtId);
-
     let catStr = t.cat ? `<br><small style="color:var(--accent)">${getCatName(t.cat)}</small>` : '';
-    let colorMonto = 'var(--red)'; 
-    if(t.type === 'Ingreso') colorMonto = 'var(--green)'; 
-    if(t.type === 'Transferencia') colorMonto = 'var(--yellow)'; 
-
-    return `
-    <tr>
-      <td>${t.date}</td><td>${t.detail}</td><td>${t.type}${catStr}<br><small style="color:var(--muted)">${ruta}</small></td>
-      <td style="text-align:right; color:${colorMonto}; font-weight:bold;">${fmt(t.amount)}</td>
-      <td>${canEdit()?`<button class="danger" onclick="delTx('${t.id}')">X</button>`:''}</td>
-    </tr>`;
+    let colorMonto = 'var(--red)'; if(t.type === 'Ingreso') colorMonto = 'var(--green)'; if(t.type === 'Transferencia') colorMonto = 'var(--yellow)'; 
+    return `<tr><td>${t.date}</td><td>${t.detail}</td><td>${t.type}${catStr}<br><small style="color:var(--muted)">${ruta}</small></td><td style="text-align:right; color:${colorMonto}; font-weight:bold;">${fmt(t.amount)}</td><td>${canEdit()?`<button class="danger" onclick="delTx('${t.id}')">X</button>`:''}</td></tr>`;
   }).join('')||'<tr><td colspan="5" style="text-align:center">Sin datos</td></tr>';
 }
 
 function renderAll() {
+  document.getElementById('toggleAdvisor').checked = state.config.advisorEnabled;
+
   const yn=document.getElementById('yearNav'); yn.innerHTML='';
   Object.keys(state.years).sort((a,b)=>b-a).forEach(y => {
     const b=document.createElement('button'); b.textContent=(state.years[y].locked?'🔒 ':'')+y;
-    if(y==state.active) b.classList.add('active');
-    b.onclick=()=>{state.active=parseInt(y);save();renderAll();};
-    yn.appendChild(b);
+    if(y==state.active) b.classList.add('active'); b.onclick=()=>{state.active=parseInt(y);save();renderAll();}; yn.appendChild(b);
   });
   
-  const yr=state.years[state.active];
-  document.getElementById('addCard').style.display=canEdit()?'block':'none';
+  const yr=state.years[state.active]; document.getElementById('addCard').style.display=canEdit()?'block':'none';
   document.getElementById('lockBtn').textContent=yr.locked?'🔓 Reabrir Año':'🔒 Cerrar Año';
-
   const isLocked = !canEditInit();
   document.getElementById('globalHideBtn').textContent = state.hidden.global ? '👁️ Mostrar todos los números' : '👁️‍🗨️ Ocultar todos los números';
 
   if(isLocked) {
-    document.getElementById('initAlert').innerHTML = `<div class="alert warn">🔒 Los saldos iniciales están bloqueados y ocultos para proteger tu historial. Si necesitas corregir un error, ve a la pestaña de Configuración > Zona de Administrador.</div>`;
-    document.getElementById('addAccWrap').style.display='none';
-    document.getElementById('addPocWrap').style.display='none';
+    document.getElementById('initAlert').innerHTML = `<div class="alert warn">🔒 Saldos iniciales bloqueados. Ve a Configuración > Zona de Administrador para corregir.</div>`;
+    document.getElementById('addAccWrap').style.display='none'; document.getElementById('addPocWrap').style.display='none';
   } else {
-    document.getElementById('initAlert').innerHTML = `
-      <div class="alert info" style="background:rgba(59,130,246,.1); border-color:var(--accent); color:var(--accent); margin-bottom:10px;">
-        <strong>Paso 1:</strong> Escribe tus saldos iniciales abajo.<br>
-        <strong>Paso 2:</strong> Cuando estés seguro, presiona el botón para bloquearlos.
-        <button class="warning" style="margin-top:8px; width:100%" onclick="lockOpeningBalances()">🔒 Guardar y Bloquear Saldos Iniciales</button>
-      </div>`;
-    document.getElementById('addAccWrap').style.display='block';
-    document.getElementById('addPocWrap').style.display='block';
+    document.getElementById('initAlert').innerHTML = `<div class="alert info" style="background:rgba(59,130,246,.1); border-color:var(--accent); color:var(--accent); margin-bottom:10px;"><strong>Paso 1:</strong> Escribe tus saldos iniciales abajo.<br><strong>Paso 2:</strong> Bloquéalos.<button class="warning" style="margin-top:8px; width:100%" onclick="lockOpeningBalances()">🔒 Guardar y Bloquear Saldos</button></div>`;
+    document.getElementById('addAccWrap').style.display='block'; document.getElementById('addPocWrap').style.display='block';
   }
 
-  const flow = getFlow(state.active);
-  const balanceAnual = flow.inc - flow.exp;
-  
+  // RENDER ASESOR
+  generateAdvice();
+
+  const flow = getFlow(state.active); const balanceAnual = flow.inc - flow.exp;
   let al = checkDebtAlerts();
-  if(flow.exp > flow.inc && flow.inc > 0) {
-    al+=`<div class="alert danger">🚨 ¡ALERTA! Estás gastando más de lo que ganas este año. Déficit: ${fmt(flow.exp - flow.inc)}.</div>`;
-  }
+  if(flow.exp > flow.inc && flow.inc > 0) al+=`<div class="alert danger">🚨 ¡ALERTA! Estás gastando más de lo que ganas este año. Déficit: ${fmt(flow.exp - flow.inc)}.</div>`;
 
   document.getElementById('flowStats').innerHTML=`
-    <div class="stat green">
-      <span class="eye-btn" onclick="toggleHideIndividual('inc')">${state.hidden.global||state.hidden.stats['inc']?'👁️':'👁️‍🗨️'}</span>
-      <div class="label">Ingresos Totales del Año</div><div class="value">${renderVal('inc', flow.inc)}</div>
-    </div>
-    <div class="stat red">
-      <span class="eye-btn" onclick="toggleHideIndividual('exp')">${state.hidden.global||state.hidden.stats['exp']?'👁️':'👁️‍🗨️'}</span>
-      <div class="label">Gastos Totales del Año</div><div class="value">${renderVal('exp', flow.exp)}</div>
-    </div>
-    <div class="stat ${balanceAnual>=0?'green':'red'}">
-      <span class="eye-btn" onclick="toggleHideIndividual('bal')">${state.hidden.global||state.hidden.stats['bal']?'👁️':'👁️‍🗨️'}</span>
-      <div class="label">Balance del Año</div><div class="value">${renderVal('bal', balanceAnual)}</div>
-    </div>
+    <div class="stat green"><span class="eye-btn" onclick="toggleHideIndividual('inc')">${state.hidden.global||state.hidden.stats['inc']?'👁️':'👁️‍🗨️'}</span><div class="label">Ingresos Totales</div><div class="value">${renderVal('inc', flow.inc)}</div></div>
+    <div class="stat red"><span class="eye-btn" onclick="toggleHideIndividual('exp')">${state.hidden.global||state.hidden.stats['exp']?'👁️':'👁️‍🗨️'}</span><div class="label">Gastos Totales</div><div class="value">${renderVal('exp', flow.exp)}</div></div>
+    <div class="stat ${balanceAnual>=0?'green':'red'}"><span class="eye-btn" onclick="toggleHideIndividual('bal')">${state.hidden.global||state.hidden.stats['bal']?'👁️':'👁️‍🗨️'}</span><div class="label">Balance del Año</div><div class="value">${renderVal('bal', balanceAnual)}</div></div>
   `;
 
   let totalEfectivo = 0, totalAhorros = 0;
   state.accounts.forEach(a => { if(a.id !== 'billetera') totalEfectivo += getAccBal(a.id); });
   state.pockets.forEach(p => totalAhorros += getPocBal(p.id));
-  
-  const totalDeudas = state.debts.reduce((s,d)=>s+getDebtBal(d.id),0);
-  const cashBilletera = getAccBal('billetera');
-  
+  const totalDeudas = state.debts.reduce((s,d)=>s+getDebtBal(d.id),0); const cashBilletera = getAccBal('billetera');
   const patrimonioNeto = totalEfectivo + totalAhorros + cashBilletera - totalDeudas;
 
   document.getElementById('patrimonyStats').innerHTML=`
-    <div class="stat blue">
-      <span class="eye-btn" onclick="toggleHideIndividual('efec')">${state.hidden.global||state.hidden.stats['efec']?'👁️':'👁️‍🗨️'}</span>
-      <div class="label">En Cuentas (Sin Billetera)</div><div class="value">${renderVal('efec', totalEfectivo)}</div>
-    </div>
-    <div class="stat yellow">
-      <span class="eye-btn" onclick="toggleHideIndividual('ahor')">${state.hidden.global||state.hidden.stats['ahor']?'👁️':'👁️‍🗨️'}</span>
-      <div class="label">En Bolsillos</div><div class="value">${renderVal('ahor', totalAhorros)}</div>
-    </div>
-    <div class="stat purple">
-      <span class="eye-btn" onclick="toggleHideIndividual('bill')">${state.hidden.global||state.hidden.stats['bill']?'👁️':'👁️‍🗨️'}</span>
-      <div class="label">💵 Billetera Efectivo</div><div class="value">${renderVal('bill', cashBilletera)}</div>
-    </div>
-    <div class="stat ${patrimonioNeto>=0?'green':'red'}">
-      <span class="eye-btn" onclick="toggleHideIndividual('patr')">${state.hidden.global||state.hidden.stats['patr']?'👁️':'👁️‍🗨️'}</span>
-      <div class="label">Patrimonio Total</div><div class="value">${renderVal('patr', patrimonioNeto)}</div>
-    </div>
+    <div class="stat blue"><span class="eye-btn" onclick="toggleHideIndividual('efec')">${state.hidden.global||state.hidden.stats['efec']?'👁️':'👁️‍🗨️'}</span><div class="label">En Cuentas (Sin Billetera)</div><div class="value">${renderVal('efec', totalEfectivo)}</div></div>
+    <div class="stat yellow"><span class="eye-btn" onclick="toggleHideIndividual('ahor')">${state.hidden.global||state.hidden.stats['ahor']?'👁️':'👁️‍🗨️'}</span><div class="label">En Bolsillos</div><div class="value">${renderVal('ahor', totalAhorros)}</div></div>
+    <div class="stat purple"><span class="eye-btn" onclick="toggleHideIndividual('bill')">${state.hidden.global||state.hidden.stats['bill']?'👁️':'👁️‍🗨️'}</span><div class="label">💵 Billetera Efectivo</div><div class="value">${renderVal('bill', cashBilletera)}</div></div>
+    <div class="stat ${patrimonioNeto>=0?'green':'red'}"><span class="eye-btn" onclick="toggleHideIndividual('patr')">${state.hidden.global||state.hidden.stats['patr']?'👁️':'👁️‍🗨️'}</span><div class="label">Patrimonio Total</div><div class="value">${renderVal('patr', patrimonioNeto)}</div></div>
   `;
 
-  const placerInfo = getPlacerLimitInfo();
-  const pctUsado = state.placerLimits[placerInfo.key + '_pct'] || state.config.placer;
-  const placerPct = placerInfo.limit > 0 ? (placerInfo.spent / placerInfo.limit) * 100 : 0;
-
+  const placerInfo = getPlacerLimitInfo(); const pctUsado = state.placerLimits[placerInfo.key + '_pct'] || state.config.placer; const placerPct = placerInfo.limit > 0 ? (placerInfo.spent / placerInfo.limit) * 100 : 0;
   let placerHtml = '';
   if(placerInfo.isLocked) {
-    let barColor = 'var(--green)';
-    let textColor = 'var(--green)';
-    if(placerPct >= 100) { barColor = 'var(--red)'; textColor = 'var(--red)'; }
-    else if(placerPct >= 70) { barColor = 'var(--yellow)'; textColor = 'var(--yellow)'; }
-
-    placerHtml = `
-      <div style="margin-bottom:10px;">
-        <div style="font-size:12px; color:var(--muted); margin-bottom:5px;">Límite calculado con el ${pctUsado}% de tus ingresos.</div>
-        <div class="stat" style="border-color:${barColor}; padding:15px;">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <div>
-              <div class="label">Disponible para Placer</div>
-              <div class="value" style="color:${textColor}; font-size:24px;">${renderVal('plac_bal', placerInfo.available)}</div>
-            </div>
-            <div style="text-align:right;">
-              <div style="font-size:11px; color:var(--muted);">Tope: ${fmt(placerInfo.limit)}</div>
-              <div style="font-size:11px; color:var(--muted);">Gastado: ${fmt(placerInfo.spent)}</div>
-            </div>
-          </div>
-          <div class="bar" style="height:12px; margin-top:10px;">
-            <div class="bar-fill" style="width:${Math.min(placerPct,100)}%; background:${barColor}"></div>
-          </div>
-        </div>
-      </div>
-    `;
+    let barColor = 'var(--green)'; let textColor = 'var(--green)';
+    if(placerPct >= 100) { barColor = 'var(--red)'; textColor = 'var(--red)'; } else if(placerPct >= 70) { barColor = 'var(--yellow)'; textColor = 'var(--yellow)'; }
+    placerHtml = `<div style="margin-bottom:10px;"><div style="font-size:12px; color:var(--muted); margin-bottom:5px;">Límite calculado con el ${pctUsado}% de tus ingresos.</div><div class="stat" style="border-color:${barColor}; padding:15px;"><div style="display:flex; justify-content:space-between; align-items:center;"><div><div class="label">Disponible para Placer</div><div class="value" style="color:${textColor}; font-size:24px;">${renderVal('plac_bal', placerInfo.available)}</div></div><div style="text-align:right;"><div style="font-size:11px; color:var(--muted);">Tope: ${fmt(placerInfo.limit)}</div><div style="font-size:11px; color:var(--muted);">Gastado: ${fmt(placerInfo.spent)}</div></div></div><div class="bar" style="height:12px; margin-top:10px;"><div class="bar-fill" style="width:${Math.min(placerPct,100)}%; background:${barColor}"></div></div></div></div>`;
   } else {
-    placerHtml = `
-      <div class="alert info" style="background:rgba(59,130,246,.1); border-color:var(--accent); color:var(--accent); margin-bottom:10px;">
-        <strong>Configura tu límite de Placer para este mes.</strong><br>
-        Ingresa el porcentaje y la app calculará el monto tope basado en tus ingresos de este mes.
-      </div>
-      <div style="display:flex; gap:10px; align-items:end;">
-        <div style="flex:1;">
-          <label style="font-size:11px; color:var(--muted);">Porcentaje de Ingresos (%)</label>
-          <input type="number" id="placerPercentageInput" value="${state.config.placer}" min="1" max="100" style="margin:0;">
-        </div>
-        <div style="flex:1;">
-          <button class="primary" onclick="calculateAndLockPlacer()" style="height:40px;">🔒 Calcular y Bloquear</button>
-        </div>
-      </div>
-    `;
+    placerHtml = `<div class="alert info" style="background:rgba(59,130,246,.1); border-color:var(--accent); color:var(--accent); margin-bottom:10px;"><strong>Configura tu límite de Placer.</strong><br>Ingresa el porcentaje y la app calculará el tope basado en tus ingresos.</div><div style="display:flex; gap:10px; align-items:end;"><div style="flex:1;"><label style="font-size:11px; color:var(--muted);">Porcentaje (%)</label><input type="number" id="placerPercentageInput" value="${state.config.placer}" min="1" max="100" style="margin:0;"></div><div style="flex:1;"><button class="primary" onclick="calculateAndLockPlacer()" style="height:40px;">🔒 Calcular y Bloquear</button></div></div>`;
   }
   document.getElementById('placerCardContent').innerHTML = placerHtml;
 
-  let budgetHtml = `
-    <div class="stat ${placerInfo.available>=0?'green':'red'}">
-      <span class="eye-btn" onclick="toggleHideIndividual('plac')">${state.hidden.global||state.hidden.stats['plac']?'👁️':'👁️‍🗨️'}</span>
-      <div class="label">Gastos Placer (${pctUsado}%)</div>
-      <div class="value">${renderVal('plac', placerInfo.available)}</div>
-      <div style="font-size:10px;color:var(--muted);margin-top:4px">Gastado: ${fmt(placerInfo.spent)} de ${fmt(placerInfo.limit)}</div>
-      <div class="bar"><div class="bar-fill" style="width:${Math.min(placerPct,100)}%;background:${placerPct>100?'var(--red)':'var(--purple)'}"></div></div>
-    </div>
-  `;
-
+  let budgetHtml = `<div class="stat ${placerInfo.available>=0?'green':'red'}"><span class="eye-btn" onclick="toggleHideIndividual('plac')">${state.hidden.global||state.hidden.stats['plac']?'👁️':'👁️‍🗨️'}</span><div class="label">Gastos Placer (${pctUsado}%)</div><div class="value">${renderVal('plac', placerInfo.available)}</div><div style="font-size:10px;color:var(--muted);margin-top:4px">Gastado: ${fmt(placerInfo.spent)} de ${fmt(placerInfo.limit)}</div><div class="bar"><div class="bar-fill" style="width:${Math.min(placerPct,100)}%;background:${placerPct>100?'var(--red)':'var(--purple)'}"></div></div></div>`;
+  
   state.pockets.forEach(p => {
     if(p.meta && p.meta > 0) {
-      const balPoc = getPocBal(p.id);
-      const pctMeta = (balPoc / p.meta) * 100;
-      let barColor = 'var(--red)';
-      if(pctMeta >= 100) barColor = 'var(--green)';
-      else if(pctMeta >= 33) barColor = 'var(--yellow)';
-      
-      budgetHtml += `
-        <div class="stat" style="border-color:${barColor}">
-          <div class="label">Meta: ${p.name}</div>
-          <div class="value" style="color:${barColor}">${pctMeta.toFixed(1)}%</div>
-          <div style="font-size:10px;color:var(--muted);margin-top:4px">${renderVal('meta_'+p.id, balPoc)} / ${fmt(p.meta)}</div>
-          <div class="bar"><div class="bar-fill" style="width:${Math.min(pctMeta,100)}%;background:${barColor}"></div></div>
-        </div>
-      `;
+      const balPoc = getPocBal(p.id); const pctMeta = (balPoc / p.meta) * 100; let barColor = 'var(--red)';
+      if(pctMeta >= 100) barColor = 'var(--green)'; else if(pctMeta >= 33) barColor = 'var(--yellow)';
+      budgetHtml += `<div class="stat" style="border-color:${barColor}"><div class="label">Meta: ${p.name}</div><div class="value" style="color:${barColor}">${pctMeta.toFixed(1)}%</div><div style="font-size:10px;color:var(--muted);margin-top:4px">${renderVal('meta_'+p.id, balPoc)} / ${fmt(p.meta)}</div><div class="bar"><div class="bar-fill" style="width:${Math.min(pctMeta,100)}%;background:${barColor}"></div></div></div>`;
     }
   });
   document.getElementById('budgetGrid').innerHTML = budgetHtml;
 
-  if(placerInfo.available<0) al+=`<div class="alert danger">🚨 ¡Has superado el límite de Gastos Placer este mes! Por ${fmt(Math.abs(placerInfo.available))}.</div>`;
-  else if(placerPct>80) al+=`<div class="alert warn">⚠️ Estás al ${placerPct.toFixed(1)}% de tu límite de Placer mensual. Te quedan ${fmt(placerInfo.available)}.</div>`;
-  
-  document.getElementById('alerts').innerHTML=al;
-
-  renderTable();
+  if(placerInfo.available<0) al+=`<div class="alert danger">🚨 ¡Superaste el límite de Gastos Placer! Por ${fmt(Math.abs(placerInfo.available))}.</div>`;
+  else if(placerPct>80) al+=`<div class="alert warn">⚠️ Estás al ${placerPct.toFixed(1)}% de tu límite de Placer.</div>`;
+  document.getElementById('alerts').innerHTML=al; renderTable();
   
   if(isLocked) {
-    document.getElementById('accountsList').innerHTML=state.accounts.map(a=>{
-      const isHidden = state.hidden.locks[a.id];
-      return `
-      <div class="row-item">
-        <div class="locked-text">${a.name}</div>
-        <div class="locked-val">
-          <span>Inició con: <strong>${isHidden?'***':fmt(state.years[state.active].openingBalances[a.id]||0)}</strong></span>
-          <span style="cursor:pointer; font-size:16px;" onclick="toggleLockHide('${a.id}')">${isHidden?'👁️':'👁️‍🗨️'}</span>
-        </div>
-        <strong style="color:var(--accent); width:20%; text-align:right">${renderVal('acc_'+a.id, getAccBal(a.id))}</strong>
-      </div>`;
-    }).join('');
+    document.getElementById('accountsList').innerHTML=state.accounts.map(a=>{ const isHidden = state.hidden.locks[a.id]; return `<div class="row-item"><div class="locked-text">${a.name}</div><div class="locked-val"><span>Inició con: <strong>${isHidden?'***':fmt(state.years[state.active].openingBalances[a.id]||0)}</strong></span><span style="cursor:pointer; font-size:16px;" onclick="toggleLockHide('${a.id}')">${isHidden?'👁️':'👁️‍🗨️'}</span></div><strong style="color:var(--accent); width:20%; text-align:right">${renderVal('acc_'+a.id, getAccBal(a.id))}</strong></div>`; }).join('');
   } else {
-    document.getElementById('accountsList').innerHTML=state.accounts.map(a=>`
-      <div class="row-item">
-        <input value="${a.name}" onchange="renameAcc('${a.id}', this.value)" style="border:none; width:40%">
-        <input type="number" value="${state.years[state.active].openingBalances[a.id]||0}" onchange="setOpeningBal('${a.id}', this.value)" placeholder="Saldo Inicial $" style="text-align:right; width:35%">
-        <strong style="color:var(--accent); width:20%; text-align:right">${fmt(getAccBal(a.id))}</strong>
-        ${canEdit() ?`<button class="danger" onclick="delAcc('${a.id}')">X</button>`:''}
-      </div>`).join('');
+    document.getElementById('accountsList').innerHTML=state.accounts.map(a=>`<div class="row-item"><input value="${a.name}" onchange="renameAcc('${a.id}', this.value)" style="border:none; width:40%"><input type="number" value="${state.years[state.active].openingBalances[a.id]||0}" onchange="setOpeningBal('${a.id}', this.value)" placeholder="Saldo Inicial $" style="text-align:right; width:35%"><strong style="color:var(--accent); width:20%; text-align:right">${fmt(getAccBal(a.id))}</strong>${canEdit() ?`<button class="danger" onclick="delAcc('${a.id}')">X</button>`:''}</div>`).join('');
   }
 
   if(isLocked) {
-    document.getElementById('pocketsList').innerHTML=state.pockets.map(p=>{
-      const isHidden = state.hidden.locks[p.id];
-      return `
-      <div class="row-item">
-        <div class="locked-text">${p.name}</div>
-        <div class="locked-val">
-          <span>Inició con: <strong>${isHidden?'***':fmt(state.years[state.active].openingBalances[p.id]||0)}</strong></span>
-          <span style="cursor:pointer; font-size:16px;" onclick="toggleLockHide('${p.id}')">${isHidden?'👁️':'👁️‍🗨️'}</span>
-        </div>
-        <strong style="color:var(--green); width:20%; text-align:right">${renderVal('poc_'+p.id, getPocBal(p.id))}</strong>
-      </div>`;
-    }).join('');
+    document.getElementById('pocketsList').innerHTML=state.pockets.map(p=>{ const isHidden = state.hidden.locks[p.id]; return `<div class="row-item"><div class="locked-text">${p.name}</div><div class="locked-val"><span>Inició con: <strong>${isHidden?'***':fmt(state.years[state.active].openingBalances[p.id]||0)}</strong></span><span style="cursor:pointer; font-size:16px;" onclick="toggleLockHide('${p.id}')">${isHidden?'👁️':'👁️‍🗨️'}</span></div><strong style="color:var(--green); width:20%; text-align:right">${renderVal('poc_'+p.id, getPocBal(p.id))}</strong></div>`; }).join('');
   } else {
-    document.getElementById('pocketsList').innerHTML=state.pockets.map(p=>`
-      <div class="row-item">
-        <input value="${p.name}" onchange="renamePoc('${p.id}', this.value)" style="border:none; width:40%">
-        <input type="number" value="${state.years[state.active].openingBalances[p.id]||0}" onchange="setOpeningBal('${p.id}', this.value)" placeholder="Saldo Inicial $" style="text-align:right; width:35%">
-        <strong style="color:var(--green); width:20%; text-align:right">${fmt(getPocBal(p.id))}</strong>
-        ${canEdit() ?`<button class="danger" onclick="delPoc('${p.id}')">X</button>`:''}
-      </div>`).join('');
+    document.getElementById('pocketsList').innerHTML=state.pockets.map(p=>`<div class="row-item"><input value="${p.name}" onchange="renamePoc('${p.id}', this.value)" style="border:none; width:40%"><input type="number" value="${state.years[state.active].openingBalances[p.id]||0}" onchange="setOpeningBal('${p.id}', this.value)" placeholder="Saldo Inicial $" style="text-align:right; width:35%"><strong style="color:var(--green); width:20%; text-align:right">${fmt(getPocBal(p.id))}</strong>${canEdit() ?`<button class="danger" onclick="delPoc('${p.id}')">X</button>`:''}</div>`).join('');
   }
 
   document.getElementById('debtsList').innerHTML=state.debts.map(d=>{
-    const saldo = getDebtBal(d.id);
-    const pct = d.total > 0 ? ((d.total-saldo)/d.total)*100 : 0;
-    const isPaid = saldo <= 0;
-    
+    const saldo = getDebtBal(d.id); const pct = d.total > 0 ? ((d.total-saldo)/d.total)*100 : 0; const isPaid = saldo <= 0;
     let dateInfo = '';
     if(!isPaid && d.dateLimit) {
-        const limitDate = new Date(d.dateLimit + 'T00:00:00');
-        const today = new Date();
-        today.setHours(0,0,0,0);
-        const diffDays = Math.ceil((limitDate - today) / (1000 * 60 * 60 * 24));
-        
+        const diffDays = Math.ceil((new Date(d.dateLimit + 'T00:00:00') - new Date().setHours(0,0,0,0)) / (1000 * 60 * 60 * 24));
         if(diffDays < 0) dateInfo = `<span style="color:var(--red); font-size:11px; font-weight:bold;">🔴 Vencida hace ${Math.abs(diffDays)} días</span>`;
-        else if(diffDays <= 5) dateInfo = `<span style="color:var(--yellow); font-size:11px; font-weight:bold;">🟡 Vence en ${diffDays} días (${d.dateLimit})</span>`;
+        else if(diffDays <= 5) dateInfo = `<span style="color:var(--yellow); font-size:11px; font-weight:bold;">🟡 Vence en ${diffDays} días</span>`;
         else dateInfo = `<span style="color:var(--muted); font-size:11px;">📅 Vence: ${d.dateLimit}</span>`;
     }
-
-    return `
-    <div class="row-item" style="flex-direction:column;align-items:flex-start">
-      <div style="display:flex;width:100%;justify-content:space-between;margin-bottom:5px;">
-        <input value="${d.name}" onchange="renameDebt('${d.id}', this.value)" style="width:50%" ${isPaid?'disabled':''}>
-        <span style="color:${isPaid?'var(--green)':'var(--red)'}">${isPaid?'¡PAGADA!':fmt(saldo)+' restante'}</span>
-        ${canEdit() && !isPaid || (canEdit() && d.adminUnlock) ?`<button class="danger" onclick="delDebt('${d.id}')">X</button>`:''}
-      </div>
-      ${dateInfo}
-      <div class="bar" style="width:100%"><div class="bar-fill" style="width:${pct}%;background:${isPaid?'var(--green)':'var(--yellow)'}"></div></div>
-      ${isPaid?'<small style="color:var(--green); font-size:10px;">Historial guardado (bloqueada)</small>':''}
-    </div>`;
+    return `<div class="row-item" style="flex-direction:column;align-items:flex-start"><div style="display:flex;width:100%;justify-content:space-between;margin-bottom:5px;"><input value="${d.name}" onchange="renameDebt('${d.id}', this.value)" style="width:50%" ${isPaid?'disabled':''}><span style="color:${isPaid?'var(--green)':'var(--red)'}">${isPaid?'¡PAGADA!':fmt(saldo)+' restante'}</span>${canEdit() && !isPaid || (canEdit() && d.adminUnlock) ?`<button class="danger" onclick="delDebt('${d.id}')">X</button>`:''}</div>${dateInfo}<div class="bar" style="width:100%"><div class="bar-fill" style="width:${pct}%;background:${isPaid?'var(--green)':'var(--yellow)'}"></div></div>${isPaid?'<small style="color:var(--green); font-size:10px;">Historial guardado</small>':''}</div>`;
   }).join('')||'<p style="text-align:center;color:var(--muted)">No hay deudas</p>';
 
-  document.getElementById('goalsConfigList').innerHTML=state.pockets.map(p=>`
-    <div class="row-item">
-      <span style="width:50%">${p.name}</span>
-      <input type="number" value="${p.meta||0}" onchange="setMetaPoc('${p.id}', this.value)" placeholder="Meta $" style="width:40%; text-align:right;">
-    </div>
-  `).join('');
+  document.getElementById('goalsConfigList').innerHTML=state.pockets.map(p=>`<div class="row-item"><span style="width:50%">${p.name}</span><input type="number" value="${p.meta||0}" onchange="setMetaPoc('${p.id}', this.value)" placeholder="Meta $" style="width:40%; text-align:right;"></div>`).join('');
+  document.getElementById('configCatsList').innerHTML=state.config.cats.map(c=>`<div class="row-item"><input value="${c.name}" onchange="renameCat('${c.id}', 'name', this.value)" style="border:none; width:30%; font-weight:bold;"><input value="${c.desc||''}" onchange="renameCat('${c.id}', 'desc', this.value)" style="border:none; width:45%; font-size:11px; color:var(--muted);" placeholder="Guía..."><span style="background:${c.color}; width:15px; height:15px; border-radius:50%;"></span><button class="danger" onclick="delCat('${c.id}')">X</button></div>`).join('');
 
-  document.getElementById('configCatsList').innerHTML=state.config.cats.map(c=>`
-    <div class="row-item">
-      <input value="${c.name}" onchange="renameCat('${c.id}', 'name', this.value)" style="border:none; width:30%; font-weight:bold;">
-      <input value="${c.desc||''}" onchange="renameCat('${c.id}', 'desc', this.value)" style="border:none; width:45%; font-size:11px; color:var(--muted);" placeholder="Guía...">
-      <span style="background:${c.color}; width:15px; height:15px; border-radius:50%;"></span>
-      <button class="danger" onclick="delCat('${c.id}')">X</button>
-    </div>
-  `).join('');
-
-  const allOrigins = [
-    ...state.accounts.map(a=>({id:a.id, name:a.name, type:'acc'})),
-    ...state.pockets.map(p=>({id:p.id, name:p.name, type:'poc'}))
-  ];
+  const allOrigins = [...state.accounts.map(a=>({id:a.id, name:a.name})), ...state.pockets.map(p=>({id:p.id, name:p.name}))];
   const allOpts = allOrigins.map(o=>`<option value="${o.id}">${o.name}</option>`).join('');
-
-  document.getElementById('fFrom').innerHTML = allOpts;
-  document.getElementById('fTo').innerHTML = allOpts;
+  document.getElementById('fFrom').innerHTML = allOpts; document.getElementById('fTo').innerHTML = allOpts;
   document.getElementById('fCategory').innerHTML = state.config.cats.map(c=>`<option value="${c.id}">${c.name} (${c.desc})</option>`).join('');
   document.getElementById('fDebtSelect').innerHTML = state.debts.filter(d=>getDebtBal(d.id)>0).map(d=>`<option value="${d.id}">${d.name} (Debe: ${fmt(getDebtBal(d.id))})</option>`).join('');
   
-  document.getElementById('flowChartType').value = state.config.chartType;
-  document.getElementById('pieChartType').value = state.config.pieType;
-  document.getElementById('projChartType').value = state.config.projChartType;
-
+  document.getElementById('flowChartType').value = state.config.chartType; document.getElementById('pieChartType').value = state.config.pieType; document.getElementById('projChartType').value = state.config.projChartType;
   document.getElementById('fType').dispatchEvent(new Event('change'));
 
   renderAnalisis();
-  actualizarEstadoBio(); 
-  
-  // Llamada para actualizar el punto rojo en el ícono de la app
+  renderExpertAnalysis(); // NUEVA BARRA 50/30/20
+  actualizarEstadoBio();
   actualizarBadgeDeudas();
 }
 
-let flowChartInstance = null;
-let pieChartInstance = null;
-let projChartInstance = null;
+let flowChartInstance = null; let pieChartInstance = null; let projChartInstance = null;
+function drawFlowChart(incM, gasM) { const canvas = document.getElementById('flowChart'); if(!canvas) return; if(flowChartInstance) flowChartInstance.destroy(); const type = state.config.chartType || 'bar'; flowChartInstance = new Chart(canvas, { type: type, data:{labels:['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'], datasets:[{label:'Ingresos',data:incM,backgroundColor: type==='line'?'#22c55e':'rgba(34,197,94,0.7)', borderColor: '#22c55e', fill: false},{label:'Gastos',data:gasM,backgroundColor: type==='line'?'#ef4444':'rgba(239,68,68,0.7)', borderColor: '#ef4444', fill: false}]}, options:{plugins:{legend:{labels:{color:'#e2e8f0'}}}, scales:{x:{ticks:{color:'#94a3b8'}},y:{ticks:{color:'#94a3b8'}}}} }); }
+function drawPieChart(flow) { const canvas = document.getElementById('pieChart'); if(!canvas) return; if(pieChartInstance) pieChartInstance.destroy(); const cats = {}; state.config.cats.forEach(c => cats[c.name] = flow.catTotals[c.id] || 0); const catColors = state.config.cats.map(c => c.color || '#3b82f6'); const type = state.config.pieType || 'doughnut'; pieChartInstance = new Chart(canvas, { type:type, data:{labels:Object.keys(cats), datasets:[{data:Object.values(cats), backgroundColor:catColors}]}, options:{plugins:{legend:{labels:{color:'#e2e8f0'}}}} }); }
 
-function drawFlowChart(incM, gasM) {
-  const canvas = document.getElementById('flowChart');
-  if(!canvas) return;
-  if(flowChartInstance) flowChartInstance.destroy();
-  const type = state.config.chartType || 'bar';
-  flowChartInstance = new Chart(canvas, {
-    type: type, 
-    data:{labels:['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'], datasets:[
-      {label:'Ingresos',data:incM,backgroundColor: type==='line'?'#22c55e':'rgba(34,197,94,0.7)', borderColor: '#22c55e', fill: false},
-      {label:'Gastos',data:gasM,backgroundColor: type==='line'?'#ef4444':'rgba(239,68,68,0.7)', borderColor: '#ef4444', fill: false}
-    ]}, 
-    options:{plugins:{legend:{labels:{color:'#e2e8f0'}}}, scales:{x:{ticks:{color:'#94a3b8'}},y:{ticks:{color:'#94a3b8'}}}}
-  });
-}
-
-function drawPieChart(flow) {
-  const canvas = document.getElementById('pieChart');
-  if(!canvas) return;
-  if(pieChartInstance) pieChartInstance.destroy();
-  const cats = {};
-  state.config.cats.forEach(c => cats[c.name] = flow.catTotals[c.id] || 0);
-  const catColors = state.config.cats.map(c => c.color || '#3b82f6');
-  const type = state.config.pieType || 'doughnut';
-  
-  pieChartInstance = new Chart(canvas, {
-    type:type, 
-    data:{labels:Object.keys(cats), datasets:[{data:Object.values(cats), backgroundColor:catColors}]}, 
-    options:{plugins:{legend:{labels:{color:'#e2e8f0'}}}}
-  });
-}
-
-function changeFlowChart() {
-  state.config.chartType = document.getElementById('flowChartType').value;
-  save();
-  const yr = state.years[state.active];
-  const incM=Array(12).fill(0), gasM=Array(12).fill(0);
-  yr.txs.forEach(t => {
-    const m=new Date(t.date).getMonth();
-    if(t.type==='Ingreso') incM[m]+=t.amount;
-    if(t.type==='Gasto'||t.type==='PagoDeuda') gasM[m]+=t.amount;
-  });
-  drawFlowChart(incM, gasM);
-  toast('Gráfico de flujo actualizado');
-}
-
-function changePieChart() {
-  state.config.pieType = document.getElementById('pieChartType').value;
-  save();
-  const flow = getFlow(state.active);
-  drawPieChart(flow);
-  toast('Gráfico de gastos actualizado');
-}
-
-function changeProjChart() {
-  state.config.projChartType = document.getElementById('projChartType').value;
-  save();
-  renderProjection();
-  toast('Proyección actualizada');
-}
+function changeFlowChart() { state.config.chartType = document.getElementById('flowChartType').value; save(); const yr = state.years[state.active]; const incM=Array(12).fill(0), gasM=Array(12).fill(0); yr.txs.forEach(t => { const m=new Date(t.date).getMonth(); if(t.type==='Ingreso') incM[m]+=t.amount; if(t.type==='Gasto'||t.type==='PagoDeuda') gasM[m]+=t.amount; }); drawFlowChart(incM, gasM); toast('Gráfico actualizado'); }
+function changePieChart() { state.config.pieType = document.getElementById('pieChartType').value; save(); drawPieChart(getFlow(state.active)); toast('Gráfico actualizado'); }
+function changeProjChart() { state.config.projChartType = document.getElementById('projChartType').value; save(); renderProjection(); toast('Proyección actualizada'); }
 
 function renderProjection() {
-    const yr = state.years[state.active];
-    const currentMonth = new Date().getMonth();
-    
-    let totalEfectivo = 0, totalAhorros = 0;
-    state.accounts.forEach(a => { if(a.id !== 'billetera') totalEfectivo += getAccBal(a.id); });
-    state.pockets.forEach(p => totalAhorros += getPocBal(p.id));
-    const totalDeudas = state.debts.reduce((s,d)=>s+getDebtBal(d.id),0);
-    const cashBilletera = getAccBal('billetera');
-    const patrimonioActual = totalEfectivo + totalAhorros + cashBilletera - totalDeudas;
-
-    let monthsWithData = 0;
-    let totalInc = 0, totalExp = 0;
-    for(let i=0; i<12; i++) {
-        let hasTx = yr.txs.some(t => new Date(t.date).getMonth() === i);
-        if(hasTx) {
-            monthsWithData++;
-            yr.txs.forEach(t => {
-                if(new Date(t.date).getMonth() === i) {
-                    if(t.type==='Ingreso') totalInc += t.amount;
-                    if(t.type==='Gasto' || t.type==='PagoDeuda') totalExp += t.amount;
-                }
-            });
-        }
-    }
-    const avgInc = monthsWithData > 0 ? totalInc / monthsWithData : 0;
-    const avgExp = monthsWithData > 0 ? totalExp / monthsWithData : 0;
-    const avgBalance = avgInc - avgExp;
-
-    const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-    const projectionData = [];
-    let currentBalance = patrimonioActual;
-
-    for(let i=0; i<12; i++) {
-        if(i < currentMonth) {
-            projectionData.push(null); 
-        } else if(i === currentMonth) {
-            projectionData.push(currentBalance);
-        } else {
-            currentBalance += avgBalance;
-            projectionData.push(currentBalance);
-        }
-    }
-
-    const canvas = document.getElementById('projChart');
-    if(!canvas) return;
-    if(projChartInstance) projChartInstance.destroy();
-    const type = state.config.projChartType || 'line';
-    projChartInstance = new Chart(canvas, {
-        type: type,
-        data: {
-            labels: months,
-            datasets: [{
-                label: 'Proyección de Patrimonio',
-                data: projectionData,
-                backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                borderColor: '#3b82f6',
-                borderWidth: 3,
-                fill: true,
-                tension: 0.3,
-                pointBackgroundColor: '#3b82f6',
-                pointRadius: 4
-            }]
-        },
-        options: {
-            plugins: {
-                legend: { display: false },
-                tooltip: { callbacks: { label: (ctx) => ctx.parsed.y ? fmt(ctx.parsed.y) : 'Sin datos' } }
-            },
-            scales: {
-                x: { ticks: { color: '#94a3b8' } },
-                y: { ticks: { color: '#94a3b8', callback: v => fmt(v) } }
-            }
-        }
-    });
+    const yr = state.years[state.active]; const currentMonth = new Date().getMonth();
+    let totalEfectivo = 0, totalAhorros = 0; state.accounts.forEach(a => { if(a.id !== 'billetera') totalEfectivo += getAccBal(a.id); }); state.pockets.forEach(p => totalAhorros += getPocBal(p.id));
+    const totalDeudas = state.debts.reduce((s,d)=>s+getDebtBal(d.id),0); const cashBilletera = getAccBal('billetera'); const patrimonioActual = totalEfectivo + totalAhorros + cashBilletera - totalDeudas;
+    let monthsWithData = 0; let totalInc = 0, totalExp = 0;
+    for(let i=0; i<12; i++) { let hasTx = yr.txs.some(t => new Date(t.date).getMonth() === i); if(hasTx) { monthsWithData++; yr.txs.forEach(t => { if(new Date(t.date).getMonth() === i) { if(t.type==='Ingreso') totalInc += t.amount; if(t.type==='Gasto' || t.type==='PagoDeuda') totalExp += t.amount; } }); } }
+    const avgInc = monthsWithData > 0 ? totalInc / monthsWithData : 0; const avgExp = monthsWithData > 0 ? totalExp / monthsWithData : 0; const avgBalance = avgInc - avgExp;
+    const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']; const projectionData = []; let currentBalance = patrimonioActual;
+    for(let i=0; i<12; i++) { if(i < currentMonth) projectionData.push(null); else if(i === currentMonth) projectionData.push(currentBalance); else { currentBalance += avgBalance; projectionData.push(currentBalance); } }
+    const canvas = document.getElementById('projChart'); if(!canvas) return; if(projChartInstance) projChartInstance.destroy();
+    projChartInstance = new Chart(canvas, { type: state.config.projChartType || 'line', data: { labels: months, datasets: [{ label: 'Proyección', data: projectionData, backgroundColor: 'rgba(59, 130, 246, 0.2)', borderColor: '#3b82f6', borderWidth: 3, fill: true, tension: 0.3, pointBackgroundColor: '#3b82f6', pointRadius: 4 }] }, options: { plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => ctx.parsed.y ? fmt(ctx.parsed.y) : 'Sin datos' } } }, scales: { x: { ticks: { color: '#94a3b8' } }, y: { ticks: { color: '#94a3b8', callback: v => fmt(v) } } } } });
 }
 
 function renderAnalisis() {
-  const yr = state.years[state.active];
-  const months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-  
-  let rowsHtml = '';
-  let sumInc = 0, sumExp = 0, sumAhorro = 0;
-  let activeMonths = 0;
-
+  const yr = state.years[state.active]; const months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  let rowsHtml = ''; let sumInc = 0, sumExp = 0, sumAhorro = 0; let activeMonths = 0;
   months.forEach((mName, i) => {
-    let mInc = 0, mExp = 0, mAhorro = 0;
-    const mCats = {};
-    state.config.cats.forEach(c => mCats[c.id] = 0);
-
+    let mInc = 0, mExp = 0, mAhorro = 0; const mCats = {}; state.config.cats.forEach(c => mCats[c.id] = 0);
     yr.txs.forEach(t => {
-      const tMonth = new Date(t.date).getMonth();
-      if(tMonth !== i) return;
-
+      if(new Date(t.date).getMonth() !== i) return;
       if(t.type === 'Ingreso') mInc += t.amount;
-      if(t.type === 'Gasto' || t.type === 'PagoDeuda') {
-        mExp += t.amount;
-        if(t.cat && mCats[t.cat] !== undefined) mCats[t.cat] += t.amount;
-      }
-      
-      if(t.type === 'Transferencia') {
-        const isToPocket = state.pockets.some(p => p.id === t.to);
-        const isFromPocket = state.pockets.some(p => p.id === t.from);
-        if(isToPocket) mAhorro += t.amount;
-        if(isFromPocket) mAhorro -= t.amount;
-      }
+      if(t.type === 'Gasto' || t.type === 'PagoDeuda') { mExp += t.amount; if(t.cat && mCats[t.cat] !== undefined) mCats[t.cat] += t.amount; }
+      if(t.type === 'Transferencia') { if(state.pockets.some(p => p.id === t.to)) mAhorro += t.amount; if(state.pockets.some(p => p.id === t.from)) mAhorro -= t.amount; }
     });
-
-    if(mInc > 0 || mExp > 0 || mAhorro !== 0) activeMonths++;
-
-    sumInc += mInc; sumExp += mExp; sumAhorro += mAhorro;
-
-    let catDetails = '';
-    state.config.cats.forEach(c => {
-      if(mCats[c.id] > 0) {
-        catDetails += `<span style="color:${c.color}; font-size:11px; margin-right:5px;">▪ ${c.name}: ${fmt(mCats[c.id])}</span><br>`;
-      }
-    });
-
-    rowsHtml += `
-      <tr>
-        <td>${mName}</td>
-        <td style="color:var(--green)">${renderVal('an_inc_'+i, mInc)}</td>
-        <td style="color:var(--red)">${renderVal('an_exp_'+i, mExp)}</td>
-        <td style="color:var(--yellow)">${renderVal('an_ahorro_'+i, mAhorro)}</td>
-        <td style="color:${mInc-mExp>=0?'var(--green)':'var(--red)'}">${renderVal('an_bal_'+i, mInc-mExp)}</td>
-        <td>${catDetails || '<span style="color:var(--muted); font-size:11px;">Sin gastos</span>'}</td>
-      </tr>
-    `;
+    if(mInc > 0 || mExp > 0 || mAhorro !== 0) activeMonths++; sumInc += mInc; sumExp += mExp; sumAhorro += mAhorro;
+    let catDetails = ''; state.config.cats.forEach(c => { if(mCats[c.id] > 0) catDetails += `<span style="color:${c.color}; font-size:11px; margin-right:5px;">▪ ${c.name}: ${fmt(mCats[c.id])}</span><br>`; });
+    rowsHtml += `<tr><td>${mName}</td><td style="color:var(--green)">${renderVal('an_inc_'+i, mInc)}</td><td style="color:var(--red)">${renderVal('an_exp_'+i, mExp)}</td><td style="color:var(--yellow)">${renderVal('an_ahorro_'+i, mAhorro)}</td><td style="color:${mInc-mExp>=0?'var(--green)':'var(--red)'}">${renderVal('an_bal_'+i, mInc-mExp)}</td><td>${catDetails || '<span style="color:var(--muted); font-size:11px;">Sin gastos</span>'}</td></tr>`;
   });
-
   document.querySelector('#analisisTable tbody').innerHTML = rowsHtml;
-
   if(activeMonths === 0) activeMonths = 1;
-
-  const avgInc = sumInc / activeMonths;
-  const avgExp = sumExp / activeMonths;
-  const avgAhorro = sumAhorro / activeMonths;
-  const avgDiff = avgInc - avgExp;
-
-  document.getElementById('analisisPromedios').innerHTML=`
-    <div class="stat green">
-      <span class="eye-btn" onclick="toggleHideIndividual('avg_inc')">${state.hidden.global||state.hidden.stats['avg_inc']?'👁️':'👁️‍🗨️'}</span>
-      <div class="label">Promedio Ingresos Mensual</div><div class="value">${renderVal('avg_inc', avgInc)}</div>
-    </div>
-    <div class="stat red">
-      <span class="eye-btn" onclick="toggleHideIndividual('avg_exp')">${state.hidden.global||state.hidden.stats['avg_exp']?'👁️':'👁️‍🗨️'}</span>
-      <div class="label">Promedio Gastos Mensual</div><div class="value">${renderVal('avg_exp', avgExp)}</div>
-    </div>
-    <div class="stat ${avgDiff>=0?'green':'red'}">
-      <span class="eye-btn" onclick="toggleHideIndividual('avg_diff')">${state.hidden.global||state.hidden.stats['avg_diff']?'👁️':'👁️‍🗨️'}</span>
-      <div class="label">Diferencia Promedio (Ing - Gas)</div><div class="value">${renderVal('avg_diff', avgDiff)}</div>
-    </div>
-    <div class="stat yellow">
-      <span class="eye-btn" onclick="toggleHideIndividual('avg_ahorro')">${state.hidden.global||state.hidden.stats['avg_ahorro']?'👁️':'👁️‍🗨️'}</span>
-      <div class="label">Promedio Ahorro Real Mensual</div><div class="value">${renderVal('avg_ahorro', avgAhorro)}</div>
-    </div>
-  `;
+  const avgInc = sumInc / activeMonths; const avgExp = sumExp / activeMonths; const avgAhorro = sumAhorro / activeMonths; const avgDiff = avgInc - avgExp;
+  document.getElementById('analisisPromedios').innerHTML=`<div class="stat green"><span class="eye-btn" onclick="toggleHideIndividual('avg_inc')">${state.hidden.global||state.hidden.stats['avg_inc']?'👁️':'👁️‍🗨️'}</span><div class="label">Promedio Ingresos Mensual</div><div class="value">${renderVal('avg_inc', avgInc)}</div></div><div class="stat red"><span class="eye-btn" onclick="toggleHideIndividual('avg_exp')">${state.hidden.global||state.hidden.stats['avg_exp']?'👁️':'👁️‍🗨️'}</span><div class="label">Promedio Gastos Mensual</div><div class="value">${renderVal('avg_exp', avgExp)}</div></div><div class="stat ${avgDiff>=0?'green':'red'}"><span class="eye-btn" onclick="toggleHideIndividual('avg_diff')">${state.hidden.global||state.hidden.stats['avg_diff']?'👁️':'👁️‍🗨️'}</span><div class="label">Diferencia Promedio (Ing - Gas)</div><div class="value">${renderVal('avg_diff', avgDiff)}</div></div><div class="stat yellow"><span class="eye-btn" onclick="toggleHideIndividual('avg_ahorro')">${state.hidden.global||state.hidden.stats['avg_ahorro']?'👁️':'👁️‍🗨️'}</span><div class="label">Promedio Ahorro Real Mensual</div><div class="value">${renderVal('avg_ahorro', avgAhorro)}</div></div>`;
 }
 
-function unlockOpeningBalances() {
-    if(!state.years[state.active].lockedInit) return toast('Los saldos iniciales ya están desbloqueados.');
-    if(!confirm('⚠️ ADVERTENCIA: ¿Estás seguro de que deseas desbloquear los saldos iniciales?')) return;
-    state.years[state.active].lockedInit = false;
-    save(); renderAll();
-    toast('Saldos desbloqueados.');
-}
-
-function unlockDebts() {
-    if(!confirm('⚠️ ¿Estás seguro de desbloquear las deudas pagadas? Podrás borrarlas de nuevo.')) return;
-    state.debts.forEach(d => d.adminUnlock = true);
-    save(); renderAll();
-    toast('Deudas pagadas desbloqueadas para borrar.');
-}
-
-function lockOpeningBalances() {
-    if(!confirm('¿Estás seguro? Una vez bloqueados, no podrás modificar los saldos iniciales de este año.')) return;
-    state.years[state.active].lockedInit = true;
-    save(); renderAll();
-    toast('Saldos iniciales bloqueados con éxito.');
-}
-
-function setOpeningBal(id, val) {
-    if(!canEditInit()) return;
-    state.years[state.active].openingBalances[id] = parseFloat(val) || 0;
-    save(); renderAll();
-}
+function unlockOpeningBalances() { if(!state.years[state.active].lockedInit) return toast('Ya desbloqueado.'); if(!confirm('⚠️ ¿Desbloquear saldos iniciales?')) return; state.years[state.active].lockedInit = false; save(); renderAll(); toast('Desbloqueado.'); }
+function unlockDebts() { if(!confirm('⚠️ ¿Desbloquear deudas pagadas?')) return; state.debts.forEach(d => d.adminUnlock = true); save(); renderAll(); toast('Desbloqueado.'); }
+function lockOpeningBalances() { if(!confirm('¿Seguro? No podrás modificar saldos iniciales.')) return; state.years[state.active].lockedInit = true; save(); renderAll(); toast('Saldos bloqueados.'); }
+function setOpeningBal(id, val) { if(!canEditInit()) return; state.years[state.active].openingBalances[id] = parseFloat(val) || 0; save(); renderAll(); }
 
 document.getElementById('fType').onchange = (e) => {
-  const v = e.target.value;
-  document.getElementById('wrapFrom').style.display = 'none';
-  document.getElementById('wrapTo').style.display = 'none';
-  document.getElementById('wrapCat').style.display = 'none';
-  document.getElementById('wrapDebt').style.display = 'none';
-
-  if(v==='Ingreso'){ document.getElementById('wrapTo').style.display='block'; }
-  if(v==='Gasto'){ document.getElementById('wrapFrom').style.display='block'; document.getElementById('wrapCat').style.display='block'; }
-  if(v==='Transferencia'){ document.getElementById('wrapFrom').style.display='block'; document.getElementById('wrapTo').style.display='block'; }
-  if(v==='PagoDeuda'){ document.getElementById('wrapFrom').style.display='block'; document.getElementById('wrapDebt').style.display='block'; document.getElementById('wrapCat').style.display='block'; }
+  const v = e.target.value; document.getElementById('wrapFrom').style.display = 'none'; document.getElementById('wrapTo').style.display = 'none'; document.getElementById('wrapCat').style.display = 'none'; document.getElementById('wrapDebt').style.display = 'none';
+  if(v==='Ingreso') document.getElementById('wrapTo').style.display='block';
+  if(v==='Gasto') { document.getElementById('wrapFrom').style.display='block'; document.getElementById('wrapCat').style.display='block'; }
+  if(v==='Transferencia') { document.getElementById('wrapFrom').style.display='block'; document.getElementById('wrapTo').style.display='block'; }
+  if(v==='PagoDeuda') { document.getElementById('wrapFrom').style.display='block'; document.getElementById('wrapDebt').style.display='block'; document.getElementById('wrapCat').style.display='block'; }
 };
 
 function addTx() {
-  if(!canEdit()) return toast('Año bloqueado');
-  const d=document.getElementById('fDate').value;
-  const det=document.getElementById('fDetail').value;
-  const a=parseFloat(document.getElementById('fAmount').value);
-  const ty=document.getElementById('fType').value;
-
+  if(!canEdit()) return toast('Año bloqueado'); const d=document.getElementById('fDate').value; const det=document.getElementById('fDetail').value; const a=parseFloat(document.getElementById('fAmount').value); const ty=document.getElementById('fType').value;
   if(!d || !det || isNaN(a) || a<=0) return toast('Completa bien los datos');
-  
-  if(ty === 'PagoDeuda'){
-    const debtId = document.getElementById('fDebtSelect').value;
-    if(a > getDebtBal(debtId)) return toast(`¡Error! La deuda es menor.`);
-  }
-
-  if(ty === 'Gasto' && document.getElementById('fCategory').value === 'placer'){
-    const placerInfo = getPlacerLimitInfo();
-    if(placerInfo.isLocked && (placerInfo.spent + a) > placerInfo.limit) {
-        return toast(`¡Alto! Este gasto de Placer (${fmt(a)}) supera tu límite disponible de ${fmt(placerInfo.available)}.`);
-    }
-  }
-
+  if(ty === 'PagoDeuda') { if(a > getDebtBal(document.getElementById('fDebtSelect').value)) return toast('La deuda es menor.'); }
+  if(ty === 'Gasto' && document.getElementById('fCategory').value === 'placer') { const placerInfo = getPlacerLimitInfo(); if(placerInfo.isLocked && (placerInfo.spent + a) > placerInfo.limit) return toast(`¡Alto! Supera tu límite disponible de ${fmt(placerInfo.available)}.`); }
   let tx = {id:genId(), date:d, detail:det, amount:a, type:ty};
   if(ty==='Ingreso') tx.to = document.getElementById('fTo').value;
-  if(ty==='Gasto'){ tx.from = document.getElementById('fFrom').value; tx.cat = document.getElementById('fCategory').value; }
-  if(ty==='Transferencia'){ tx.from = document.getElementById('fFrom').value; tx.to = document.getElementById('fTo').value; }
-  if(ty==='PagoDeuda'){ tx.from = document.getElementById('fFrom').value; tx.debtId = document.getElementById('fDebtSelect').value; tx.cat = document.getElementById('fCategory').value; }
-
-  state.years[state.active].txs.push(tx);
-  save(); renderAll(); toast('Guardado');
+  if(ty==='Gasto') { tx.from = document.getElementById('fFrom').value; tx.cat = document.getElementById('fCategory').value; }
+  if(ty==='Transferencia') { tx.from = document.getElementById('fFrom').value; tx.to = document.getElementById('fTo').value; }
+  if(ty==='PagoDeuda') { tx.from = document.getElementById('fFrom').value; tx.debtId = document.getElementById('fDebtSelect').value; tx.cat = document.getElementById('fCategory').value; }
+  state.years[state.active].txs.push(tx); save(); renderAll(); toast('Guardado');
   document.getElementById('fDetail').value=''; document.getElementById('fAmount').value='';
 }
 
 function delTx(id){ if(!canEdit())return; state.years[state.active].txs=state.years[state.active].txs.filter(t=>t.id!==id); save(); renderAll(); }
-
 function addAcc(){ if(!canEditInit()) return toast('Bloquea primero los saldos para añadir cuentas.'); const n=document.getElementById('newAccName').value; if(!n)return; const id=genId(); state.accounts.push({id,name:n}); state.years[state.active].openingBalances[id]=0; save(); renderAll(); document.getElementById('newAccName').value=''; }
 function renameAcc(id, n){ if(!n)return; const a=state.accounts.find(x=>x.id===id); if(a){a.name=n;save();} }
 function delAcc(id){ if(!confirm('¿Borrar?'))return; if(tieneMovimientos(id)) return toast('Tiene movimientos asociados.'); state.accounts=state.accounts.filter(x=>x.id!==id); save(); renderAll(); }
-
 function addPocket(){ if(!canEditInit()) return toast('Bloquea primero los saldos para añadir bolsillos.'); const n=document.getElementById('newPocketName').value; if(!n)return; const id=genId(); state.pockets.push({id,name:n, meta:0}); state.years[state.active].openingBalances[id]=0; save(); renderAll(); document.getElementById('newPocketName').value=''; }
 function renamePoc(id, n){ if(!n)return; const p=state.pockets.find(x=>x.id===id); if(p){p.name=n;save();} }
 function delPoc(id){ if(!confirm('¿Borrar?'))return; if(tieneMovimientos(id)) return toast('Tiene movimientos asociados.'); state.pockets=state.pockets.filter(x=>x.id!==id); save(); renderAll(); }
 function setMetaPoc(id, val) { const p = state.pockets.find(x=>x.id===id); if(p) { p.meta = parseFloat(val) || 0; save(); renderAll(); } }
-
-function addCat() {
-    const name = document.getElementById('newCatName').value;
-    const desc = document.getElementById('newCatDesc').value;
-    if(!name) return toast('Falta el nombre');
-    state.config.cats.push({id: genId(), name: name, desc: desc, color: '#' + Math.floor(Math.random()*16777215).toString(16)});
-    save(); renderAll();
-    document.getElementById('newCatName').value=''; document.getElementById('newCatDesc').value='';
-    toast('Categoría añadida');
-}
-function renameCat(id, field, val) {
-    const c = state.config.cats.find(x=>x.id===id);
-    if(c) { c[field] = val; save(); }
-}
-function delCat(id) {
-    if(!confirm('¿Borrar categoría? Los gastos con esta categoría quedarán sin categoría.')) return;
-    state.config.cats = state.config.cats.filter(x=>x.id!==id);
-    save(); renderAll();
-}
-
-function addDebt(){ 
-    const n=document.getElementById('newDebtName').value; 
-    const a=parseFloat(document.getElementById('newDebtAmount').value); 
-    const date = document.getElementById('newDebtDate').value;
-    const type=document.getElementById('newDebtType').value;
-    if(!n||!a)return toast('Faltan datos'); 
-    state.debts.push({id:genId(),name:n,total:a,type:type,dateLimit: date || null}); 
-    save(); renderAll(); 
-    document.getElementById('newDebtName').value=''; document.getElementById('newDebtAmount').value=''; document.getElementById('newDebtDate').value='';
-}
+function addCat() { const name = document.getElementById('newCatName').value; const desc = document.getElementById('newCatDesc').value; if(!name) return toast('Falta el nombre'); state.config.cats.push({id: genId(), name: name, desc: desc, color: '#' + Math.floor(Math.random()*16777215).toString(16)}); save(); renderAll(); document.getElementById('newCatName').value=''; document.getElementById('newCatDesc').value=''; toast('Categoría añadida'); }
+function renameCat(id, field, val) { const c = state.config.cats.find(x=>x.id===id); if(c) { c[field] = val; save(); } }
+function delCat(id) { if(!confirm('¿Borrar categoría?')) return; state.config.cats = state.config.cats.filter(x=>x.id!==id); save(); renderAll(); }
+function addDebt(){ const n=document.getElementById('newDebtName').value; const a=parseFloat(document.getElementById('newDebtAmount').value); const date = document.getElementById('newDebtDate').value; const type=document.getElementById('newDebtType').value; if(!n||!a)return toast('Faltan datos'); state.debts.push({id:genId(),name:n,total:a,type:type,dateLimit: date || null}); save(); renderAll(); document.getElementById('newDebtName').value=''; document.getElementById('newDebtAmount').value=''; document.getElementById('newDebtDate').value=''; }
 function renameDebt(id, n){ if(!n)return; const d=state.debts.find(x=>x.id===id); if(d){d.name=n;save();} }
-function delDebt(id){ 
-    const d = state.debts.find(x=>x.id===id);
-    if(!d) return;
-    if(!d.adminUnlock && getDebtBal(id) <= 0) {
-        return toast('No puedes borrar una deuda pagada. Usa la Zona de Administrador.');
-    }
-    if(!confirm('¿Borrar esta deuda?'))return; 
-    state.debts=state.debts.filter(x=>x.id!==id); save(); renderAll(); 
-}
-
+function delDebt(id){ const d = state.debts.find(x=>x.id===id); if(!d) return; if(!d.adminUnlock && getDebtBal(id) <= 0) return toast('No puedes borrar una deuda pagada. Usa la Zona de Administrador.'); if(!confirm('¿Borrar esta deuda?'))return; state.debts=state.debts.filter(x=>x.id!==id); save(); renderAll(); }
 function saveConfig(){ state.config.placer=parseFloat(document.getElementById('cfgPlacerLimit').value); save(); renderAll(); toast('Guardado'); }
-
-function createNextYear(){ 
-  const y=Math.max(...Object.keys(state.years).map(Number)); 
-  if(!state.years[y].locked)return toast('Cierra el año primero'); 
-  
-  const newYear = y+1;
-  state.years[newYear] = { locked:false, lockedInit: false, openingBalances: {}, txs:[] };
-  
-  state.accounts.forEach(a => { state.years[newYear].openingBalances[a.id] = getAccBal(a.id); });
-  state.pockets.forEach(p => { state.years[newYear].openingBalances[p.id] = getPocBal(p.id); });
-  
-  state.active = newYear; 
-  save(); renderAll(); 
-  toast(`¡Año ${newYear} creado con los saldos exactos!`);
-}
-
+function createNextYear(){ const y=Math.max(...Object.keys(state.years).map(Number)); if(!state.years[y].locked)return toast('Cierra el año primero'); const newYear = y+1; state.years[newYear] = { locked:false, lockedInit: false, openingBalances: {}, txs:[] }; state.accounts.forEach(a => { state.years[newYear].openingBalances[a.id] = getAccBal(a.id); }); state.pockets.forEach(p => { state.years[newYear].openingBalances[p.id] = getPocBal(p.id); }); state.active = newYear; save(); renderAll(); toast(`¡Año ${newYear} creado!`); }
 function toggleLock(){ state.years[state.active].locked=!state.years[state.active].locked; save(); renderAll(); }
 
-// LÓGICA CLAVE: RENDERIZAR GRÁFICOS AL CAMBIAR DE PESTAÑA
 document.querySelectorAll('#mainNav button').forEach(b=>{
-  b.onclick=()=>{ 
-    document.querySelectorAll('#mainNav button').forEach(x=>x.classList.remove('active')); 
-    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active')); 
-    b.classList.add('active'); 
-    document.getElementById('view-'+b.dataset.view).classList.add('active'); 
-    
-    if(b.dataset.view === 'dashboard') {
-        const yr=state.years[state.active];
-        const incM=Array(12).fill(0), gasM=Array(12).fill(0);
-        yr.txs.forEach(t => {
-            const m=new Date(t.date).getMonth();
-            if(t.type==='Ingreso') incM[m]+=t.amount;
-            if(t.type==='Gasto'||t.type==='PagoDeuda') gasM[m]+=t.amount;
-        });
-        drawFlowChart(incM, gasM);
-        drawPieChart(getFlow(state.active));
-    }
-    
-    if(b.dataset.view === 'analisis') {
-        renderProjection();
-    }
+  b.onclick=()=>{ document.querySelectorAll('#mainNav button').forEach(x=>x.classList.remove('active')); document.querySelectorAll('.view').forEach(v=>v.classList.remove('active')); b.classList.add('active'); document.getElementById('view-'+b.dataset.view).classList.add('active'); 
+    if(b.dataset.view === 'dashboard') { const yr=state.years[state.active]; const incM=Array(12).fill(0), gasM=Array(12).fill(0); yr.txs.forEach(t => { const m=new Date(t.date).getMonth(); if(t.type==='Ingreso') incM[m]+=t.amount; if(t.type==='Gasto'||t.type==='PagoDeuda') gasM[m]+=t.amount; }); drawFlowChart(incM, gasM); drawPieChart(getFlow(state.active)); }
+    if(b.dataset.view === 'analisis') { renderProjection(); }
   };
 });
 
 document.getElementById('fDate').value=new Date().toISOString().slice(0,10);
-
-// REGISTRAR SERVICE WORKER PARA PWA
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js')
-            .then(reg => console.log('Service Worker registrado', reg))
-            .catch(err => console.log('Error al registrar Service Worker', err));
-    });
-}
+if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(err => console.log('Error SW', err)); }); }
 </script>
 </body>
 </html>
