@@ -9,7 +9,6 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<!-- FIREBASE SCRIPTS -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -57,7 +56,6 @@ th{color:var(--muted);font-size:11px}
 .row-item .locked-val{font-size:12px;color:var(--muted);width:35%;text-align:right; display:flex; justify-content:flex-end; align-items:center; gap:6px;}
 @media(max-width:600px){header h1{font-size:15px}}
 
-/* Estilos Login y Bloqueo */
 #auth-screen, #lock-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
 .auth-card { background: var(--card); padding: 30px; border-radius: 10px; border: 1px solid var(--border); width: 100%; max-width: 400px; }
 .auth-card h2 { text-align: center; margin-bottom: 20px; color: var(--accent); }
@@ -66,7 +64,6 @@ th{color:var(--muted);font-size:11px}
 #auth-error { color: var(--red); text-align: center; margin-top: 10px; font-size: 13px; }
 #lock-screen { display: none; background: var(--bg); position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; }
 
-/* Estilos Configuración PRO */
 .config-section { border-left: 4px solid var(--accent); padding-left: 15px; margin-bottom: 25px; }
 .config-section h3 { font-size: 15px; color: var(--text); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
 .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
@@ -76,13 +73,11 @@ th{color:var(--muted);font-size:11px}
 input:checked + .slider { background-color: var(--green); }
 input:checked + .slider:before { transform: translateX(20px); }
 
-/* Modal de Pago de Cuota */
 #payModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; align-items: center; justify-content: center; padding: 20px; }
 </style>
 </head>
 <body>
 
-<!-- LOGIN -->
 <div id="auth-screen">
     <div class="auth-card">
         <h2>💰 Mis Finanzas Pro</h2>
@@ -98,7 +93,6 @@ input:checked + .slider:before { transform: translateX(20px); }
     </div>
 </div>
 
-<!-- BLOQUEO BIOMÉTRICO -->
 <div id="lock-screen">
     <div class="auth-card" style="text-align: center;">
         <h2>🔒 App Bloqueada</h2>
@@ -108,7 +102,6 @@ input:checked + .slider:before { transform: translateX(20px); }
     </div>
 </div>
 
-<!-- MODAL PARA PAGAR CUOTA -->
 <div id="payModal">
     <div class="auth-card" style="max-width: 350px;">
         <h3 style="margin-bottom:15px; color:var(--accent); text-align:center;">💳 Pagar Cuota</h3>
@@ -122,7 +115,6 @@ input:checked + .slider:before { transform: translateX(20px); }
     </div>
 </div>
 
-<!-- APP PRINCIPAL -->
 <div id="app-screen" style="display:none;">
     <header>
       <h1>💰 Mis Finanzas Pro</h1>
@@ -289,11 +281,8 @@ input:checked + .slider:before { transform: translateX(20px); }
       </section>
 
       <section class="view" id="view-config">
-        
-        <!-- 1. AUTOMATIZACIONES -->
         <div class="card config-section" style="border-left-color: var(--accent);">
           <h3>⚙️ Automatizaciones</h3>
-          
           <div style="background: var(--bg); padding: 10px; border-radius: 6px; margin-bottom: 15px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
               <span style="font-size:13px; font-weight:bold;">Ahorro Automático</span>
@@ -309,7 +298,6 @@ input:checked + .slider:before { transform: translateX(20px); }
               <select id="autoSavePocket" onchange="saveAutoSaveConfig()"></select>
             </div>
           </div>
-
           <div style="background: var(--bg); padding: 10px; border-radius: 6px;">
             <h4 style="font-size:13px; margin-bottom: 10px;">Gastos Recurrentes (Fijos)</h4>
             <div id="recurringList" style="margin-bottom:10px;"></div>
@@ -323,8 +311,6 @@ input:checked + .slider:before { transform: translateX(20px); }
             </div>
           </div>
         </div>
-
-        <!-- 2. Asesor Inteligente -->
         <div class="card config-section" style="border-left-color: var(--purple);">
           <h3>🤖 Asesor Financiero IA</h3>
           <p style="font-size: 12px; color: var(--muted); margin-bottom: 10px;">Muestra consejos automáticos en tu Panel Principal basados en tus gastos.</p>
@@ -336,21 +322,15 @@ input:checked + .slider:before { transform: translateX(20px); }
             </label>
           </div>
         </div>
-
-        <!-- 3. Exportar Datos -->
         <div class="card config-section" style="border-left-color: var(--green);">
           <h3>📥 Exportar Información</h3>
           <p style="font-size: 12px; color: var(--muted); margin-bottom: 10px;">Descarga un archivo Excel con todos los movimientos de este año.</p>
           <button class="primary" onclick="downloadExcel()" style="background: var(--green);">📊 Descargar Historial en Excel</button>
         </div>
-
-        <!-- 4. Metas Individuales -->
         <div class="card config-section" style="border-left-color: var(--yellow);">
           <h3>🎯 Metas de Bolsillos</h3>
           <div id="goalsConfigList"></div>
         </div>
-
-        <!-- 5. Categorías -->
         <div class="card config-section" style="border-left-color: var(--yellow);">
           <h3>🏷️ Categorías de Gasto</h3>
           <div id="configCatsList"></div>
@@ -360,51 +340,37 @@ input:checked + .slider:before { transform: translateX(20px); }
             <button class="primary" onclick="addCat()">+ Añadir Categoría</button>
           </div>
         </div>
-
-        <!-- 6. Administrador -->
         <div class="card config-section" style="border-left-color: var(--red);">
           <h3>🔧 Zona de Administrador</h3>
           <p style="font-size:11px; color:var(--accent); margin-top:10px; margin-bottom:5px;">Desbloqueo de Saldos y Placer</p>
           <button class="warning" onclick="unlockOpeningBalances()">🔓 Desbloquear Saldos Iniciales</button>
           <button class="warning" onclick="unlockPlacerLimit()">🔓 Desbloquear Límite de Placer</button>
-          
           <p style="font-size:11px; color:var(--accent); margin-top:15px; margin-bottom:5px;">Desbloqueo de Deudas Pagadas</p>
           <button class="warning" onclick="unlockDebts()">🔓 Desbloquear Deudas Pagadas</button>
         </div>
-
-        <!-- 7. Seguridad -->
         <div class="card config-section">
           <h3>🔒 Cuenta y Seguridad</h3>
           <label style="font-size:11px; color:var(--muted);">Cambiar Contraseña</label>
           <input type="password" id="new-password" placeholder="Nueva contraseña (mín. 6 caracteres)" style="margin-bottom: 5px;">
           <button class="warning" onclick="changePassword()" style="width: 100%; margin-bottom: 15px;">Actualizar Contraseña</button>
-
           <label style="font-size:11px; color:var(--muted);">Seguridad Biométrica (Huella/PIN)</label>
           <div id="bio-status-text" style="font-size: 12px; margin-bottom: 5px; color: var(--muted);">Cargando estado...</div>
           <button class="primary" id="btn-bio-toggle" onclick="toggleBiometric()" style="background: var(--purple);">Configurar Huella/PIN</button>
         </div>
-
-        <!-- 8. Años -->
         <div class="card config-section">
           <h3>📅 Gestión de Años</h3>
           <button class="primary" onclick="createNextYear()">+ Crear año siguiente (Arrastra todo)</button>
           <button class="primary" onclick="toggleLock()" id="lockBtn">🔒 Cerrar año actual</button>
         </div>
-
-        <!-- 9. Logout -->
         <div style="margin-top: 30px; margin-bottom: 50px;">
           <button class="danger" onclick="logout()" style="padding: 15px; font-size: 16px; width: 100%;">Cerrar Sesión</button>
         </div>
-
       </section>
     </main>
     <div id="toastWrap"></div>
 </div>
 
 <script>
-// ==========================================
-// 1. CONFIGURACIÓN DE FIREBASE
-// ==========================================
 const firebaseConfig = {
   apiKey: "AIzaSyDucnaKWbeWoZbZF4x6hoRemtBlNxXBYD8",
   authDomain: "misfinanzasapp-ac4b8.firebaseapp.com",
@@ -418,9 +384,6 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// ==========================================
-// 2. AUTENTICACIÓN Y BIOMETRÍA
-// ==========================================
 let bioCredentialId = localStorage.getItem('bioCredentialId');
 
 auth.onAuthStateChanged(user => {
@@ -517,9 +480,6 @@ function actualizarBadgeDeudas() {
     if (alertas > 0) navigator.setAppBadge(alertas).catch(()=>{}); else navigator.clearAppBadge().catch(()=>{});
 }
 
-// ==========================================
-// 3. LÓGICA DE LA APP Y ESTADO (BLINDADO)
-// ==========================================
 const KEY = 'fin_v12_0'; 
 let state = JSON.parse(localStorage.getItem(KEY) || 'null') || {};
 
@@ -536,7 +496,6 @@ function migrateState() {
     if(!state.recurring) state.recurring = [];
     if(!state.summaries) state.summaries = {};
     
-    // BLINDAJE EXTREMO: Solo crear por defecto si NO EXISTEN en absoluto.
     if(state.accounts === undefined || state.accounts === null || state.accounts.length === 0) {
         state.accounts = [{id:'nequi', name:'Nequi'},{id:'banco', name:'Bancolombia'},{id:'billetera', name:'Billetera (Efectivo)'}];
     }
@@ -584,10 +543,8 @@ function syncData() {
             if (cloudData.state) { 
                 let localState = JSON.parse(JSON.stringify(state));
                 state = cloudData.state;
-                
                 if (!state.accounts || state.accounts.length === 0) state.accounts = localState.accounts;
                 if (!state.pockets || state.pockets.length === 0) state.pockets = localState.pockets;
-                
                 migrateState(); 
                 localStorage.setItem(KEY, JSON.stringify(state)); 
                 processRecurring(); 
@@ -599,9 +556,6 @@ function syncData() {
     });
 }
 
-// ==========================================
-// 4. GENERADOR DE CRONOGRAMA DE CUOTAS
-// ==========================================
 function addMonths(dateStr, months) {
     let d = new Date(dateStr + 'T12:00:00');
     d.setMonth(d.getMonth() + months);
@@ -624,9 +578,6 @@ function generateSchedule(amount, rate, months, startDateStr) {
     return schedule;
 }
 
-// ==========================================
-// 5. AUTOMATIZACIONES
-// ==========================================
 function processRecurring() {
     const today = new Date();
     const currentMonthStr = `${today.getFullYear()}-${today.getMonth()}`;
@@ -686,9 +637,6 @@ function delRecurring(id) {
     save(); renderAll();
 }
 
-// ==========================================
-// 6. DEUDAS Y PAGOS
-// ==========================================
 function addDebt() { 
     const n = document.getElementById('newDebtName').value; 
     const a = parseFloat(document.getElementById('newDebtAmount').value); 
@@ -798,9 +746,6 @@ function checkDebtAlerts() {
     return alertsHtml;
 }
 
-// ==========================================
-// 7. ASESOR Y RESUMEN
-// ==========================================
 function generateAdvice() {
     const box = document.getElementById('advisorBox');
     if (!state.config.advisorEnabled) { box.style.display = 'none'; return; }
@@ -876,9 +821,6 @@ function checkMonthlySummary() {
     save();
 }
 
-// ==========================================
-// 8. RENDERIZADO Y GRÁFICOS
-// ==========================================
 function toggleGlobalHide() { state.hidden.global = !state.hidden.global; if(state.hidden.global) state.hidden.stats = {}; save(); renderAll(); }
 function toggleHideIndividual(key) { if(state.hidden.global) { state.hidden.global = false; state.hidden.stats[key] = false; } else { state.hidden.stats[key] = !state.hidden.stats[key]; } save(); renderAll(); }
 function toggleLockHide(id) { state.hidden.locks[id] = !state.hidden.locks[id]; save(); renderAll(); }
@@ -1021,7 +963,174 @@ function delDebt(id){ const d = state.debts.find(x=>x.id===id); if(!d) return; i
 function createNextYear(){ const y=Math.max(...Object.keys(state.years).map(Number)); if(!state.years[y].locked)return toast('Cierra el año primero'); const newYear = y+1; state.years[newYear] = { locked:false, lockedInit: false, openingBalances: {}, txs:[] }; state.accounts.forEach(a => { state.years[newYear].openingBalances[a.id] = getAccBal(a.id); }); state.pockets.forEach(p => { state.years[newYear].openingBalances[p.id] = getPocBal(p.id); }); state.active = newYear; save(); renderAll(); toast(`¡Año ${newYear} creado!`); }
 function toggleLock(){ state.years[state.active].locked=!state.years[state.active].locked; save(); renderAll(); }
 
-// GRÁFICOS
+function renderAll() {
+  try { renderDashboard(); } catch(e) { console.error("Error en Dashboard:", e); }
+  try { renderCuentas(); } catch(e) { console.error("Error en Cuentas:", e); }
+  try { renderDeudas(); } catch(e) { console.error("Error en Deudas:", e); }
+  try { renderConfig(); } catch(e) { console.error("Error en Config:", e); }
+  try { renderAnalisis(); } catch(e) { console.error("Error en Analisis:", e); }
+  try { renderExpertAnalysis(); } catch(e) { console.error("Error en Expert:", e); }
+  try { renderMonthlySummaries(); } catch(e) { console.error("Error en Resumenes:", e); }
+  try { actualizarEstadoBio(); actualizarBadgeDeudas(); } catch(e) {}
+}
+
+function renderDashboard() {
+  document.getElementById('toggleAdvisor').checked = state.config.advisorEnabled;
+  const yn=document.getElementById('yearNav'); yn.innerHTML='';
+  Object.keys(state.years).sort((a,b)=>b-a).forEach(y => {
+    const b=document.createElement('button'); b.textContent=(state.years[y].locked?'🔒 ':'')+y;
+    if(y==state.active) b.classList.add('active'); b.onclick=()=>{state.active=parseInt(y);save();renderAll();}; yn.appendChild(b);
+  });
+  
+  const yr=state.years[state.active]; 
+  document.getElementById('addCard').style.display=canEdit()?'block':'none';
+  document.getElementById('lockBtn').textContent=yr.locked?'🔓 Reabrir Año':'🔒 Cerrar Año';
+  
+  generateAdvice();
+  const flow = getFlow(state.active); 
+  const balanceAnual = flow.inc - flow.exp;
+  let al = checkDebtAlerts();
+  if(flow.exp > flow.inc && flow.inc > 0) al+=`<div class="alert danger">🚨 ¡ALERTA! Estás gastando más de lo que ganas este año. Déficit: ${fmt(flow.exp - flow.inc)}.</div>`;
+  document.getElementById('alerts').innerHTML=al;
+
+  document.getElementById('flowStats').innerHTML=`
+    <div class="stat green"><span class="eye-btn" onclick="toggleHideIndividual('inc')">${state.hidden.global||state.hidden.stats['inc']?'👁️':'👁️‍🗨️'}</span><div class="label">Ingresos Totales</div><div class="value">${renderVal('inc', flow.inc)}</div></div>
+    <div class="stat red"><span class="eye-btn" onclick="toggleHideIndividual('exp')">${state.hidden.global||state.hidden.stats['exp']?'👁️':'👁️‍🗨️'}</span><div class="label">Gastos Totales</div><div class="value">${renderVal('exp', flow.exp)}</div></div>
+    <div class="stat ${balanceAnual>=0?'green':'red'}"><span class="eye-btn" onclick="toggleHideIndividual('bal')">${state.hidden.global||state.hidden.stats['bal']?'👁️':'👁️‍🗨️'}</span><div class="label">Balance del Año</div><div class="value">${renderVal('bal', balanceAnual)}</div></div>
+  `;
+
+  let totalEfectivo = 0, totalAhorros = 0;
+  state.accounts.forEach(a => { if(a.id !== 'billetera') totalEfectivo += getAccBal(a.id); });
+  state.pockets.forEach(p => totalAhorros += getPocBal(p.id));
+  const totalDeudas = state.debts.reduce((s,d)=>s+getDebtBal(d.id),0); const cashBilletera = getAccBal('billetera');
+  const patrimonioNeto = totalEfectivo + totalAhorros + cashBilletera - totalDeudas;
+
+  document.getElementById('patrimonyStats').innerHTML=`
+    <div class="stat blue"><span class="eye-btn" onclick="toggleHideIndividual('efec')">${state.hidden.global||state.hidden.stats['efec']?'👁️':'👁️‍🗨️'}</span><div class="label">En Cuentas (Sin Billetera)</div><div class="value">${renderVal('efec', totalEfectivo)}</div></div>
+    <div class="stat yellow"><span class="eye-btn" onclick="toggleHideIndividual('ahor')">${state.hidden.global||state.hidden.stats['ahor']?'👁️':'👁️‍🗨️'}</span><div class="label">En Bolsillos</div><div class="value">${renderVal('ahor', totalAhorros)}</div></div>
+    <div class="stat purple"><span class="eye-btn" onclick="toggleHideIndividual('bill')">${state.hidden.global||state.hidden.stats['bill']?'👁️':'👁️‍🗨️'}</span><div class="label">💵 Billetera Efectivo</div><div class="value">${renderVal('bill', cashBilletera)}</div></div>
+    <div class="stat ${patrimonioNeto>=0?'green':'red'}"><span class="eye-btn" onclick="toggleHideIndividual('patr')">${state.hidden.global||state.hidden.stats['patr']?'👁️':'👁️‍🗨️'}</span><div class="label">Patrimonio Total</div><div class="value">${renderVal('patr', patrimonioNeto)}</div></div>
+  `;
+
+  const placerInfo = getPlacerLimitInfo(); const pctUsado = state.placerLimits[placerInfo.key + '_pct'] || state.config.placer; const placerPct = placerInfo.limit > 0 ? (placerInfo.spent / placerInfo.limit) * 100 : 0;
+  let placerHtml = '';
+  if(placerInfo.isLocked) {
+    let barColor = 'var(--green)'; let textColor = 'var(--green)';
+    if(placerPct >= 100) { barColor = 'var(--red)'; textColor = 'var(--red)'; } else if(placerPct >= 70) { barColor = 'var(--yellow)'; textColor = 'var(--yellow)'; }
+    placerHtml = `<div style="margin-bottom:10px;"><div style="font-size:12px; color:var(--muted); margin-bottom:5px;">Límite calculado con el ${pctUsado}% de tus ingresos.</div><div class="stat" style="border-color:${barColor}; padding:15px;"><div style="display:flex; justify-content:space-between; align-items:center;"><div><div class="label">Disponible para Placer</div><div class="value" style="color:${textColor}; font-size:24px;">${renderVal('plac_bal', placerInfo.available)}</div></div><div style="text-align:right;"><div style="font-size:11px; color:var(--muted);">Tope: ${fmt(placerInfo.limit)}</div><div style="font-size:11px; color:var(--muted);">Gastado: ${fmt(placerInfo.spent)}</div></div></div><div class="bar" style="height:12px; margin-top:10px;"><div class="bar-fill" style="width:${Math.min(placerPct,100)}%; background:${barColor}"></div></div></div></div>`;
+  } else {
+    placerHtml = `<div class="alert info" style="background:rgba(59,130,246,.1); border-color:var(--accent); color:var(--accent); margin-bottom:10px;"><strong>Configura tu límite de Placer.</strong><br>Ingresa el porcentaje y la app calculará el tope basado en tus ingresos.</div><div style="display:flex; gap:10px; align-items:end;"><div style="flex:1;"><label style="font-size:11px; color:var(--muted);">Porcentaje (%)</label><input type="number" id="placerPercentageInput" value="${state.config.placer}" min="1" max="100" style="margin:0;"></div><div style="flex:1;"><button class="primary" onclick="calculateAndLockPlacer()" style="height:40px;">🔒 Calcular y Bloquear</button></div></div>`;
+  }
+  document.getElementById('placerCardContent').innerHTML = placerHtml;
+
+  let budgetHtml = `<div class="stat ${placerInfo.available>=0?'green':'red'}"><span class="eye-btn" onclick="toggleHideIndividual('plac')">${state.hidden.global||state.hidden.stats['plac']?'👁️':'👁️‍🗨️'}</span><div class="label">Gastos Placer (${pctUsado}%)</div><div class="value">${renderVal('plac', placerInfo.available)}</div><div style="font-size:10px;color:var(--muted);margin-top:4px">Gastado: ${fmt(placerInfo.spent)} de ${fmt(placerInfo.limit)}</div><div class="bar"><div class="bar-fill" style="width:${Math.min(placerPct,100)}%;background:${placerPct>100?'var(--red)':'var(--purple)'}"></div></div></div>`;
+  
+  state.pockets.forEach(p => {
+    if(p.meta && p.meta > 0) {
+      const balPoc = getPocBal(p.id); const pctMeta = (balPoc / p.meta) * 100; let barColor = 'var(--red)';
+      if(pctMeta >= 100) barColor = 'var(--green)'; else if(pctMeta >= 33) barColor = 'var(--yellow)';
+      budgetHtml += `<div class="stat" style="border-color:${barColor}"><div class="label">Meta: ${p.name}</div><div class="value" style="color:${barColor}">${pctMeta.toFixed(1)}%</div><div style="font-size:10px;color:var(--muted);margin-top:4px">${renderVal('meta_'+p.id, balPoc)} / ${fmt(p.meta)}</div><div class="bar"><div class="bar-fill" style="width:${Math.min(pctMeta,100)}%;background:${barColor}"></div></div></div>`;
+    }
+  });
+  document.getElementById('budgetGrid').innerHTML = budgetHtml;
+  
+  if(placerInfo.available<0) al+=`<div class="alert danger">🚨 ¡Superaste el límite de Gastos Placer! Por ${fmt(Math.abs(placerInfo.available))}.</div>`;
+  else if(placerPct>80) al+=`<div class="alert warn">⚠️ Estás al ${placerPct.toFixed(1)}% de tu límite de Placer.</div>`;
+  document.getElementById('alerts').innerHTML=al; 
+  
+  renderTable();
+}
+
+function renderCuentas() {
+  const isLocked = !canEditInit();
+  document.getElementById('globalHideBtn').textContent = state.hidden.global ? '👁️ Mostrar todos los números' : '👁️‍🗨️ Ocultar todos los números';
+
+  if(isLocked) {
+    document.getElementById('initAlert').innerHTML = `<div class="alert warn">🔒 Saldos iniciales bloqueados. Ve a Configuración > Zona de Administrador para corregir.</div>`;
+    document.getElementById('addAccWrap').style.display='none'; document.getElementById('addPocWrap').style.display='none';
+  } else {
+    document.getElementById('initAlert').innerHTML = `<div class="alert info" style="background:rgba(59,130,246,.1); border-color:var(--accent); color:var(--accent); margin-bottom:10px;"><strong>Paso 1:</strong> Escribe tus saldos iniciales abajo.<br><strong>Paso 2:</strong> Bloquéalos.<button class="warning" style="margin-top:8px; width:100%" onclick="lockOpeningBalances()">🔒 Guardar y Bloquear Saldos</button></div>`;
+    document.getElementById('addAccWrap').style.display='block'; document.getElementById('addPocWrap').style.display='block';
+  }
+
+  if(isLocked) {
+    document.getElementById('accountsList').innerHTML=state.accounts.map(a=>{ const isHidden = state.hidden.locks[a.id]; return `<div class="row-item"><div class="locked-text">${a.name}</div><div class="locked-val"><span>Inició con: <strong>${isHidden?'***':fmt(state.years[state.active].openingBalances[a.id]||0)}</strong></span><span style="cursor:pointer; font-size:16px;" onclick="toggleLockHide('${a.id}')">${isHidden?'👁️':'👁️‍🗨️'}</span></div><strong style="color:var(--accent); width:20%; text-align:right">${renderVal('acc_'+a.id, getAccBal(a.id))}</strong></div>`; }).join('');
+  } else {
+    document.getElementById('accountsList').innerHTML=state.accounts.map(a=>`<div class="row-item"><input value="${a.name}" onchange="renameAcc('${a.id}', this.value)" style="border:none; width:40%"><input type="number" value="${state.years[state.active].openingBalances[a.id]||0}" onchange="setOpeningBal('${a.id}', this.value)" placeholder="Saldo Inicial $" style="text-align:right; width:35%"><strong style="color:var(--accent); width:20%; text-align:right">${fmt(getAccBal(a.id))}</strong>${canEdit() ?`<button class="danger" onclick="delAcc('${a.id}')">X</button>`:''}</div>`).join('');
+  }
+
+  if(isLocked) {
+    document.getElementById('pocketsList').innerHTML=state.pockets.map(p=>{ const isHidden = state.hidden.locks[p.id]; return `<div class="row-item"><div class="locked-text">${p.name}</div><div class="locked-val"><span>Inició con: <strong>${isHidden?'***':fmt(state.years[state.active].openingBalances[p.id]||0)}</strong></span><span style="cursor:pointer; font-size:16px;" onclick="toggleLockHide('${p.id}')">${isHidden?'👁️':'👁️‍🗨️'}</span></div><strong style="color:var(--green); width:20%; text-align:right">${renderVal('poc_'+p.id, getPocBal(p.id))}</strong></div>`; }).join('');
+  } else {
+    document.getElementById('pocketsList').innerHTML=state.pockets.map(p=>`<div class="row-item"><input value="${p.name}" onchange="renamePoc('${p.id}', this.value)" style="border:none; width:40%"><input type="number" value="${state.years[state.active].openingBalances[p.id]||0}" onchange="setOpeningBal('${p.id}', this.value)" placeholder="Saldo Inicial $" style="text-align:right; width:35%"><strong style="color:var(--green); width:20%; text-align:right">${fmt(getPocBal(p.id))}</strong>${canEdit() ?`<button class="danger" onclick="delPoc('${p.id}')">X</button>`:''}</div>`).join('');
+  }
+}
+
+function renderDeudas() {
+  document.getElementById('debtsList').innerHTML=state.debts.map(d=>{
+    const saldo = getDebtBal(d.id); const isPaid = saldo <= 0;
+    let scheduleHtml = '';
+    if (d.schedule) {
+        scheduleHtml = `<div style="margin-top:10px; display:flex; flex-direction:column; gap:5px;">`;
+        d.schedule.forEach(c => {
+            if (!c.paid) {
+                scheduleHtml += `<div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg); padding:6px; border-radius:4px; font-size:12px;"><span>Cuota #${c.num} - ${c.date}</span><span style="color:var(--accent); font-weight:bold;">${fmt(c.amount)}</span><button class="primary" onclick="openPayModal('${d.id}', ${c.num})" style="width:auto; padding:4px 8px; font-size:11px;">Pagar</button></div>`;
+            } else {
+                scheduleHtml += `<div style="display:flex; justify-content:space-between; align-items:center; background:rgba(34,197,94,0.1); padding:6px; border-radius:4px; font-size:12px; opacity:0.6;"><span>✅ Cuota #${c.num} - ${c.date}</span><span style="color:var(--green); font-weight:bold;">Pagada</span></div>`;
+            }
+        });
+        scheduleHtml += `</div>`;
+    }
+    let infoInteres = '';
+    if (d.rate > 0) infoInteres = `<div style="font-size:11px; color:var(--red); margin-top:3px;">💸 Interés: ${d.rate}% mensual. Pagas ${fmt(d.total - d.baseAmount)} extra en total.</div>`;
+    return `<div class="row-item" style="flex-direction:column;align-items:flex-start; padding-bottom:15px; margin-bottom:15px;"><div style="display:flex;width:100%;justify-content:space-between;margin-bottom:5px;"><input value="${d.name}" onchange="renameDebt('${d.id}', this.value)" style="width:50%; font-weight:bold;" ${isPaid?'disabled':''}><span style="color:${isPaid?'var(--green)':'var(--red)'}">${isPaid?'¡PAGADA!':fmt(saldo)+' restante'}</span>${canEdit() && !isPaid ?`<button class="danger" onclick="delDebt('${d.id}')">X</button>`:''}</div>${infoInteres}${scheduleHtml}</div>`;
+  }).join('')||'<p style="text-align:center;color:var(--muted)">No hay deudas registradas</p>';
+}
+
+function renderConfig() {
+  document.getElementById('toggleAutoSave').checked = state.config.autoSave.enabled;
+  document.getElementById('autoSaveConfig').style.display = state.config.autoSave.enabled ? 'block' : 'none';
+  document.getElementById('autoSavePct').value = state.config.autoSave.pct;
+
+  document.getElementById('goalsConfigList').innerHTML=state.pockets.map(p=>`<div class="row-item"><span style="width:50%">${p.name}</span><input type="number" value="${p.meta||0}" onchange="setMetaPoc('${p.id}', this.value)" placeholder="Meta $" style="width:40%; text-align:right;"></div>`).join('');
+  document.getElementById('configCatsList').innerHTML=state.config.cats.map(c=>`<div class="row-item"><input value="${c.name}" onchange="renameCat('${c.id}', 'name', this.value)" style="border:none; width:30%; font-weight:bold;"><input value="${c.desc||''}" onchange="renameCat('${c.id}', 'desc', this.value)" style="border:none; width:45%; font-size:11px; color:var(--muted);" placeholder="Guía..."><span style="background:${c.color}; width:15px; height:15px; border-radius:50%;"></span><button class="danger" onclick="delCat('${c.id}')">X</button></div>`).join('');
+  
+  document.getElementById('recurringList').innerHTML = state.recurring.map(r=>`<div class="row-item"><div style="width: 60%; font-size: 12px;"><strong>${r.detail}</strong> - ${fmt(r.amount)}<br><span style="color:var(--muted)">Los días ${r.day} de ${getAccName(r.from) || getPocName(r.from)}</span></div><button class="danger" onclick="delRecurring('${r.id}')">X</button></div>`).join('') || '<p style="font-size:11px; color:var(--muted);">No hay gastos recurrentes configurados.</p>';
+
+  const allOrigins = [...state.accounts.map(a=>({id:a.id, name:a.name})), ...state.pockets.map(p=>({id:p.id, name:p.name}))];
+  const allOpts = allOrigins.map(o=>`<option value="${o.id}">${o.name}</option>`).join('');
+  
+  document.getElementById('fFrom').innerHTML = allOpts; 
+  document.getElementById('fTo').innerHTML = allOpts;
+  document.getElementById('recAcc').innerHTML = allOpts;
+  document.getElementById('autoSavePocket').innerHTML = state.pockets.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  
+  document.getElementById('fCategory').innerHTML = state.config.cats.map(c=>`<option value="${c.id}">${c.name} (${c.desc})</option>`).join('');
+  document.getElementById('fDebtSelect').innerHTML = state.debts.filter(d=>getDebtBal(d.id)>0).map(d=>`<option value="${d.id}">${d.name} (Debe: ${fmt(getDebtBal(d.id))})</option>`).join('');
+  
+  if(state.config.autoSave.pocketId) document.getElementById('autoSavePocket').value = state.config.autoSave.pocketId;
+
+  document.getElementById('flowChartType').value = state.config.chartType; 
+  document.getElementById('pieChartType').value = state.config.pieType; 
+  document.getElementById('projChartType').value = state.config.projChartType;
+  document.getElementById('fType').dispatchEvent(new Event('change'));
+}
+
+function renderTable() {
+  const tb=document.querySelector('#txTable tbody'); const q=document.getElementById('txSearch').value.toLowerCase();
+  const list=state.years[state.active].txs.filter(t=>t.detail.toLowerCase().includes(q)).sort((a,b)=>b.date.localeCompare(a.date));
+  document.getElementById('txCount').textContent=list.length+' registros';
+  tb.innerHTML=list.map(t=>{
+    let ruta = ''; if(t.type==='Ingreso') ruta = '➔ ' + (getAccName(t.to) || getPocName(t.to));
+    if(t.type==='Gasto') ruta = (getAccName(t.from) || getPocName(t.from)) + ' ➔ Gasto';
+    if(t.type==='Transferencia') ruta = (getAccName(t.from)||getPocName(t.from)) + ' ➔ ' + (getAccName(t.to) || getPocName(t.to));
+    if(t.type==='PagoDeuda') ruta = (getAccName(t.from)||getPocName(t.from)) + ' ➔ Deuda: ' + getDebtName(t.debtId);
+    let catStr = t.cat ? `<br><small style="color:var(--accent)">${getCatName(t.cat)}</small>` : '';
+    let colorMonto = 'var(--red)'; if(t.type === 'Ingreso') colorMonto = 'var(--green)'; if(t.type === 'Transferencia') colorMonto = 'var(--yellow)'; 
+    return `<tr><td>${t.date}</td><td>${t.detail}</td><td>${t.type}${catStr}<br><small style="color:var(--muted)">${ruta}</small></td><td style="text-align:right; color:${colorMonto}; font-weight:bold;">${fmt(t.amount)}</td><td>${canEdit()?`<button class="danger" onclick="delTx('${t.id}')">X</button>`:''}</td></tr>`;
+  }).join('')||'<tr><td colspan="5" style="text-align:center">Sin datos</td></tr>';
+}
+
 let flowChartInstance = null;
 let pieChartInstance = null;
 let projChartInstance = null;
@@ -1289,143 +1398,6 @@ function downloadExcel() {
 }
 
 function toggleAdvisor() { state.config.advisorEnabled = document.getElementById('toggleAdvisor').checked; save(); renderAll(); toast(state.config.advisorEnabled ? 'Asesor Activado' : 'Asesor Desactivado'); }
-
-function renderAll() {
-  document.getElementById('toggleAdvisor').checked = state.config.advisorEnabled;
-  document.getElementById('toggleAutoSave').checked = state.config.autoSave.enabled;
-  document.getElementById('autoSaveConfig').style.display = state.config.autoSave.enabled ? 'block' : 'none';
-  document.getElementById('autoSavePct').value = state.config.autoSave.pct;
-
-  const yn=document.getElementById('yearNav'); yn.innerHTML='';
-  Object.keys(state.years).sort((a,b)=>b-a).forEach(y => {
-    const b=document.createElement('button'); b.textContent=(state.years[y].locked?'🔒 ':'')+y;
-    if(y==state.active) b.classList.add('active'); b.onclick=()=>{state.active=parseInt(y);save();renderAll();}; yn.appendChild(b);
-  });
-  
-  const yr=state.years[state.active]; document.getElementById('addCard').style.display=canEdit()?'block':'none';
-  document.getElementById('lockBtn').textContent=yr.locked?'🔓 Reabrir Año':'🔒 Cerrar Año';
-  const isLocked = !canEditInit();
-  document.getElementById('globalHideBtn').textContent = state.hidden.global ? '👁️ Mostrar todos los números' : '👁️‍🗨️ Ocultar todos los números';
-
-  if(isLocked) {
-    document.getElementById('initAlert').innerHTML = `<div class="alert warn">🔒 Saldos iniciales bloqueados. Ve a Configuración > Zona de Administrador para corregir.</div>`;
-    document.getElementById('addAccWrap').style.display='none'; document.getElementById('addPocWrap').style.display='none';
-  } else {
-    document.getElementById('initAlert').innerHTML = `<div class="alert info" style="background:rgba(59,130,246,.1); border-color:var(--accent); color:var(--accent); margin-bottom:10px;"><strong>Paso 1:</strong> Escribe tus saldos iniciales abajo.<br><strong>Paso 2:</strong> Bloquéalos.<button class="warning" style="margin-top:8px; width:100%" onclick="lockOpeningBalances()">🔒 Guardar y Bloquear Saldos</button></div>`;
-    document.getElementById('addAccWrap').style.display='block'; document.getElementById('addPocWrap').style.display='block';
-  }
-
-  generateAdvice();
-
-  const flow = getFlow(state.active); const balanceAnual = flow.inc - flow.exp;
-  let al = checkDebtAlerts();
-  if(flow.exp > flow.inc && flow.inc > 0) al+=`<div class="alert danger">🚨 ¡ALERTA! Estás gastando más de lo que ganas este año. Déficit: ${fmt(flow.exp - flow.inc)}.</div>`;
-
-  document.getElementById('flowStats').innerHTML=`
-    <div class="stat green"><span class="eye-btn" onclick="toggleHideIndividual('inc')">${state.hidden.global||state.hidden.stats['inc']?'👁️':'👁️‍🗨️'}</span><div class="label">Ingresos Totales</div><div class="value">${renderVal('inc', flow.inc)}</div></div>
-    <div class="stat red"><span class="eye-btn" onclick="toggleHideIndividual('exp')">${state.hidden.global||state.hidden.stats['exp']?'👁️':'👁️‍🗨️'}</span><div class="label">Gastos Totales</div><div class="value">${renderVal('exp', flow.exp)}</div></div>
-    <div class="stat ${balanceAnual>=0?'green':'red'}"><span class="eye-btn" onclick="toggleHideIndividual('bal')">${state.hidden.global||state.hidden.stats['bal']?'👁️':'👁️‍🗨️'}</span><div class="label">Balance del Año</div><div class="value">${renderVal('bal', balanceAnual)}</div></div>
-  `;
-
-  let totalEfectivo = 0, totalAhorros = 0;
-  state.accounts.forEach(a => { if(a.id !== 'billetera') totalEfectivo += getAccBal(a.id); });
-  state.pockets.forEach(p => totalAhorros += getPocBal(p.id));
-  const totalDeudas = state.debts.reduce((s,d)=>s+getDebtBal(d.id),0); const cashBilletera = getAccBal('billetera');
-  const patrimonioNeto = totalEfectivo + totalAhorros + cashBilletera - totalDeudas;
-
-  document.getElementById('patrimonyStats').innerHTML=`
-    <div class="stat blue"><span class="eye-btn" onclick="toggleHideIndividual('efec')">${state.hidden.global||state.hidden.stats['efec']?'👁️':'👁️‍🗨️'}</span><div class="label">En Cuentas (Sin Billetera)</div><div class="value">${renderVal('efec', totalEfectivo)}</div></div>
-    <div class="stat yellow"><span class="eye-btn" onclick="toggleHideIndividual('ahor')">${state.hidden.global||state.hidden.stats['ahor']?'👁️':'👁️‍🗨️'}</span><div class="label">En Bolsillos</div><div class="value">${renderVal('ahor', totalAhorros)}</div></div>
-    <div class="stat purple"><span class="eye-btn" onclick="toggleHideIndividual('bill')">${state.hidden.global||state.hidden.stats['bill']?'👁️':'👁️‍🗨️'}</span><div class="label">💵 Billetera Efectivo</div><div class="value">${renderVal('bill', cashBilletera)}</div></div>
-    <div class="stat ${patrimonioNeto>=0?'green':'red'}"><span class="eye-btn" onclick="toggleHideIndividual('patr')">${state.hidden.global||state.hidden.stats['patr']?'👁️':'👁️‍🗨️'}</span><div class="label">Patrimonio Total</div><div class="value">${renderVal('patr', patrimonioNeto)}</div></div>
-  `;
-
-  const placerInfo = getPlacerLimitInfo(); const pctUsado = state.placerLimits[placerInfo.key + '_pct'] || state.config.placer; const placerPct = placerInfo.limit > 0 ? (placerInfo.spent / placerInfo.limit) * 100 : 0;
-  let placerHtml = '';
-  if(placerInfo.isLocked) {
-    let barColor = 'var(--green)'; let textColor = 'var(--green)';
-    if(placerPct >= 100) { barColor = 'var(--red)'; textColor = 'var(--red)'; } else if(placerPct >= 70) { barColor = 'var(--yellow)'; textColor = 'var(--yellow)'; }
-    placerHtml = `<div style="margin-bottom:10px;"><div style="font-size:12px; color:var(--muted); margin-bottom:5px;">Límite calculado con el ${pctUsado}% de tus ingresos.</div><div class="stat" style="border-color:${barColor}; padding:15px;"><div style="display:flex; justify-content:space-between; align-items:center;"><div><div class="label">Disponible para Placer</div><div class="value" style="color:${textColor}; font-size:24px;">${renderVal('plac_bal', placerInfo.available)}</div></div><div style="text-align:right;"><div style="font-size:11px; color:var(--muted);">Tope: ${fmt(placerInfo.limit)}</div><div style="font-size:11px; color:var(--muted);">Gastado: ${fmt(placerInfo.spent)}</div></div></div><div class="bar" style="height:12px; margin-top:10px;"><div class="bar-fill" style="width:${Math.min(placerPct,100)}%; background:${barColor}"></div></div></div></div>`;
-  } else {
-    placerHtml = `<div class="alert info" style="background:rgba(59,130,246,.1); border-color:var(--accent); color:var(--accent); margin-bottom:10px;"><strong>Configura tu límite de Placer.</strong><br>Ingresa el porcentaje y la app calculará el tope basado en tus ingresos.</div><div style="display:flex; gap:10px; align-items:end;"><div style="flex:1;"><label style="font-size:11px; color:var(--muted);">Porcentaje (%)</label><input type="number" id="placerPercentageInput" value="${state.config.placer}" min="1" max="100" style="margin:0;"></div><div style="flex:1;"><button class="primary" onclick="calculateAndLockPlacer()" style="height:40px;">🔒 Calcular y Bloquear</button></div></div>`;
-  }
-  document.getElementById('placerCardContent').innerHTML = placerHtml;
-
-  let budgetHtml = `<div class="stat ${placerInfo.available>=0?'green':'red'}"><span class="eye-btn" onclick="toggleHideIndividual('plac')">${state.hidden.global||state.hidden.stats['plac']?'👁️':'👁️‍🗨️'}</span><div class="label">Gastos Placer (${pctUsado}%)</div><div class="value">${renderVal('plac', placerInfo.available)}</div><div style="font-size:10px;color:var(--muted);margin-top:4px">Gastado: ${fmt(placerInfo.spent)} de ${fmt(placerInfo.limit)}</div><div class="bar"><div class="bar-fill" style="width:${Math.min(placerPct,100)}%;background:${placerPct>100?'var(--red)':'var(--purple)'}"></div></div></div>`;
-  
-  state.pockets.forEach(p => {
-    if(p.meta && p.meta > 0) {
-      const balPoc = getPocBal(p.id); const pctMeta = (balPoc / p.meta) * 100; let barColor = 'var(--red)';
-      if(pctMeta >= 100) barColor = 'var(--green)'; else if(pctMeta >= 33) barColor = 'var(--yellow)';
-      budgetHtml += `<div class="stat" style="border-color:${barColor}"><div class="label">Meta: ${p.name}</div><div class="value" style="color:${barColor}">${pctMeta.toFixed(1)}%</div><div style="font-size:10px;color:var(--muted);margin-top:4px">${renderVal('meta_'+p.id, balPoc)} / ${fmt(p.meta)}</div><div class="bar"><div class="bar-fill" style="width:${Math.min(pctMeta,100)}%;background:${barColor}"></div></div></div>`;
-    }
-  });
-  document.getElementById('budgetGrid').innerHTML = budgetHtml;
-
-  if(placerInfo.available<0) al+=`<div class="alert danger">🚨 ¡Superaste el límite de Gastos Placer! Por ${fmt(Math.abs(placerInfo.available))}.</div>`;
-  else if(placerPct>80) al+=`<div class="alert warn">⚠️ Estás al ${placerPct.toFixed(1)}% de tu límite de Placer.</div>`;
-  document.getElementById('alerts').innerHTML=al; renderTable();
-  
-  if(isLocked) {
-    document.getElementById('accountsList').innerHTML=state.accounts.map(a=>{ const isHidden = state.hidden.locks[a.id]; return `<div class="row-item"><div class="locked-text">${a.name}</div><div class="locked-val"><span>Inició con: <strong>${isHidden?'***':fmt(state.years[state.active].openingBalances[a.id]||0)}</strong></span><span style="cursor:pointer; font-size:16px;" onclick="toggleLockHide('${a.id}')">${isHidden?'👁️':'👁️‍🗨️'}</span></div><strong style="color:var(--accent); width:20%; text-align:right">${renderVal('acc_'+a.id, getAccBal(a.id))}</strong></div>`; }).join('');
-  } else {
-    document.getElementById('accountsList').innerHTML=state.accounts.map(a=>`<div class="row-item"><input value="${a.name}" onchange="renameAcc('${a.id}', this.value)" style="border:none; width:40%"><input type="number" value="${state.years[state.active].openingBalances[a.id]||0}" onchange="setOpeningBal('${a.id}', this.value)" placeholder="Saldo Inicial $" style="text-align:right; width:35%"><strong style="color:var(--accent); width:20%; text-align:right">${fmt(getAccBal(a.id))}</strong>${canEdit() ?`<button class="danger" onclick="delAcc('${a.id}')">X</button>`:''}</div>`).join('');
-  }
-
-  if(isLocked) {
-    document.getElementById('pocketsList').innerHTML=state.pockets.map(p=>{ const isHidden = state.hidden.locks[p.id]; return `<div class="row-item"><div class="locked-text">${p.name}</div><div class="locked-val"><span>Inició con: <strong>${isHidden?'***':fmt(state.years[state.active].openingBalances[p.id]||0)}</strong></span><span style="cursor:pointer; font-size:16px;" onclick="toggleLockHide('${p.id}')">${isHidden?'👁️':'👁️‍🗨️'}</span></div><strong style="color:var(--green); width:20%; text-align:right">${renderVal('poc_'+p.id, getPocBal(p.id))}</strong></div>`; }).join('');
-  } else {
-    document.getElementById('pocketsList').innerHTML=state.pockets.map(p=>`<div class="row-item"><input value="${p.name}" onchange="renamePoc('${p.id}', this.value)" style="border:none; width:40%"><input type="number" value="${state.years[state.active].openingBalances[p.id]||0}" onchange="setOpeningBal('${p.id}', this.value)" placeholder="Saldo Inicial $" style="text-align:right; width:35%"><strong style="color:var(--green); width:20%; text-align:right">${fmt(getPocBal(p.id))}</strong>${canEdit() ?`<button class="danger" onclick="delPoc('${p.id}')">X</button>`:''}</div>`).join('');
-  }
-
-  document.getElementById('debtsList').innerHTML=state.debts.map(d=>{
-    const saldo = getDebtBal(d.id); const isPaid = saldo <= 0;
-    let scheduleHtml = '';
-    if (d.schedule) {
-        scheduleHtml = `<div style="margin-top:10px; display:flex; flex-direction:column; gap:5px;">`;
-        d.schedule.forEach(c => {
-            if (!c.paid) {
-                scheduleHtml += `<div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg); padding:6px; border-radius:4px; font-size:12px;"><span>Cuota #${c.num} - ${c.date}</span><span style="color:var(--accent); font-weight:bold;">${fmt(c.amount)}</span><button class="primary" onclick="openPayModal('${d.id}', ${c.num})" style="width:auto; padding:4px 8px; font-size:11px;">Pagar</button></div>`;
-            } else {
-                scheduleHtml += `<div style="display:flex; justify-content:space-between; align-items:center; background:rgba(34,197,94,0.1); padding:6px; border-radius:4px; font-size:12px; opacity:0.6;"><span>✅ Cuota #${c.num} - ${c.date}</span><span style="color:var(--green); font-weight:bold;">Pagada</span></div>`;
-            }
-        });
-        scheduleHtml += `</div>`;
-    }
-    let infoInteres = '';
-    if (d.rate > 0) infoInteres = `<div style="font-size:11px; color:var(--red); margin-top:3px;">💸 Interés: ${d.rate}% mensual. Pagas ${fmt(d.total - d.baseAmount)} extra en total.</div>`;
-    return `<div class="row-item" style="flex-direction:column;align-items:flex-start; padding-bottom:15px; margin-bottom:15px;"><div style="display:flex;width:100%;justify-content:space-between;margin-bottom:5px;"><input value="${d.name}" onchange="renameDebt('${d.id}', this.value)" style="width:50%; font-weight:bold;" ${isPaid?'disabled':''}><span style="color:${isPaid?'var(--green)':'var(--red)'}">${isPaid?'¡PAGADA!':fmt(saldo)+' restante'}</span>${canEdit() && !isPaid ?`<button class="danger" onclick="delDebt('${d.id}')">X</button>`:''}</div>${infoInteres}${scheduleHtml}</div>`;
-  }).join('')||'<p style="text-align:center;color:var(--muted)">No hay deudas registradas</p>';
-
-  document.getElementById('goalsConfigList').innerHTML=state.pockets.map(p=>`<div class="row-item"><span style="width:50%">${p.name}</span><input type="number" value="${p.meta||0}" onchange="setMetaPoc('${p.id}', this.value)" placeholder="Meta $" style="width:40%; text-align:right;"></div>`).join('');
-  document.getElementById('configCatsList').innerHTML=state.config.cats.map(c=>`<div class="row-item"><input value="${c.name}" onchange="renameCat('${c.id}', 'name', this.value)" style="border:none; width:30%; font-weight:bold;"><input value="${c.desc||''}" onchange="renameCat('${c.id}', 'desc', this.value)" style="border:none; width:45%; font-size:11px; color:var(--muted);" placeholder="Guía..."><span style="background:${c.color}; width:15px; height:15px; border-radius:50%;"></span><button class="danger" onclick="delCat('${c.id}')">X</button></div>`).join('');
-  
-  document.getElementById('recurringList').innerHTML = state.recurring.map(r=>`<div class="row-item"><div style="width: 60%; font-size: 12px;"><strong>${r.detail}</strong> - ${fmt(r.amount)}<br><span style="color:var(--muted)">Los días ${r.day} de ${getAccName(r.from) || getPocName(r.from)}</span></div><button class="danger" onclick="delRecurring('${r.id}')">X</button></div>`).join('') || '<p style="font-size:11px; color:var(--muted);">No hay gastos recurrentes configurados.</p>';
-
-  const allOrigins = [...state.accounts.map(a=>({id:a.id, name:a.name})), ...state.pockets.map(p=>({id:p.id, name:p.name}))];
-  const allOpts = allOrigins.map(o=>`<option value="${o.id}">${o.name}</option>`).join('');
-  
-  document.getElementById('fFrom').innerHTML = allOpts; 
-  document.getElementById('fTo').innerHTML = allOpts;
-  document.getElementById('recAcc').innerHTML = allOpts;
-  document.getElementById('autoSavePocket').innerHTML = state.pockets.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
-  
-  document.getElementById('fCategory').innerHTML = state.config.cats.map(c=>`<option value="${c.id}">${c.name} (${c.desc})</option>`).join('');
-  document.getElementById('fDebtSelect').innerHTML = state.debts.filter(d=>getDebtBal(d.id)>0).map(d=>`<option value="${d.id}">${d.name} (Debe: ${fmt(getDebtBal(d.id))})</option>`).join('');
-  
-  if(state.config.autoSave.pocketId) document.getElementById('autoSavePocket').value = state.config.autoSave.pocketId;
-
-  document.getElementById('flowChartType').value = state.config.chartType; 
-  document.getElementById('pieChartType').value = state.config.pieType; 
-  document.getElementById('projChartType').value = state.config.projChartType;
-  document.getElementById('fType').dispatchEvent(new Event('change'));
-
-  renderAnalisis();
-  renderExpertAnalysis();
-  renderMonthlySummaries();
-  actualizarEstadoBio();
-  actualizarBadgeDeudas();
-}
 
 document.querySelectorAll('#mainNav button').forEach(b=>{
   b.onclick=()=>{ document.querySelectorAll('#mainNav button').forEach(x=>x.classList.remove('active')); document.querySelectorAll('.view').forEach(v=>v.classList.remove('active')); b.classList.add('active'); document.getElementById('view-'+b.dataset.view).classList.add('active'); 
