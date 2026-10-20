@@ -785,7 +785,6 @@ function confirmPayInstallment() {
 
     const fromAcc = document.getElementById('payModalAcc').value;
     
-    // ✅ CORRECCIÓN: Validar saldo de la cuenta específica sin duplicar
     let currentBalance = 0;
     if (state.accounts.some(a => a.id === fromAcc)) {
         currentBalance = getAccBal(fromAcc);
@@ -915,6 +914,14 @@ function checkMonthlySummary() {
     save();
 }
 
+function delSummary(key) {
+    if(!confirm('¿Eliminar este resumen guardado?')) return;
+    delete state.summaries[key];
+    save();
+    renderAll();
+    toast('Resumen eliminado');
+}
+
 function toggleGlobalHide() { state.hidden.global = !state.hidden.global; if(state.hidden.global) state.hidden.stats = {}; save(); renderAll(); }
 function toggleHideIndividual(key) { if(state.hidden.global) { state.hidden.global = false; state.hidden.stats[key] = false; } else { state.hidden.stats[key] = !state.hidden.stats[key]; } save(); renderAll(); }
 function toggleLockHide(id) { state.hidden.locks[id] = !state.hidden.locks[id]; save(); renderAll(); }
@@ -1022,7 +1029,6 @@ function addTx() {
       
       const fromAcc = document.getElementById('fFrom').value;
       
-      // ✅ CORRECCIÓN: Validar saldo de la cuenta específica sin duplicar
       let currentBalance = 0;
       if (state.accounts.some(acc => acc.id === fromAcc)) {
           currentBalance = getAccBal(fromAcc);
@@ -1487,7 +1493,12 @@ function renderMonthlySummaries() {
     const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
     box.innerHTML = keys.map(k => {
         const s = state.summaries[k]; const balance = s.inc - s.exp; const color = balance >= 0 ? 'var(--green)' : 'var(--red)';
-        return `<div style="background: var(--bg); padding: 12px; border-radius: 8px; border-left: 4px solid ${color}; margin-bottom:10px;"><h4 style="font-size: 14px; margin-bottom: 8px;">${monthNames[s.mes]} ${s.anio}</h4><div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;"><span>Ingresos: <span style="color:var(--green)">${fmt(s.inc)}</span></span><span>Gastos: <span style="color:var(--red)">${fmt(s.exp)}</span></span><span>Ahorro: <span style="color:var(--yellow)">${fmt(s.ahorro)}</span></span></div><div style="font-size:11px; color:var(--muted); background:rgba(255,255,255,0.05); padding:8px; border-radius:4px; margin-top:8px;"><strong>🤖 Resumen:</strong> ${s.advice}</div></div>`;
+        return `<div style="background: var(--bg); padding: 12px; border-radius: 8px; border-left: 4px solid ${color}; margin-bottom:10px; position: relative;">
+            <button class="danger" onclick="delSummary('${k}')" style="position:absolute; top:8px; right:8px; padding:2px 6px; font-size:10px;">X</button>
+            <h4 style="font-size: 14px; margin-bottom: 8px;">${monthNames[s.mes]} ${s.anio}</h4>
+            <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;"><span>Ingresos: <span style="color:var(--green)">${fmt(s.inc)}</span></span><span>Gastos: <span style="color:var(--red)">${fmt(s.exp)}</span></span><span>Ahorro: <span style="color:var(--yellow)">${fmt(s.ahorro)}</span></span></div>
+            <div style="font-size:11px; color:var(--muted); background:rgba(255,255,255,0.05); padding:8px; border-radius:4px; margin-top:8px;"><strong>🤖 Resumen:</strong> ${s.advice}</div>
+        </div>`;
     }).join('');
 }
 
