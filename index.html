@@ -372,13 +372,26 @@ input:checked + .slider:before { transform: translateX(20px); }
 
 <script>
 // ==========================================
-// 🚨 LIMPIADOR AUTOMÁTICO DE MEMORIA (LA SOLUCIÓN REAL)
+// 🚨 RESCATE EXTREMO (AUTO-DESTRUCCIÓN Y LIMPIEZA)
 // ==========================================
-localStorage.removeItem('fin_v12_0');
-localStorage.removeItem('fin_v12_1');
-localStorage.removeItem('fin_v12_2');
-localStorage.removeItem('fin_v12_3');
-localStorage.removeItem('fin_v12_4');
+(function() {
+    const VERSION_RESCATE = 'v2'; 
+    if (localStorage.getItem('rescate_app') !== VERSION_RESCATE) {
+        console.log("Aplicando rescate y limpiando memoria...");
+        localStorage.clear();
+        sessionStorage.clear();
+        if ('caches' in window) {
+            caches.keys().then(names => { for (let name of names) caches.delete(name); });
+        }
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(registrations => {
+                for (let registration of registrations) { registration.unregister(); }
+            });
+        }
+        localStorage.setItem('rescate_app', VERSION_RESCATE);
+        setTimeout(() => { window.location.reload(true); }, 500);
+    }
+})();
 // ==========================================
 
 const firebaseConfig = {
@@ -490,10 +503,13 @@ function actualizarBadgeDeudas() {
     if (alertas > 0) navigator.setAppBadge(alertas).catch(()=>{}); else navigator.clearAppBadge().catch(()=>{});
 }
 
-const KEY = 'fin_v13_0'; // NUEVA LLAVE PARA EMPEZAR DE CERO
-let state = JSON.parse(localStorage.getItem(KEY) || 'null') || {};
+const KEY = 'fin_v13_0'; 
+let state = {};
 
+// 🛡️ FUNCIÓN DE MIGRACIÓN ULTRA-BLINDADA
 function migrateState() {
+    if (!state || typeof state !== 'object') state = {}; // Evitar nulos
+    
     if(!state.config) state.config = {};
     if(!state.config.cats || state.config.cats.length === 0) state.config.cats = [{id:'fijo', name:'Fijo (mensual)', desc:'Arriendo, mercado, servicios', color:'#3b82f6'},{id:'necesario', name:'Necesario', desc:'Imprevistos, reparaciones, salud', color:'#eab308'},{id:'placer', name:'Placer', desc:'Ocio, salidas, gustos', color:'#a855f7'}];
     if(state.config.placer === undefined) state.config.placer = 30;
@@ -506,10 +522,11 @@ function migrateState() {
     if(!state.recurring) state.recurring = [];
     if(!state.summaries) state.summaries = {};
     
-    if(state.accounts === undefined || state.accounts === null || state.accounts.length === 0) {
+    // 🚨 AQUÍ ESTÁ LA MAGIA PARA QUE NUNCA DESAPAREZCAN
+    if(!state.accounts || !Array.isArray(state.accounts) || state.accounts.length === 0) {
         state.accounts = [{id:'nequi', name:'Nequi'},{id:'banco', name:'Bancolombia'},{id:'billetera', name:'Billetera (Efectivo)'}];
     }
-    if(state.pockets === undefined || state.pockets === null || state.pockets.length === 0) {
+    if(!state.pockets || !Array.isArray(state.pockets) || state.pockets.length === 0) {
         state.pockets = [{id:'ahorro_gen', name:'Ahorro General', meta: 0},{id:'ahorro_emg', name:'Ahorro Emergencias', meta: 0},{id:'ahorro_car', name:'Ahorro Carro', meta: 0}];
     }
     
@@ -532,12 +549,19 @@ function migrateState() {
         if(state.years[state.active].openingBalances[p.id] === undefined) state.years[state.active].openingBalances[p.id] = 0;
     });
 }
+
+// Intentar cargar estado inicial
+try {
+    state = JSON.parse(localStorage.getItem(KEY) || 'null') || {};
+} catch(e) { state = {}; }
 migrateState();
 
 function save(){ 
-    localStorage.setItem(KEY, JSON.stringify(state)); 
-    const user = auth.currentUser;
-    if (user) db.collection('finanzas').doc(user.uid).set({ state: state }).catch(e => console.error('Error nube:', e));
+    try {
+        localStorage.setItem(KEY, JSON.stringify(state)); 
+        const user = auth.currentUser;
+        if (user) db.collection('finanzas').doc(user.uid).set({ state: state }).catch(e => console.error('Error nube:', e));
+    } catch(e) { console.error("Error guardando", e); }
 }
 function fmt(n){ return new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0}).format(n||0); }
 function genId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
@@ -553,6 +577,7 @@ function syncData() {
             if (cloudData.state) { 
                 let localState = JSON.parse(JSON.stringify(state));
                 state = cloudData.state;
+                // Si la nube viene vacía, rescatamos la local
                 if (!state.accounts || state.accounts.length === 0) state.accounts = localState.accounts;
                 if (!state.pockets || state.pockets.length === 0) state.pockets = localState.pockets;
                 migrateState(); 
@@ -973,12 +998,20 @@ function delDebt(id){ const d = state.debts.find(x=>x.id===id); if(!d) return; i
 function createNextYear(){ const y=Math.max(...Object.keys(state.years).map(Number)); if(!state.years[y].locked)return toast('Cierra el año primero'); const newYear = y+1; state.years[newYear] = { locked:false, lockedInit: false, openingBalances: {}, txs:[] }; state.accounts.forEach(a => { state.years[newYear].openingBalances[a.id] = getAccBal(a.id); }); state.pockets.forEach(p => { state.years[newYear].openingBalances[p.id] = getPocBal(p.id); }); state.active = newYear; save(); renderAll(); toast(`¡Año ${newYear} creado!`); }
 function toggleLock(){ state.years[state.active].locked=!state.years[state.active].locked; save(); renderAll(); }
 
+// 🛡️ RENDERIZADO BLINDADO (Evita que la app se congele si un gráfico falla)
 function renderAll() {
-  document.getElementById('toggleAdvisor').checked = state.config.advisorEnabled;
-  document.getElementById('toggleAutoSave').checked = state.config.autoSave.enabled;
-  document.getElementById('autoSaveConfig').style.display = state.config.autoSave.enabled ? 'block' : 'none';
-  document.getElementById('autoSavePct').value = state.config.autoSave.pct;
+    try { renderDashboard(); } catch(e) { console.error("Fallo en Dashboard:", e); }
+    try { renderCuentas(); } catch(e) { console.error("Fallo en Cuentas:", e); }
+    try { renderDeudas(); } catch(e) { console.error("Fallo en Deudas:", e); }
+    try { renderConfig(); } catch(e) { console.error("Fallo en Config:", e); }
+    try { renderAnalisis(); } catch(e) { console.error("Fallo en Analisis:", e); }
+    try { renderExpertAnalysis(); } catch(e) { console.error("Fallo en Expert:", e); }
+    try { renderMonthlySummaries(); } catch(e) { console.error("Fallo en Resumenes:", e); }
+    try { actualizarEstadoBio(); actualizarBadgeDeudas(); } catch(e) {}
+}
 
+function renderDashboard() {
+  document.getElementById('toggleAdvisor').checked = state.config.advisorEnabled;
   const yn=document.getElementById('yearNav'); yn.innerHTML='';
   Object.keys(state.years).sort((a,b)=>b-a).forEach(y => {
     const b=document.createElement('button'); b.textContent=(state.years[y].locked?'🔒 ':'')+y;
@@ -987,22 +1020,12 @@ function renderAll() {
   
   const yr=state.years[state.active]; document.getElementById('addCard').style.display=canEdit()?'block':'none';
   document.getElementById('lockBtn').textContent=yr.locked?'🔓 Reabrir Año':'🔒 Cerrar Año';
-  const isLocked = !canEditInit();
-  document.getElementById('globalHideBtn').textContent = state.hidden.global ? '👁️ Mostrar todos los números' : '👁️‍🗨️ Ocultar todos los números';
-
-  if(isLocked) {
-    document.getElementById('initAlert').innerHTML = `<div class="alert warn">🔒 Saldos iniciales bloqueados. Ve a Configuración > Zona de Administrador para corregir.</div>`;
-    document.getElementById('addAccWrap').style.display='none'; document.getElementById('addPocWrap').style.display='none';
-  } else {
-    document.getElementById('initAlert').innerHTML = `<div class="alert info" style="background:rgba(59,130,246,.1); border-color:var(--accent); color:var(--accent); margin-bottom:10px;"><strong>Paso 1:</strong> Escribe tus saldos iniciales abajo.<br><strong>Paso 2:</strong> Bloquéalos.<button class="warning" style="margin-top:8px; width:100%" onclick="lockOpeningBalances()">🔒 Guardar y Bloquear Saldos</button></div>`;
-    document.getElementById('addAccWrap').style.display='block'; document.getElementById('addPocWrap').style.display='block';
-  }
-
+  
   generateAdvice();
-
   const flow = getFlow(state.active); const balanceAnual = flow.inc - flow.exp;
   let al = checkDebtAlerts();
   if(flow.exp > flow.inc && flow.inc > 0) al+=`<div class="alert danger">🚨 ¡ALERTA! Estás gastando más de lo que ganas este año. Déficit: ${fmt(flow.exp - flow.inc)}.</div>`;
+  document.getElementById('alerts').innerHTML=al;
 
   document.getElementById('flowStats').innerHTML=`
     <div class="stat green"><span class="eye-btn" onclick="toggleHideIndividual('inc')">${state.hidden.global||state.hidden.stats['inc']?'👁️':'👁️‍🗨️'}</span><div class="label">Ingresos Totales</div><div class="value">${renderVal('inc', flow.inc)}</div></div>
@@ -1047,8 +1070,23 @@ function renderAll() {
 
   if(placerInfo.available<0) al+=`<div class="alert danger">🚨 ¡Superaste el límite de Gastos Placer! Por ${fmt(Math.abs(placerInfo.available))}.</div>`;
   else if(placerPct>80) al+=`<div class="alert warn">⚠️ Estás al ${placerPct.toFixed(1)}% de tu límite de Placer.</div>`;
-  document.getElementById('alerts').innerHTML=al; renderTable();
+  document.getElementById('alerts').innerHTML=al; 
   
+  renderTable();
+}
+
+function renderCuentas() {
+  const isLocked = !canEditInit();
+  document.getElementById('globalHideBtn').textContent = state.hidden.global ? '👁️ Mostrar todos los números' : '👁️‍🗨️ Ocultar todos los números';
+
+  if(isLocked) {
+    document.getElementById('initAlert').innerHTML = `<div class="alert warn">🔒 Saldos iniciales bloqueados. Ve a Configuración > Zona de Administrador para corregir.</div>`;
+    document.getElementById('addAccWrap').style.display='none'; document.getElementById('addPocWrap').style.display='none';
+  } else {
+    document.getElementById('initAlert').innerHTML = `<div class="alert info" style="background:rgba(59,130,246,.1); border-color:var(--accent); color:var(--accent); margin-bottom:10px;"><strong>Paso 1:</strong> Escribe tus saldos iniciales abajo.<br><strong>Paso 2:</strong> Bloquéalos.<button class="warning" style="margin-top:8px; width:100%" onclick="lockOpeningBalances()">🔒 Guardar y Bloquear Saldos</button></div>`;
+    document.getElementById('addAccWrap').style.display='block'; document.getElementById('addPocWrap').style.display='block';
+  }
+
   if(isLocked) {
     document.getElementById('accountsList').innerHTML=state.accounts.map(a=>{ const isHidden = state.hidden.locks[a.id]; return `<div class="row-item"><div class="locked-text">${a.name}</div><div class="locked-val"><span>Inició con: <strong>${isHidden?'***':fmt(state.years[state.active].openingBalances[a.id]||0)}</strong></span><span style="cursor:pointer; font-size:16px;" onclick="toggleLockHide('${a.id}')">${isHidden?'👁️':'👁️‍🗨️'}</span></div><strong style="color:var(--accent); width:20%; text-align:right">${renderVal('acc_'+a.id, getAccBal(a.id))}</strong></div>`; }).join('');
   } else {
@@ -1060,7 +1098,9 @@ function renderAll() {
   } else {
     document.getElementById('pocketsList').innerHTML=state.pockets.map(p=>`<div class="row-item"><input value="${p.name}" onchange="renamePoc('${p.id}', this.value)" style="border:none; width:40%"><input type="number" value="${state.years[state.active].openingBalances[p.id]||0}" onchange="setOpeningBal('${p.id}', this.value)" placeholder="Saldo Inicial $" style="text-align:right; width:35%"><strong style="color:var(--green); width:20%; text-align:right">${fmt(getPocBal(p.id))}</strong>${canEdit() ?`<button class="danger" onclick="delPoc('${p.id}')">X</button>`:''}</div>`).join('');
   }
+}
 
+function renderDeudas() {
   document.getElementById('debtsList').innerHTML=state.debts.map(d=>{
     const saldo = getDebtBal(d.id); const isPaid = saldo <= 0;
     let scheduleHtml = '';
@@ -1079,6 +1119,12 @@ function renderAll() {
     if (d.rate > 0) infoInteres = `<div style="font-size:11px; color:var(--red); margin-top:3px;">💸 Interés: ${d.rate}% mensual. Pagas ${fmt(d.total - d.baseAmount)} extra en total.</div>`;
     return `<div class="row-item" style="flex-direction:column;align-items:flex-start; padding-bottom:15px; margin-bottom:15px;"><div style="display:flex;width:100%;justify-content:space-between;margin-bottom:5px;"><input value="${d.name}" onchange="renameDebt('${d.id}', this.value)" style="width:50%; font-weight:bold;" ${isPaid?'disabled':''}><span style="color:${isPaid?'var(--green)':'var(--red)'}">${isPaid?'¡PAGADA!':fmt(saldo)+' restante'}</span>${canEdit() && !isPaid ?`<button class="danger" onclick="delDebt('${d.id}')">X</button>`:''}</div>${infoInteres}${scheduleHtml}</div>`;
   }).join('')||'<p style="text-align:center;color:var(--muted)">No hay deudas registradas</p>';
+}
+
+function renderConfig() {
+  document.getElementById('toggleAutoSave').checked = state.config.autoSave.enabled;
+  document.getElementById('autoSaveConfig').style.display = state.config.autoSave.enabled ? 'block' : 'none';
+  document.getElementById('autoSavePct').value = state.config.autoSave.pct;
 
   document.getElementById('goalsConfigList').innerHTML=state.pockets.map(p=>`<div class="row-item"><span style="width:50%">${p.name}</span><input type="number" value="${p.meta||0}" onchange="setMetaPoc('${p.id}', this.value)" placeholder="Meta $" style="width:40%; text-align:right;"></div>`).join('');
   document.getElementById('configCatsList').innerHTML=state.config.cats.map(c=>`<div class="row-item"><input value="${c.name}" onchange="renameCat('${c.id}', 'name', this.value)" style="border:none; width:30%; font-weight:bold;"><input value="${c.desc||''}" onchange="renameCat('${c.id}', 'desc', this.value)" style="border:none; width:45%; font-size:11px; color:var(--muted);" placeholder="Guía..."><span style="background:${c.color}; width:15px; height:15px; border-radius:50%;"></span><button class="danger" onclick="delCat('${c.id}')">X</button></div>`).join('');
@@ -1102,57 +1148,22 @@ function renderAll() {
   document.getElementById('pieChartType').value = state.config.pieType; 
   document.getElementById('projChartType').value = state.config.projChartType;
   document.getElementById('fType').dispatchEvent(new Event('change'));
-
-  renderAnalisis();
-  renderExpertAnalysis();
-  renderMonthlySummaries();
-  actualizarEstadoBio();
-  actualizarBadgeDeudas();
 }
 
-function renderMonthlySummaries() {
-    const box = document.getElementById('monthlySummariesList');
-    const keys = Object.keys(state.summaries).sort().reverse();
-    if (keys.length === 0) { box.innerHTML = '<p style="color:var(--muted); font-size:13px;">Los resúmenes aparecerán aquí al finalizar cada mes.</p>'; return; }
-    const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-    box.innerHTML = keys.map(k => {
-        const s = state.summaries[k]; const balance = s.inc - s.exp; const color = balance >= 0 ? 'var(--green)' : 'var(--red)';
-        return `<div style="background: var(--bg); padding: 12px; border-radius: 8px; border-left: 4px solid ${color}; margin-bottom:10px;"><h4 style="font-size: 14px; margin-bottom: 8px;">${monthNames[s.mes]} ${s.anio}</h4><div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;"><span>Ingresos: <span style="color:var(--green)">${fmt(s.inc)}</span></span><span>Gastos: <span style="color:var(--red)">${fmt(s.exp)}</span></span><span>Ahorro: <span style="color:var(--yellow)">${fmt(s.ahorro)}</span></span></div><div style="font-size:11px; color:var(--muted); background:rgba(255,255,255,0.05); padding:8px; border-radius:4px; margin-top:8px;"><strong>🤖 Resumen:</strong> ${s.advice}</div></div>`;
-    }).join('');
+function renderTable() {
+  const tb=document.querySelector('#txTable tbody'); const q=document.getElementById('txSearch').value.toLowerCase();
+  const list=state.years[state.active].txs.filter(t=>t.detail.toLowerCase().includes(q)).sort((a,b)=>b.date.localeCompare(a.date));
+  document.getElementById('txCount').textContent=list.length+' registros';
+  tb.innerHTML=list.map(t=>{
+    let ruta = ''; if(t.type==='Ingreso') ruta = '➔ ' + (getAccName(t.to) || getPocName(t.to));
+    if(t.type==='Gasto') ruta = (getAccName(t.from) || getPocName(t.from)) + ' ➔ Gasto';
+    if(t.type==='Transferencia') ruta = (getAccName(t.from)||getPocName(t.from)) + ' ➔ ' + (getAccName(t.to) || getPocName(t.to));
+    if(t.type==='PagoDeuda') ruta = (getAccName(t.from)||getPocName(t.from)) + ' ➔ Deuda: ' + getDebtName(t.debtId);
+    let catStr = t.cat ? `<br><small style="color:var(--accent)">${getCatName(t.cat)}</small>` : '';
+    let colorMonto = 'var(--red)'; if(t.type === 'Ingreso') colorMonto = 'var(--green)'; if(t.type === 'Transferencia') colorMonto = 'var(--yellow)'; 
+    return `<tr><td>${t.date}</td><td>${t.detail}</td><td>${t.type}${catStr}<br><small style="color:var(--muted)">${ruta}</small></td><td style="text-align:right; color:${colorMonto}; font-weight:bold;">${fmt(t.amount)}</td><td>${canEdit()?`<button class="danger" onclick="delTx('${t.id}')">X</button>`:''}</td></tr>`;
+  }).join('')||'<tr><td colspan="5" style="text-align:center">Sin datos</td></tr>';
 }
-
-function renderExpertAnalysis() {
-    const box = document.getElementById('expertAnalysis');
-    const yr = state.years[state.active]; const now = new Date();
-    let inc = 0, expFijo = 0, expPlacer = 0;
-    yr.txs.forEach(t => {
-        const d = new Date(t.date);
-        if(d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
-            if(t.type === 'Ingreso') inc += t.amount;
-            if(t.type === 'Gasto' || t.type === 'PagoDeuda') { if(t.cat === 'fijo') expFijo += t.amount; if(t.cat === 'placer') expPlacer += t.amount; }
-        }
-    });
-    const ahorroPots = state.pockets.reduce((s,p)=>s+getPocBal(p.id),0);
-    if (inc === 0) { box.innerHTML = '<p style="color:var(--muted); font-size:13px;">Registra ingresos este mes para calcular tu regla 50/30/20.</p>'; return; }
-    const pctFijo = (expFijo / inc) * 100; const pctPlacer = (expPlacer / inc) * 100; const pctAhorro = (ahorroPots / inc) * 100;
-    const createBar = (label, pct, target, color) => {
-        let actualColor = color; if (pct > target) actualColor = 'var(--red)'; else if (pct > target * 0.9) actualColor = 'var(--yellow)';
-        return `<div style="margin-bottom:12px;"><div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;"><span>${label} <span style="color:var(--muted)">(Ideal: ${target}%)</span></span><strong style="color:${actualColor}">${pct.toFixed(1)}% (${fmt(pct === 0 ? 0 : (pct/100)*inc)})</strong></div><div class="bar" style="height:10px; position:relative;"><div class="bar-fill" style="width:${Math.min(pct,100)}%; background:${actualColor};"></div><div style="position:absolute; left:${target}%; top:0; bottom:0; width:2px; background:white; z-index:10; opacity:0.8;"></div></div></div>`;
-    };
-    box.innerHTML = createBar('Gastos Fijos', pctFijo, 50, 'var(--accent)') + createBar('Gastos Placer', pctPlacer, 30, 'var(--purple)') + createBar('Ahorro', pctAhorro, 20, 'var(--green)');
-}
-
-function downloadExcel() {
-    const yr = state.years[state.active]; if (yr.txs.length === 0) return toast('No hay movimientos para exportar.');
-    const data = yr.txs.map(t => {
-        let origen = t.from ? (getAccName(t.from) || getPocName(t.from)) : ''; let destino = t.to ? (getAccName(t.to) || getPocName(t.to)) : '';
-        if(t.type === 'Gasto') destino = 'Gasto'; if(t.type === 'Ingreso') origen = 'Ingreso'; if(t.type === 'PagoDeuda') destino = 'Deuda: ' + getDebtName(t.debtId);
-        return { "Fecha": t.date, "Detalle": t.detail, "Tipo": t.type, "Categoría": t.cat ? getCatName(t.cat) : '', "Origen": origen, "Destino": destino, "Monto ($)": t.amount };
-    });
-    const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Movimientos"); XLSX.writeFile(wb, `Mis_Finanzas_${state.active}.xlsx`); toast('📥 Archivo descargado.');
-}
-
-function toggleAdvisor() { state.config.advisorEnabled = document.getElementById('toggleAdvisor').checked; save(); renderAll(); toast(state.config.advisorEnabled ? 'Asesor Activado' : 'Asesor Desactivado'); }
 
 let flowChartInstance = null;
 let pieChartInstance = null;
@@ -1378,10 +1389,61 @@ function renderAnalisis() {
   `;
 }
 
+function renderExpertAnalysis() {
+    const box = document.getElementById('expertAnalysis');
+    const yr = state.years[state.active]; const now = new Date();
+    let inc = 0, expFijo = 0, expPlacer = 0;
+    yr.txs.forEach(t => {
+        const d = new Date(t.date);
+        if(d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
+            if(t.type === 'Ingreso') inc += t.amount;
+            if(t.type === 'Gasto' || t.type === 'PagoDeuda') { if(t.cat === 'fijo') expFijo += t.amount; if(t.cat === 'placer') expPlacer += t.amount; }
+        }
+    });
+    const ahorroPots = state.pockets.reduce((s,p)=>s+getPocBal(p.id),0);
+    if (inc === 0) { box.innerHTML = '<p style="color:var(--muted); font-size:13px;">Registra ingresos este mes para calcular tu regla 50/30/20.</p>'; return; }
+    const pctFijo = (expFijo / inc) * 100; const pctPlacer = (expPlacer / inc) * 100; const pctAhorro = (ahorroPots / inc) * 100;
+    const createBar = (label, pct, target, color) => {
+        let actualColor = color; if (pct > target) actualColor = 'var(--red)'; else if (pct > target * 0.9) actualColor = 'var(--yellow)';
+        return `<div style="margin-bottom:12px;"><div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;"><span>${label} <span style="color:var(--muted)">(Ideal: ${target}%)</span></span><strong style="color:${actualColor}">${pct.toFixed(1)}% (${fmt(pct === 0 ? 0 : (pct/100)*inc)})</strong></div><div class="bar" style="height:10px; position:relative;"><div class="bar-fill" style="width:${Math.min(pct,100)}%; background:${actualColor};"></div><div style="position:absolute; left:${target}%; top:0; bottom:0; width:2px; background:white; z-index:10; opacity:0.8;"></div></div></div>`;
+    };
+    box.innerHTML = createBar('Gastos Fijos', pctFijo, 50, 'var(--accent)') + createBar('Gastos Placer', pctPlacer, 30, 'var(--purple)') + createBar('Ahorro', pctAhorro, 20, 'var(--green)');
+}
+
+function renderMonthlySummaries() {
+    const box = document.getElementById('monthlySummariesList');
+    const keys = Object.keys(state.summaries).sort().reverse();
+    if (keys.length === 0) { box.innerHTML = '<p style="color:var(--muted); font-size:13px;">Los resúmenes aparecerán aquí al finalizar cada mes.</p>'; return; }
+    const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    box.innerHTML = keys.map(k => {
+        const s = state.summaries[k]; const balance = s.inc - s.exp; const color = balance >= 0 ? 'var(--green)' : 'var(--red)';
+        return `<div style="background: var(--bg); padding: 12px; border-radius: 8px; border-left: 4px solid ${color}; margin-bottom:10px;"><h4 style="font-size: 14px; margin-bottom: 8px;">${monthNames[s.mes]} ${s.anio}</h4><div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;"><span>Ingresos: <span style="color:var(--green)">${fmt(s.inc)}</span></span><span>Gastos: <span style="color:var(--red)">${fmt(s.exp)}</span></span><span>Ahorro: <span style="color:var(--yellow)">${fmt(s.ahorro)}</span></span></div><div style="font-size:11px; color:var(--muted); background:rgba(255,255,255,0.05); padding:8px; border-radius:4px; margin-top:8px;"><strong>🤖 Resumen:</strong> ${s.advice}</div></div>`;
+    }).join('');
+}
+
+function downloadExcel() {
+    const yr = state.years[state.active]; if (yr.txs.length === 0) return toast('No hay movimientos para exportar.');
+    const data = yr.txs.map(t => {
+        let origen = t.from ? (getAccName(t.from) || getPocName(t.from)) : ''; let destino = t.to ? (getAccName(t.to) || getPocName(t.to)) : '';
+        if(t.type === 'Gasto') destino = 'Gasto'; if(t.type === 'Ingreso') origen = 'Ingreso'; if(t.type === 'PagoDeuda') destino = 'Deuda: ' + getDebtName(t.debtId);
+        return { "Fecha": t.date, "Detalle": t.detail, "Tipo": t.type, "Categoría": t.cat ? getCatName(t.cat) : '', "Origen": origen, "Destino": destino, "Monto ($)": t.amount };
+    });
+    const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Movimientos"); XLSX.writeFile(wb, `Mis_Finanzas_${state.active}.xlsx`); toast('📥 Archivo descargado.');
+}
+
+function toggleAdvisor() { state.config.advisorEnabled = document.getElementById('toggleAdvisor').checked; save(); renderAll(); toast(state.config.advisorEnabled ? 'Asesor Activado' : 'Asesor Desactivado'); }
+
 document.querySelectorAll('#mainNav button').forEach(b=>{
   b.onclick=()=>{ document.querySelectorAll('#mainNav button').forEach(x=>x.classList.remove('active')); document.querySelectorAll('.view').forEach(v=>v.classList.remove('active')); b.classList.add('active'); document.getElementById('view-'+b.dataset.view).classList.add('active'); 
-    if(b.dataset.view === 'dashboard') { const yr=state.years[state.active]; const incM=Array(12).fill(0), gasM=Array(12).fill(0); yr.txs.forEach(t => { const m=new Date(t.date).getMonth(); if(t.type==='Ingreso') incM[m]+=t.amount; if(t.type==='Gasto'||t.type==='PagoDeuda') gasM[m]+=t.amount; }); drawFlowChart(incM, gasM); drawPieChart(getFlow(state.active)); }
-    if(b.dataset.view === 'analisis') { renderProjection(); }
+    if(b.dataset.view === 'dashboard') { 
+        const yr=state.years[state.active]; const incM=Array(12).fill(0), gasM=Array(12).fill(0); 
+        yr.txs.forEach(t => { const m=new Date(t.date).getMonth(); if(t.type==='Ingreso') incM[m]+=t.amount; if(t.type==='Gasto'||t.type==='PagoDeuda') gasM[m]+=t.amount; }); 
+        try { drawFlowChart(incM, gasM); } catch(e) { console.error("Fallo gráfico flujo", e); }
+        try { drawPieChart(getFlow(state.active)); } catch(e) { console.error("Fallo gráfico dona", e); }
+    }
+    if(b.dataset.view === 'analisis') { 
+        try { renderProjection(); } catch(e) { console.error("Fallo gráfico proyección", e); }
+    }
   };
 });
 
