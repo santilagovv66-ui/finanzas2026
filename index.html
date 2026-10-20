@@ -442,7 +442,8 @@ function signup() {
 function loginWithGoogle() {
     const provider = new firebase.auth.GoogleAuthProvider();
     document.getElementById('auth-error').innerText = '';
-    auth.signInWithPopup(provider).catch(error => { document.getElementById('auth-error').innerText = error.message; });
+    // 👇 ÚNICO CAMBIO: Se cambió signInWithPopup por signInWithRedirect
+    auth.signInWithRedirect(provider).catch(error => { document.getElementById('auth-error').innerText = error.message; });
 }
 function logout() { auth.signOut(); }
 function forgotPassword() {
