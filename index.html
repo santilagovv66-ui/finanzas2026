@@ -515,24 +515,32 @@ function actualizarBadgeDeudas() {
 }
 
 // ==========================================
-// 3. LÓGICA DE LA APP Y ESTADO
+// 3. LÓGICA DE LA APP Y ESTADO (BLINDADO)
 // ==========================================
 const KEY = 'fin_v12_0'; 
 let state = JSON.parse(localStorage.getItem(KEY) || 'null') || {};
 
 function migrateState() {
     if(!state.config) state.config = {};
-    if(!state.config.cats) state.config.cats = [{id:'fijo', name:'Fijo (mensual)', desc:'Arriendo, mercado, servicios', color:'#3b82f6'},{id:'necesario', name:'Necesario', desc:'Imprevistos, reparaciones, salud', color:'#eab308'},{id:'placer', name:'Placer', desc:'Ocio, salidas, gustos', color:'#a855f7'}];
+    if(!state.config.cats || state.config.cats.length === 0) state.config.cats = [{id:'fijo', name:'Fijo (mensual)', desc:'Arriendo, mercado, servicios', color:'#3b82f6'},{id:'necesario', name:'Necesario', desc:'Imprevistos, reparaciones, salud', color:'#eab308'},{id:'placer', name:'Placer', desc:'Ocio, salidas, gustos', color:'#a855f7'}];
     if(state.config.placer === undefined) state.config.placer = 30;
     if(!state.config.chartType) state.config.chartType = 'bar';
     if(!state.config.pieType) state.config.pieType = 'doughnut';
     if(!state.config.projChartType) state.config.projChartType = 'line';
     if(state.config.advisorEnabled === undefined) state.config.advisorEnabled = true;
     if(!state.config.autoSave) state.config.autoSave = { enabled: false, pct: 10, pocketId: '' };
+    
     if(!state.recurring) state.recurring = [];
     if(!state.summaries) state.summaries = {};
-    if(!state.accounts) state.accounts = [{id:'nequi', name:'Nequi'},{id:'banco', name:'Bancolombia'},{id:'billetera', name:'Billetera (Efectivo)'}];
-    if(!state.pockets) state.pockets = [{id:'ahorro_gen', name:'Ahorro General', meta: 0},{id:'ahorro_emg', name:'Ahorro Emergencias', meta: 0},{id:'ahorro_car', name:'Ahorro Carro', meta: 0}];
+    
+    // PROTECCIÓN CRUCIAL: Evitar que se borren las cuentas o bolsillos
+    if(!state.accounts || state.accounts.length === 0) {
+        state.accounts = [{id:'nequi', name:'Nequi'},{id:'banco', name:'Bancolombia'},{id:'billetera', name:'Billetera (Efectivo)'}];
+    }
+    if(!state.pockets || state.pockets.length === 0) {
+        state.pockets = [{id:'ahorro_gen', name:'Ahorro General', meta: 0},{id:'ahorro_emg', name:'Ahorro Emergencias', meta: 0},{id:'ahorro_car', name:'Ahorro Carro', meta: 0}];
+    }
+    
     if(!state.debts) state.debts = [];
     if(!state.years) state.years = {};
     if(!state.active) state.active = new Date().getFullYear();
@@ -543,9 +551,15 @@ function migrateState() {
 
     if(!state.years[state.active]) {
         state.years[state.active] = { locked:false, lockedInit: false, openingBalances: {}, txs:[] };
-        state.accounts.forEach(a => state.years[state.active].openingBalances[a.id] = 0);
-        state.pockets.forEach(p => state.years[state.active].openingBalances[p.id] = 0);
     }
+    
+    // Asegurar que cada cuenta/bolsillo tenga un saldo inicial definido
+    state.accounts.forEach(a => {
+        if(state.years[state.active].openingBalances[a.id] === undefined) state.years[state.active].openingBalances[a.id] = 0;
+    });
+    state.pockets.forEach(p => {
+        if(state.years[state.active].openingBalances[p.id] === undefined) state.years[state.active].openingBalances[p.id] = 0;
+    });
 }
 migrateState();
 
@@ -557,6 +571,33 @@ function save(){
 function fmt(n){ return new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0}).format(n||0); }
 function genId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 function toast(m){ const d=document.createElement('div'); d.className='toast'; d.textContent=m; document.body.appendChild(d); setTimeout(()=>d.remove(),3000); }
+
+let unsubscribeSnapshot = null;
+function syncData() {
+    const user = auth.currentUser; if (!user) return;
+    if (unsubscribeSnapshot) unsubscribeSnapshot();
+    unsubscribeSnapshot = db.collection('finanzas').doc(user.uid).onSnapshot(doc => {
+        if (doc.exists) {
+            const cloudData = doc.data();
+            if (cloudData.state) { 
+                // Si la nube tiene datos, los tomamos, pero protegemos cuentas/bolsillos si vienen vacíos
+                let tempState = cloudData.state;
+                if (tempState.accounts && tempState.accounts.length > 0) {
+                    state = tempState; 
+                } else {
+                    // Si la nube se corrompió, mantenemos las locales o creamos por defecto
+                    state = Object.assign({}, state, tempState);
+                }
+                migrateState(); 
+                localStorage.setItem(KEY, JSON.stringify(state)); 
+                processRecurring(); 
+                checkMonthlySummary(); 
+                renderAll(); 
+                toast('Datos sincronizados'); 
+            }
+        } else { db.collection('finanzas').doc(user.uid).set({ state: state }); }
+    });
+}
 
 // ==========================================
 // 4. GENERADOR DE CRONOGRAMA DE CUOTAS
@@ -571,14 +612,11 @@ function generateSchedule(amount, rate, months, startDateStr) {
     let schedule = [];
     let i = rate / 100;
     let payment = 0;
-    
-    // Fórmula de amortización francesa (cuota fija)
     if (i === 0) {
         payment = amount / months;
     } else {
         payment = (amount * i) / (1 - Math.pow(1 + i, -months));
     }
-
     for (let m = 0; m < months; m++) {
         let dateStr = addMonths(startDateStr, m);
         schedule.push({ num: m + 1, date: dateStr, amount: payment, paid: false });
@@ -587,13 +625,12 @@ function generateSchedule(amount, rate, months, startDateStr) {
 }
 
 // ==========================================
-// 5. AUTOMATIZACIONES (RECURRENTES Y AHORRO)
+// 5. AUTOMATIZACIONES
 // ==========================================
 function processRecurring() {
     const today = new Date();
     const currentMonthStr = `${today.getFullYear()}-${today.getMonth()}`;
     let changed = false;
-
     if (!state.recurring) return;
 
     state.recurring.forEach(r => {
@@ -603,18 +640,12 @@ function processRecurring() {
 
         if (today.getDate() >= r.day && r.lastRun !== currentMonthStr) {
             if (createdThisMonth && !createdBeforeDueDate) {
-                // Se creó este mes pero después del día de cobro. No aplicar hasta el próximo mes.
-                r.lastRun = currentMonthStr; // Marcar para evitar bucle este mes
+                r.lastRun = currentMonthStr; 
                 changed = true;
             } else {
                 const tx = {
-                    id: genId(),
-                    date: new Date().toISOString().slice(0, 10),
-                    detail: r.detail,
-                    amount: r.amount,
-                    type: 'Gasto',
-                    from: r.from,
-                    cat: 'fijo'
+                    id: genId(), date: new Date().toISOString().slice(0, 10), detail: r.detail,
+                    amount: r.amount, type: 'Gasto', from: r.from, cat: 'fijo'
                 };
                 state.years[state.active].txs.push(tx);
                 r.lastRun = currentMonthStr;
@@ -623,7 +654,6 @@ function processRecurring() {
             }
         }
     });
-
     if (changed) save();
 }
 
@@ -645,7 +675,6 @@ function addRecurring() {
     const from = document.getElementById('recAcc').value;
     const day = parseInt(document.getElementById('recDay').value);
     if (!detail || !amount || !from || !day) return toast('Completa todos los campos.');
-    
     state.recurring.push({ id: genId(), detail, amount, from, day, createdAt: Date.now(), lastRun: null });
     save(); renderAll(); toast('Recurrente añadido.');
     document.getElementById('recDetail').value = ''; document.getElementById('recAmount').value = ''; document.getElementById('recDay').value = '';
@@ -658,7 +687,7 @@ function delRecurring(id) {
 }
 
 // ==========================================
-// 6. DEUDAS Y PAGOS DE CUOTAS
+// 6. DEUDAS
 // ==========================================
 function addDebt() { 
     const n = document.getElementById('newDebtName').value; 
@@ -720,31 +749,23 @@ function confirmPayInstallment() {
     const fromAcc = document.getElementById('payModalAcc').value;
 
     const tx = {
-        id: genId(),
-        date: new Date().toISOString().slice(0, 10),
+        id: genId(), date: new Date().toISOString().slice(0, 10),
         detail: `Pago Cuota #${cuota.num} - ${debt.name}`,
-        amount: cuota.amount,
-        type: 'PagoDeuda',
-        from: fromAcc,
-        debtId: debt.id,
-        cat: debt.type === 'mala' ? 'necesario' : 'fijo'
+        amount: cuota.amount, type: 'PagoDeuda', from: fromAcc,
+        debtId: debt.id, cat: debt.type === 'mala' ? 'necesario' : 'fijo'
     };
     state.years[state.active].txs.push(tx);
     cuota.paid = true;
     cuota.txId = tx.id;
 
-    save();
-    renderAll();
+    save(); renderAll();
     document.getElementById('payModal').style.display = 'none';
     toast('✅ Cuota pagada con éxito');
 }
 
 function getDebtBal(debtId) {
   const debt = state.debts.find(d=>d.id===debtId); if(!debt) return 0;
-  if (debt.schedule) {
-      return debt.schedule.filter(c => !c.paid).reduce((sum, c) => sum + c.amount, 0);
-  }
-  // Fallback
+  if (debt.schedule) return debt.schedule.filter(c => !c.paid).reduce((sum, c) => sum + c.amount, 0);
   let paid=0; state.years[state.active].txs.forEach(t => { if(t.type==='PagoDeuda' && t.debtId===debtId) paid+=t.amount; });
   return (debt.total || 0) - paid;
 }
@@ -756,11 +777,8 @@ function checkDebtAlerts() {
             d.schedule.forEach(c => {
                 if (!c.paid) {
                     const diffDays = Math.ceil((new Date(c.date + 'T00:00:00') - today) / (1000 * 60 * 60 * 24));
-                    if (diffDays < 0) {
-                        alertsHtml += `<div class="alert danger">🚨 ¡ALERTA! La cuota #${c.num} de <strong>${d.name}</strong> venció hace ${Math.abs(diffDays)} días (${c.date}). Monto: ${fmt(c.amount)}.</div>`;
-                    } else if (diffDays <= 5) {
-                        alertsHtml += `<div class="alert warn">⚠️ La cuota #${c.num} de <strong>${d.name}</strong> vence en ${diffDays} días (${c.date}). Monto: ${fmt(c.amount)}.</div>`;
-                    }
+                    if (diffDays < 0) alertsHtml += `<div class="alert danger">🚨 ¡ALERTA! La cuota #${c.num} de <strong>${d.name}</strong> venció hace ${Math.abs(diffDays)} días (${c.date}). Monto: ${fmt(c.amount)}.</div>`;
+                    else if (diffDays <= 5) alertsHtml += `<div class="alert warn">⚠️ La cuota #${c.num} de <strong>${d.name}</strong> vence en ${diffDays} días (${c.date}). Monto: ${fmt(c.amount)}.</div>`;
                 }
             });
         }
@@ -769,23 +787,18 @@ function checkDebtAlerts() {
 }
 
 // ==========================================
-// 7. ASESOR INTELIGENTE Y RESUMEN MENSUAL
+// 7. ASESOR Y RESUMEN
 // ==========================================
 function generateAdvice() {
     const box = document.getElementById('advisorBox');
     if (!state.config.advisorEnabled) { box.style.display = 'none'; return; }
-    
-    const yr = state.years[state.active];
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-    
+    const yr = state.years[state.active]; const now = new Date();
     let inc = 0, expFijo = 0, expNecesario = 0, expPlacer = 0;
     const detailsPlacer = {}, detailsFijo = {};
 
     yr.txs.forEach(t => {
         const d = new Date(t.date);
-        if(d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
+        if(d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
             if(t.type === 'Ingreso') inc += t.amount;
             if(t.type === 'Gasto' || t.type === 'PagoDeuda') {
                 if(t.cat === 'fijo') { expFijo += t.amount; detailsFijo[t.detail] = (detailsFijo[t.detail]||0) + t.amount; }
@@ -799,8 +812,7 @@ function generateAdvice() {
     if (inc === 0 && expFijo === 0 && expPlacer === 0) {
         adviceHtml = `<div class="alert info" style="background:rgba(59,130,246,.1); border-color:var(--accent); color:var(--accent);">💡 <strong>Asesor:</strong> Registra tus ingresos y gastos de este mes para que pueda darte recomendaciones personalizadas.</div>`;
     } else if (inc > 0) {
-        const pctFijo = (expFijo / inc) * 100;
-        const pctPlacer = (expPlacer / inc) * 100;
+        const pctFijo = (expFijo / inc) * 100; const pctPlacer = (expPlacer / inc) * 100;
         const ahorroPots = state.pockets.reduce((s,p)=>s+getPocBal(p.id),0);
         const pctAhorro = (ahorroPots / inc) * 100;
 
@@ -822,26 +834,18 @@ function generateAdvice() {
             adviceHtml += `<div class="alert" style="background:rgba(34,197,94,.1); border-color:var(--green); color:var(--green);">🌟 <strong>¡Excelente!</strong> Tus finanzas están equilibradas este mes y estás cumpliendo tus metas de ahorro. ¡Sigue así!</div>`;
         }
     }
-
-    box.innerHTML = adviceHtml;
-    box.style.display = adviceHtml ? 'block' : 'none';
+    box.innerHTML = adviceHtml; box.style.display = adviceHtml ? 'block' : 'none';
 }
 
 function checkMonthlySummary() {
     const now = new Date();
-    let prevMonth = now.getMonth() - 1;
-    let prevYear = now.getFullYear();
+    let prevMonth = now.getMonth() - 1; let prevYear = now.getFullYear();
     if (prevMonth < 0) { prevMonth = 11; prevYear--; }
-    
     const key = `${prevYear}-${prevMonth}`;
     if (state.summaries[key]) return;
+    const yr = state.years[prevYear]; if (!yr) return;
 
-    const yr = state.years[prevYear];
-    if (!yr) return;
-
-    let inc = 0, exp = 0, ahorro = 0;
-    const details = {};
-
+    let inc = 0, exp = 0, ahorro = 0; const details = {};
     yr.txs.forEach(t => {
         const d = new Date(t.date);
         if (d.getMonth() === prevMonth && d.getFullYear() === prevYear) {
@@ -850,21 +854,18 @@ function checkMonthlySummary() {
             if (t.type === 'Transferencia' && state.pockets.some(p=>p.id===t.to)) ahorro += t.amount;
         }
     });
-
     if (inc === 0 && exp === 0) return;
-
     let topExpense = Object.keys(details).reduce((a, b) => details[a] > details[b] ? a : b, "");
     let advice = "";
     if (exp > inc) advice = `Gastaste más de lo que ingresaste. Te sugerimos reducir los gastos en <strong>${topExpense}</strong>.`;
     else if (ahorro < (inc * 0.2)) advice = `Te fue bien, pero podrías ahorrar un poco más. Tu mayor gasto fue en <strong>${topExpense}</strong>.`;
     else advice = `¡Excelente mes! Ahorraste una buena cantidad. Tu mayor gasto fue en <strong>${topExpense}</strong>.`;
-
     state.summaries[key] = { mes: prevMonth, anio: prevYear, inc, exp, ahorro, topExpense, advice };
     save();
 }
 
 // ==========================================
-// 8. RENDERIZADO GENERAL Y UTILIDADES
+// 8. RENDERIZADO
 // ==========================================
 function toggleGlobalHide() { state.hidden.global = !state.hidden.global; if(state.hidden.global) state.hidden.stats = {}; save(); renderAll(); }
 function toggleHideIndividual(key) { if(state.hidden.global) { state.hidden.global = false; state.hidden.stats[key] = false; } else { state.hidden.stats[key] = !state.hidden.stats[key]; } save(); renderAll(); }
@@ -914,32 +915,21 @@ function canEditInit(){ return !state.years[state.active].lockedInit; }
 function tieneMovimientos(id) { return state.years[state.active].txs.some(t => t.from === id || t.to === id); }
 
 function getPlacerLimitInfo() {
-    const now = new Date(); const key = `${now.getFullYear()}-${now.getMonth()}`;
-    const yr = state.years[state.active];
-    const monthPlacerSpent = yr.txs.filter(t => {
-        const d = new Date(t.date);
-        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() && (t.type === 'Gasto' || t.type === 'PagoDeuda') && t.cat === 'placer';
-    }).reduce((s, t) => s + t.amount, 0);
-    const isLocked = state.placerLimits[key] !== undefined;
-    const limit = state.placerLimits[key] || 0;
+    const now = new Date(); const key = `${now.getFullYear()}-${now.getMonth()}`; const yr = state.years[state.active];
+    const monthPlacerSpent = yr.txs.filter(t => { const d = new Date(t.date); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() && (t.type === 'Gasto' || t.type === 'PagoDeuda') && t.cat === 'placer'; }).reduce((s, t) => s + t.amount, 0);
+    const isLocked = state.placerLimits[key] !== undefined; const limit = state.placerLimits[key] || 0;
     return { key, limit, spent: monthPlacerSpent, available: limit - monthPlacerSpent, isLocked };
 }
 
 function calculateAndLockPlacer() {
-    const pct = parseFloat(document.getElementById('placerPercentageInput').value);
-    if(isNaN(pct) || pct < 1 || pct > 100) return toast('Porcentaje inválido (1-100)');
+    const pct = parseFloat(document.getElementById('placerPercentageInput').value); if(isNaN(pct) || pct < 1 || pct > 100) return toast('Porcentaje inválido (1-100)');
     const now = new Date(); const key = `${now.getFullYear()}-${now.getMonth()}`;
-    const monthIncome = state.years[state.active].txs.filter(t => {
-        const d = new Date(t.date);
-        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() && t.type === 'Ingreso';
-    }).reduce((s, t) => s + t.amount, 0);
-    state.placerLimits[key] = monthIncome * (pct / 100); state.placerLimits[key + '_pct'] = pct;
-    save(); renderAll(); toast(`Límite bloqueado: ${fmt(state.placerLimits[key])}`);
+    const monthIncome = state.years[state.active].txs.filter(t => { const d = new Date(t.date); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() && t.type === 'Ingreso'; }).reduce((s, t) => s + t.amount, 0);
+    state.placerLimits[key] = monthIncome * (pct / 100); state.placerLimits[key + '_pct'] = pct; save(); renderAll(); toast(`Límite bloqueado: ${fmt(state.placerLimits[key])}`);
 }
 
 function unlockPlacerLimit() {
-    const key = `${new Date().getFullYear()}-${new Date().getMonth()}`;
-    if(state.placerLimits[key] === undefined) return toast('No está bloqueado.');
+    const key = `${new Date().getFullYear()}-${new Date().getMonth()}`; if(state.placerLimits[key] === undefined) return toast('No está bloqueado.');
     if(!confirm('⚠️ ¿Desbloquear límite de Placer?')) return;
     delete state.placerLimits[key]; delete state.placerLimits[key + '_pct']; save(); renderAll(); toast('Desbloqueado.');
 }
@@ -976,6 +966,7 @@ function renderAll() {
   const isLocked = !canEditInit();
   document.getElementById('globalHideBtn').textContent = state.hidden.global ? '👁️ Mostrar todos los números' : '👁️‍🗨️ Ocultar todos los números';
 
+  // SI ESTÁ BLOQUEADO, SE OCULTAN LOS BOTONES DE AGREGAR
   if(isLocked) {
     document.getElementById('initAlert').innerHTML = `<div class="alert warn">🔒 Saldos iniciales bloqueados. Ve a Configuración > Zona de Administrador para corregir.</div>`;
     document.getElementById('addAccWrap').style.display='none'; document.getElementById('addPocWrap').style.display='none';
@@ -1049,65 +1040,34 @@ function renderAll() {
 
   document.getElementById('debtsList').innerHTML=state.debts.map(d=>{
     const saldo = getDebtBal(d.id); const isPaid = saldo <= 0;
-    
     let scheduleHtml = '';
     if (d.schedule) {
         scheduleHtml = `<div style="margin-top:10px; display:flex; flex-direction:column; gap:5px;">`;
         d.schedule.forEach(c => {
             if (!c.paid) {
-                scheduleHtml += `
-                <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg); padding:6px; border-radius:4px; font-size:12px;">
-                    <span>Cuota #${c.num} - ${c.date}</span>
-                    <span style="color:var(--accent); font-weight:bold;">${fmt(c.amount)}</span>
-                    <button class="primary" onclick="openPayModal('${d.id}', ${c.num})" style="width:auto; padding:4px 8px; font-size:11px;">Pagar</button>
-                </div>`;
+                scheduleHtml += `<div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg); padding:6px; border-radius:4px; font-size:12px;"><span>Cuota #${c.num} - ${c.date}</span><span style="color:var(--accent); font-weight:bold;">${fmt(c.amount)}</span><button class="primary" onclick="openPayModal('${d.id}', ${c.num})" style="width:auto; padding:4px 8px; font-size:11px;">Pagar</button></div>`;
             } else {
-                scheduleHtml += `
-                <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(34,197,94,0.1); padding:6px; border-radius:4px; font-size:12px; opacity:0.6;">
-                    <span>✅ Cuota #${c.num} - ${c.date}</span>
-                    <span style="color:var(--green); font-weight:bold;">Pagada</span>
-                </div>`;
+                scheduleHtml += `<div style="display:flex; justify-content:space-between; align-items:center; background:rgba(34,197,94,0.1); padding:6px; border-radius:4px; font-size:12px; opacity:0.6;"><span>✅ Cuota #${c.num} - ${c.date}</span><span style="color:var(--green); font-weight:bold;">Pagada</span></div>`;
             }
         });
         scheduleHtml += `</div>`;
     }
-
     let infoInteres = '';
-    if (d.rate > 0) {
-        infoInteres = `<div style="font-size:11px; color:var(--red); margin-top:3px;">💸 Interés: ${d.rate}% mensual. Pagas ${fmt(d.total - d.baseAmount)} extra en total.</div>`;
-    }
-
-    return `<div class="row-item" style="flex-direction:column;align-items:flex-start; padding-bottom:15px; margin-bottom:15px;">
-        <div style="display:flex;width:100%;justify-content:space-between;margin-bottom:5px;">
-            <input value="${d.name}" onchange="renameDebt('${d.id}', this.value)" style="width:50%; font-weight:bold;" ${isPaid?'disabled':''}>
-            <span style="color:${isPaid?'var(--green)':'var(--red)'}">${isPaid?'¡PAGADA!':fmt(saldo)+' restante'}</span>
-            ${canEdit() && !isPaid ?`<button class="danger" onclick="delDebt('${d.id}')">X</button>`:''}
-        </div>
-        ${infoInteres}
-        ${scheduleHtml}
-    </div>`;
+    if (d.rate > 0) infoInteres = `<div style="font-size:11px; color:var(--red); margin-top:3px;">💸 Interés: ${d.rate}% mensual. Pagas ${fmt(d.total - d.baseAmount)} extra en total.</div>`;
+    return `<div class="row-item" style="flex-direction:column;align-items:flex-start; padding-bottom:15px; margin-bottom:15px;"><div style="display:flex;width:100%;justify-content:space-between;margin-bottom:5px;"><input value="${d.name}" onchange="renameDebt('${d.id}', this.value)" style="width:50%; font-weight:bold;" ${isPaid?'disabled':''}><span style="color:${isPaid?'var(--green)':'var(--red)'}">${isPaid?'¡PAGADA!':fmt(saldo)+' restante'}</span>${canEdit() && !isPaid ?`<button class="danger" onclick="delDebt('${d.id}')">X</button>`:''}</div>${infoInteres}${scheduleHtml}</div>`;
   }).join('')||'<p style="text-align:center;color:var(--muted)">No hay deudas registradas</p>';
 
-  // Configuración
   document.getElementById('goalsConfigList').innerHTML=state.pockets.map(p=>`<div class="row-item"><span style="width:50%">${p.name}</span><input type="number" value="${p.meta||0}" onchange="setMetaPoc('${p.id}', this.value)" placeholder="Meta $" style="width:40%; text-align:right;"></div>`).join('');
   document.getElementById('configCatsList').innerHTML=state.config.cats.map(c=>`<div class="row-item"><input value="${c.name}" onchange="renameCat('${c.id}', 'name', this.value)" style="border:none; width:30%; font-weight:bold;"><input value="${c.desc||''}" onchange="renameCat('${c.id}', 'desc', this.value)" style="border:none; width:45%; font-size:11px; color:var(--muted);" placeholder="Guía..."><span style="background:${c.color}; width:15px; height:15px; border-radius:50%;"></span><button class="danger" onclick="delCat('${c.id}')">X</button></div>`).join('');
   
-  document.getElementById('recurringList').innerHTML = state.recurring.map(r=>`
-    <div class="row-item">
-      <div style="width: 60%; font-size: 12px;">
-        <strong>${r.detail}</strong> - ${fmt(r.amount)}<br>
-        <span style="color:var(--muted)">Los días ${r.day} de ${getAccName(r.from) || getPocName(r.from)}</span>
-      </div>
-      <button class="danger" onclick="delRecurring('${r.id}')">X</button>
-    </div>
-  `).join('') || '<p style="font-size:11px; color:var(--muted);">No hay gastos recurrentes configurados.</p>';
+  document.getElementById('recurringList').innerHTML = state.recurring.map(r=>`<div class="row-item"><div style="width: 60%; font-size: 12px;"><strong>${r.detail}</strong> - ${fmt(r.amount)}<br><span style="color:var(--muted)">Los días ${r.day} de ${getAccName(r.from) || getPocName(r.from)}</span></div><button class="danger" onclick="delRecurring('${r.id}')">X</button></div>`).join('') || '<p style="font-size:11px; color:var(--muted);">No hay gastos recurrentes configurados.</p>';
 
   const allOrigins = [...state.accounts.map(a=>({id:a.id, name:a.name})), ...state.pockets.map(p=>({id:p.id, name:p.name}))];
   const allOpts = allOrigins.map(o=>`<option value="${o.id}">${o.name}</option>`).join('');
   
   document.getElementById('fFrom').innerHTML = allOpts; 
   document.getElementById('fTo').innerHTML = allOpts;
-  document.getElementById('recAcc').innerHTML = allOpts; // Incluye bolsillos
+  document.getElementById('recAcc').innerHTML = allOpts;
   document.getElementById('autoSavePocket').innerHTML = state.pockets.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
   
   document.getElementById('fCategory').innerHTML = state.config.cats.map(c=>`<option value="${c.id}">${c.name} (${c.desc})</option>`).join('');
@@ -1170,83 +1130,6 @@ function downloadExcel() {
 }
 
 function toggleAdvisor() { state.config.advisorEnabled = document.getElementById('toggleAdvisor').checked; save(); renderAll(); toast(state.config.advisorEnabled ? 'Asesor Activado' : 'Asesor Desactivado'); }
-function toggleGlobalHide() { state.hidden.global = !state.hidden.global; if(state.hidden.global) state.hidden.stats = {}; save(); renderAll(); }
-function toggleHideIndividual(key) { if(state.hidden.global) { state.hidden.global = false; state.hidden.stats[key] = false; } else { state.hidden.stats[key] = !state.hidden.stats[key]; } save(); renderAll(); }
-function toggleLockHide(id) { state.hidden.locks[id] = !state.hidden.locks[id]; save(); renderAll(); }
-function renderVal(key, val) { if(state.hidden.global || state.hidden.stats[key]) return '***'; return fmt(val); }
-
-function getAccName(id){ const a=state.accounts.find(x=>x.id===id); return a?a.name:'?'; }
-function getPocName(id){ const p=state.pockets.find(x=>x.id===id); return p?p.name:'?'; }
-function getDebtName(id){ const d=state.debts.find(x=>x.id===id); return d?d.name:'?'; }
-function getCatName(id){ const c=state.config.cats.find(x=>x.id===id); return c?c.name:id; }
-
-function getFlow(y) {
-  let inc=0, exp=0; const yr=state.years[y]; const catTotals = {};
-  state.config.cats.forEach(c => catTotals[c.id] = 0);
-  if(!yr) return {inc:0, exp:0, catTotals};
-  yr.txs.forEach(t => {
-    if(t.type==='Ingreso') inc+=t.amount;
-    if(t.type==='Gasto' || t.type==='PagoDeuda') { exp+=t.amount; if(t.cat && catTotals[t.cat] !== undefined) catTotals[t.cat] += t.amount; }
-  });
-  return {inc, exp, catTotals};
-}
-
-function getAccBal(accId) {
-  let b = state.years[state.active].openingBalances[accId] || 0;
-  state.years[state.active].txs.forEach(t => {
-    if(t.type==='Ingreso' && t.to===accId) b+=t.amount;
-    if(t.type==='Gasto' && t.from===accId) b-=t.amount;
-    if(t.type==='PagoDeuda' && t.from===accId) b-=t.amount;
-    if(t.type==='Transferencia' && t.from===accId) b-=t.amount;
-    if(t.type==='Transferencia' && t.to===accId) b+=t.amount;
-  });
-  return b;
-}
-
-function getPocBal(pocId) {
-  let b = state.years[state.active].openingBalances[pocId] || 0;
-  state.years[state.active].txs.forEach(t => {
-    if(t.type==='Transferencia' && t.to===pocId) b+=t.amount;
-    if(t.type==='Transferencia' && t.from===pocId) b-=t.amount;
-    if(t.type==='PagoDeuda' && t.from===pocId) b-=t.amount;
-  });
-  return b;
-}
-
-function canEdit(){ return !state.years[state.active].locked; }
-function canEditInit(){ return !state.years[state.active].lockedInit; }
-function tieneMovimientos(id) { return state.years[state.active].txs.some(t => t.from === id || t.to === id); }
-function getPlacerLimitInfo() {
-    const now = new Date(); const key = `${now.getFullYear()}-${now.getMonth()}`; const yr = state.years[state.active];
-    const monthPlacerSpent = yr.txs.filter(t => { const d = new Date(t.date); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() && (t.type === 'Gasto' || t.type === 'PagoDeuda') && t.cat === 'placer'; }).reduce((s, t) => s + t.amount, 0);
-    const isLocked = state.placerLimits[key] !== undefined; const limit = state.placerLimits[key] || 0;
-    return { key, limit, spent: monthPlacerSpent, available: limit - monthPlacerSpent, isLocked };
-}
-function calculateAndLockPlacer() {
-    const pct = parseFloat(document.getElementById('placerPercentageInput').value); if(isNaN(pct) || pct < 1 || pct > 100) return toast('Porcentaje inválido (1-100)');
-    const now = new Date(); const key = `${now.getFullYear()}-${now.getMonth()}`;
-    const monthIncome = state.years[state.active].txs.filter(t => { const d = new Date(t.date); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() && t.type === 'Ingreso'; }).reduce((s, t) => s + t.amount, 0);
-    state.placerLimits[key] = monthIncome * (pct / 100); state.placerLimits[key + '_pct'] = pct; save(); renderAll(); toast(`Límite bloqueado: ${fmt(state.placerLimits[key])}`);
-}
-function unlockPlacerLimit() {
-    const key = `${new Date().getFullYear()}-${new Date().getMonth()}`; if(state.placerLimits[key] === undefined) return toast('No está bloqueado.');
-    if(!confirm('⚠️ ¿Desbloquear límite de Placer?')) return;
-    delete state.placerLimits[key]; delete state.placerLimits[key + '_pct']; save(); renderAll(); toast('Desbloqueado.');
-}
-function renderTable() {
-  const tb=document.querySelector('#txTable tbody'); const q=document.getElementById('txSearch').value.toLowerCase();
-  const list=state.years[state.active].txs.filter(t=>t.detail.toLowerCase().includes(q)).sort((a,b)=>b.date.localeCompare(a.date));
-  document.getElementById('txCount').textContent=list.length+' registros';
-  tb.innerHTML=list.map(t=>{
-    let ruta = ''; if(t.type==='Ingreso') ruta = '➔ ' + (getAccName(t.to) || getPocName(t.to));
-    if(t.type==='Gasto') ruta = (getAccName(t.from) || getPocName(t.from)) + ' ➔ Gasto';
-    if(t.type==='Transferencia') ruta = (getAccName(t.from)||getPocName(t.from)) + ' ➔ ' + (getAccName(t.to) || getPocName(t.to));
-    if(t.type==='PagoDeuda') ruta = (getAccName(t.from)||getPocName(t.from)) + ' ➔ Deuda: ' + getDebtName(t.debtId);
-    let catStr = t.cat ? `<br><small style="color:var(--accent)">${getCatName(t.cat)}</small>` : '';
-    let colorMonto = 'var(--red)'; if(t.type === 'Ingreso') colorMonto = 'var(--green)'; if(t.type === 'Transferencia') colorMonto = 'var(--yellow)'; 
-    return `<tr><td>${t.date}</td><td>${t.detail}</td><td>${t.type}${catStr}<br><small style="color:var(--muted)">${ruta}</small></td><td style="text-align:right; color:${colorMonto}; font-weight:bold;">${fmt(t.amount)}</td><td>${canEdit()?`<button class="danger" onclick="delTx('${t.id}')">X</button>`:''}</td></tr>`;
-  }).join('')||'<tr><td colspan="5" style="text-align:center">Sin datos</td></tr>';
-}
 function unlockOpeningBalances() { if(!state.years[state.active].lockedInit) return toast('Ya desbloqueado.'); if(!confirm('⚠️ ¿Desbloquear saldos iniciales?')) return; state.years[state.active].lockedInit = false; save(); renderAll(); toast('Desbloqueado.'); }
 function lockOpeningBalances() { if(!confirm('¿Seguro? No podrás modificar saldos iniciales.')) return; state.years[state.active].lockedInit = true; save(); renderAll(); toast('Saldos bloqueados.'); }
 function setOpeningBal(id, val) { if(!canEditInit()) return; state.years[state.active].openingBalances[id] = parseFloat(val) || 0; save(); renderAll(); }
@@ -1259,36 +1142,22 @@ document.getElementById('fType').onchange = (e) => {
 };
 function addTx() {
   if(!canEdit()) return toast('Año bloqueado'); 
-  const d=document.getElementById('fDate').value; 
-  const det=document.getElementById('fDetail').value; 
-  const a=parseFloat(document.getElementById('fAmount').value); 
-  const ty=document.getElementById('fType').value;
-  
+  const d=document.getElementById('fDate').value; const det=document.getElementById('fDetail').value; const a=parseFloat(document.getElementById('fAmount').value); const ty=document.getElementById('fType').value;
   if(!d || !det || isNaN(a) || a<=0) return toast('Completa bien los datos');
-  
   if(ty === 'PagoDeuda') { if(a > getDebtBal(document.getElementById('fDebtSelect').value)) return toast('La deuda es menor.'); }
-  if(ty === 'Gasto' && document.getElementById('fCategory').value === 'placer') { 
-      const placerInfo = getPlacerLimitInfo(); 
-      if(placerInfo.isLocked && (placerInfo.spent + a) > placerInfo.limit) return toast(`¡Alto! Supera tu límite disponible de ${fmt(placerInfo.available)}.`); 
-  }
-
+  if(ty === 'Gasto' && document.getElementById('fCategory').value === 'placer') { const placerInfo = getPlacerLimitInfo(); if(placerInfo.isLocked && (placerInfo.spent + a) > placerInfo.limit) return toast(`¡Alto! Supera tu límite disponible de ${fmt(placerInfo.available)}.`); }
   let tx = {id:genId(), date:d, detail:det, amount:a, type:ty};
   if(ty==='Ingreso') tx.to = document.getElementById('fTo').value;
   if(ty==='Gasto') { tx.from = document.getElementById('fFrom').value; tx.cat = document.getElementById('fCategory').value; }
   if(ty==='Transferencia') { tx.from = document.getElementById('fFrom').value; tx.to = document.getElementById('fTo').value; }
   if(ty==='PagoDeuda') { tx.from = document.getElementById('fFrom').value; tx.debtId = document.getElementById('fDebtSelect').value; tx.cat = document.getElementById('fCategory').value; }
-  
   state.years[state.active].txs.push(tx); 
-
   if (ty === 'Ingreso' && state.config.autoSave.enabled && state.config.autoSave.pocketId && state.config.autoSave.pct > 0) {
       const saveAmount = a * (state.config.autoSave.pct / 100);
       const txAutoSave = { id: genId(), date: d, detail: 'Ahorro Automático', amount: saveAmount, type: 'Transferencia', from: tx.to, to: state.config.autoSave.pocketId };
-      state.years[state.active].txs.push(txAutoSave);
-      toast(`Se ahorraron ${fmt(saveAmount)} automáticamente.`);
+      state.years[state.active].txs.push(txAutoSave); toast(`Se ahorraron ${fmt(saveAmount)} automáticamente.`);
   }
-
-  save(); renderAll(); toast('Guardado');
-  document.getElementById('fDetail').value=''; document.getElementById('fAmount').value='';
+  save(); renderAll(); toast('Guardado'); document.getElementById('fDetail').value=''; document.getElementById('fAmount').value='';
 }
 function delTx(id){ if(!canEdit())return; state.years[state.active].txs=state.years[state.active].txs.filter(t=>t.id!==id); save(); renderAll(); }
 function addAcc(){ if(!canEditInit()) return toast('Bloquea primero los saldos para añadir cuentas.'); const n=document.getElementById('newAccName').value; if(!n)return; const id=genId(); state.accounts.push({id,name:n}); state.years[state.active].openingBalances[id]=0; save(); renderAll(); document.getElementById('newAccName').value=''; }
