@@ -461,31 +461,88 @@ function changePassword() {
 
 function b64urlToBuf(b64url) { return Uint8Array.from(atob(b64url.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0)).buffer; }
 function bufToB64url(buf) { return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, ''); }
+
+// ✅ FUNCIÓN CORREGIDA PARA ANDROID Y PC
 async function toggleBiometric() {
-    if (bioCredentialId) { localStorage.removeItem('bioCredentialId'); bioCredentialId = null; actualizarEstadoBio(); toast('Desactivado.'); } 
-    else {
-        if (!window.PublicKeyCredential) return alert('No soportado.');
+    if (bioCredentialId) { 
+        localStorage.removeItem('bioCredentialId'); 
+        bioCredentialId = null; 
+        actualizarEstadoBio(); 
+        toast('Desbloqueo biométrico desactivado.'); 
+    } else {
+        if (!window.PublicKeyCredential) {
+            return alert('❌ Tu navegador o dispositivo no soporta autenticación biométrica (WebAuthn).');
+        }
+
         try {
-            const challenge = new Uint8Array(32); window.crypto.getRandomValues(challenge); const userId = new Uint8Array(16); window.crypto.getRandomValues(userId);
-            const credential = await navigator.credentials.create({ publicKey: { challenge: challenge, rp: { name: "Mis Finanzas Pro" }, user: { id: userId, name: auth.currentUser.email + Math.random(), displayName: auth.currentUser.email }, pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }], authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" }, timeout: 60000 }});
-            bioCredentialId = bufToB64url(credential.rawId); localStorage.setItem('bioCredentialId', bioCredentialId); actualizarEstadoBio(); toast('✅ Huella/PIN configurado.');
+            const challenge = new Uint8Array(32); 
+            window.crypto.getRandomValues(challenge); 
+            const userId = new Uint8Array(16); 
+            window.crypto.getRandomValues(userId);
+
+            const publicKeyCredentialCreationOptions = {
+                challenge: challenge,
+                rp: { 
+                    name: "Mis Finanzas Pro", 
+                    id: window.location.hostname // 👈 CRUCIAL PARA ANDROID
+                },
+                user: {
+                    id: userId,
+                    name: auth.currentUser.email,
+                    displayName: auth.currentUser.email,
+                },
+                pubKeyCredParams: [
+                    { type: "public-key", alg: -7 },  // ES256
+                    { type: "public-key", alg: -257 } // RS256
+                ],
+                authenticatorSelection: {
+                    userVerification: "required", // 👈 Obliga a pedir PIN/Huella
+                    residentKey: "preferred"
+                },
+                timeout: 120000 // 2 minutos de margen
+            };
+
+            const credential = await navigator.credentials.create({ publicKey: publicKeyCredentialCreationOptions });
+            
+            bioCredentialId = bufToB64url(credential.rawId); 
+            localStorage.setItem('bioCredentialId', bioCredentialId); 
+            actualizarEstadoBio(); 
+            toast('✅ Huella/PIN configurado con éxito.');
         } catch (error) { 
-            if (error.name === 'InvalidStateError') {
-                alert('❌ Este dispositivo ya tiene una huella o PIN registrado para la app. Si quieres registrar uno nuevo, debes borrar el anterior desde la configuración de seguridad de tu teléfono o PC.');
+            console.error(error);
+            if (error.name === 'NotAllowedError') {
+                alert('❌ No se pudo completar la configuración.\n\nAsegúrate de:\n1. Tener configurado un PIN o huella en tu teléfono.\n2. Desbloquear la pantalla cuando aparezca el aviso.\n3. No cerrar la ventana de seguridad.');
+            } else if (error.name === 'InvalidStateError') {
+                alert('❌ Ya existe una huella registrada para esta cuenta en este dispositivo. Desactívala primero o borra los datos del sitio e intenta de nuevo.');
             } else {
-                alert('Error: ' + error.message); 
+                alert('❌ Error al configurar la huella: ' + error.message); 
             }
         }
     }
 }
+
 async function desbloquearHuella() {
     if (!bioCredentialId) return;
     try {
-        const challenge = new Uint8Array(32); window.crypto.getRandomValues(challenge);
-        await navigator.credentials.get({ publicKey: { challenge: challenge, allowCredentials: [{ id: b64urlToBuf(bioCredentialId), type: 'public-key' }], userVerification: "required" }});
-        document.getElementById('lock-screen').style.display = 'none'; document.getElementById('app-screen').style.display = 'block'; syncData(); toast('🔓 Desbloqueado');
-    } catch (error) { toast('❌ Error o cancelado.'); }
+        const challenge = new Uint8Array(32); 
+        window.crypto.getRandomValues(challenge);
+        await navigator.credentials.get({ 
+            publicKey: { 
+                challenge: challenge, 
+                allowCredentials: [{ id: b64urlToBuf(bioCredentialId), type: 'public-key' }], 
+                userVerification: "required" 
+            }
+        });
+        document.getElementById('lock-screen').style.display = 'none'; 
+        document.getElementById('app-screen').style.display = 'block'; 
+        syncData(); 
+        toast('🔓 Desbloqueado');
+    } catch (error) { 
+        console.error(error);
+        toast('❌ Error o cancelado. Intenta de nuevo.'); 
+    }
 }
+
 function actualizarEstadoBio() {
     const btn = document.getElementById('btn-bio-toggle'), txt = document.getElementById('bio-status-text');
     if (!btn || !txt) return;
@@ -1116,7 +1173,6 @@ function renderDeudas() {
     let infoInteres = '';
     if (d.rate > 0) infoInteres = `<div style="font-size:11px; color:var(--red); margin-top:3px;">💸 Interés: ${d.rate}% mensual. Pagas ${fmt(d.total - d.baseAmount)} extra en total.</div>`;
     
-    // Corregido: La X de borrar aparece si la deuda no está pagada (y el año está abierto) O si tiene adminUnlock
     const showDeleteBtn = (!isPaid && canEdit()) || d.adminUnlock;
     
     return `<div class="row-item" style="flex-direction:column;align-items:flex-start; padding-bottom:15px; margin-bottom:15px;"><div style="display:flex;width:100%;justify-content:space-between;margin-bottom:5px;"><input value="${d.name}" onchange="renameDebt('${d.id}', this.value)" style="width:50%; font-weight:bold;" ${isPaid?'disabled':''}><span style="color:${isPaid?'var(--green)':'var(--red)'}">${isPaid?'¡PAGADA!':fmt(saldo)+' restante'}</span>${showDeleteBtn ?`<button class="danger" onclick="delDebt('${d.id}')">X</button>`:''}</div>${infoInteres}${scheduleHtml}</div>`;
