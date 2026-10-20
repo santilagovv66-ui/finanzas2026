@@ -367,6 +367,9 @@ input:checked + .slider:before { transform: translateX(20px); }
           <p style="font-size:11px; color:var(--accent); margin-top:10px; margin-bottom:5px;">Desbloqueo de Saldos y Placer</p>
           <button class="warning" onclick="unlockOpeningBalances()">🔓 Desbloquear Saldos Iniciales</button>
           <button class="warning" onclick="unlockPlacerLimit()">🔓 Desbloquear Límite de Placer</button>
+          
+          <p style="font-size:11px; color:var(--accent); margin-top:15px; margin-bottom:5px;">Desbloqueo de Deudas Pagadas</p>
+          <button class="warning" onclick="unlockDebts()">🔓 Desbloquear Deudas Pagadas</button>
         </div>
 
         <!-- 7. Seguridad -->
@@ -553,7 +556,6 @@ function migrateState() {
         state.years[state.active] = { locked:false, lockedInit: false, openingBalances: {}, txs:[] };
     }
     
-    // Asegurar que cada cuenta/bolsillo tenga un saldo inicial definido
     state.accounts.forEach(a => {
         if(state.years[state.active].openingBalances[a.id] === undefined) state.years[state.active].openingBalances[a.id] = 0;
     });
@@ -580,12 +582,10 @@ function syncData() {
         if (doc.exists) {
             const cloudData = doc.data();
             if (cloudData.state) { 
-                // Si la nube tiene datos, los tomamos, pero protegemos cuentas/bolsillos si vienen vacíos
                 let tempState = cloudData.state;
                 if (tempState.accounts && tempState.accounts.length > 0) {
                     state = tempState; 
                 } else {
-                    // Si la nube se corrompió, mantenemos las locales o creamos por defecto
                     state = Object.assign({}, state, tempState);
                 }
                 migrateState(); 
@@ -687,7 +687,7 @@ function delRecurring(id) {
 }
 
 // ==========================================
-// 6. DEUDAS
+// 6. DEUDAS Y PAGOS
 // ==========================================
 function addDebt() { 
     const n = document.getElementById('newDebtName').value; 
@@ -747,6 +747,12 @@ function confirmPayInstallment() {
     if (!cuota) return;
 
     const fromAcc = document.getElementById('payModalAcc').value;
+    
+    // NUEVA VALIDACIÓN DE SALDO
+    const currentBalance = (getAccBal(fromAcc) || 0) + (getPocBal(fromAcc) || 0);
+    if (currentBalance < cuota.amount) {
+        return toast(`❌ Saldo insuficiente en ${getAccName(fromAcc) || getPocName(fromAcc)}. Tienes ${fmt(currentBalance)} y necesitas ${fmt(cuota.amount)}.`);
+    }
 
     const tx = {
         id: genId(), date: new Date().toISOString().slice(0, 10),
@@ -966,7 +972,6 @@ function renderAll() {
   const isLocked = !canEditInit();
   document.getElementById('globalHideBtn').textContent = state.hidden.global ? '👁️ Mostrar todos los números' : '👁️‍🗨️ Ocultar todos los números';
 
-  // SI ESTÁ BLOQUEADO, SE OCULTAN LOS BOTONES DE AGREGAR
   if(isLocked) {
     document.getElementById('initAlert').innerHTML = `<div class="alert warn">🔒 Saldos iniciales bloqueados. Ve a Configuración > Zona de Administrador para corregir.</div>`;
     document.getElementById('addAccWrap').style.display='none'; document.getElementById('addPocWrap').style.display='none';
@@ -1144,8 +1149,17 @@ function addTx() {
   if(!canEdit()) return toast('Año bloqueado'); 
   const d=document.getElementById('fDate').value; const det=document.getElementById('fDetail').value; const a=parseFloat(document.getElementById('fAmount').value); const ty=document.getElementById('fType').value;
   if(!d || !det || isNaN(a) || a<=0) return toast('Completa bien los datos');
-  if(ty === 'PagoDeuda') { if(a > getDebtBal(document.getElementById('fDebtSelect').value)) return toast('La deuda es menor.'); }
+  
+  if(ty === 'PagoDeuda') { 
+      const debtId = document.getElementById('fDebtSelect').value;
+      if(a > getDebtBal(debtId)) return toast('El monto a pagar supera la deuda total.');
+      const fromAcc = document.getElementById('fFrom').value;
+      const currentBalance = (getAccBal(fromAcc) || 0) + (getPocBal(fromAcc) || 0);
+      if (currentBalance < a) return toast(`Saldo insuficiente en ${getAccName(fromAcc) || getPocName(fromAcc)}. Tienes ${fmt(currentBalance)}.`);
+  }
+  
   if(ty === 'Gasto' && document.getElementById('fCategory').value === 'placer') { const placerInfo = getPlacerLimitInfo(); if(placerInfo.isLocked && (placerInfo.spent + a) > placerInfo.limit) return toast(`¡Alto! Supera tu límite disponible de ${fmt(placerInfo.available)}.`); }
+  
   let tx = {id:genId(), date:d, detail:det, amount:a, type:ty};
   if(ty==='Ingreso') tx.to = document.getElementById('fTo').value;
   if(ty==='Gasto') { tx.from = document.getElementById('fFrom').value; tx.cat = document.getElementById('fCategory').value; }
