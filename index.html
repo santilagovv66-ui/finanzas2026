@@ -57,7 +57,7 @@ th{color:var(--muted);font-size:11px}
 .row-item .locked-val{font-size:12px;color:var(--muted);width:35%;text-align:right; display:flex; justify-content:flex-end; align-items:center; gap:6px;}
 @media(max-width:600px){header h1{font-size:15px}}
 
-/* Estilos de Login y Bloqueo */
+/* Estilos Login y Bloqueo */
 #auth-screen, #lock-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
 .auth-card { background: var(--card); padding: 30px; border-radius: 10px; border: 1px solid var(--border); width: 100%; max-width: 400px; }
 .auth-card h2 { text-align: center; margin-bottom: 20px; color: var(--accent); }
@@ -66,7 +66,7 @@ th{color:var(--muted);font-size:11px}
 #auth-error { color: var(--red); text-align: center; margin-top: 10px; font-size: 13px; }
 #lock-screen { display: none; background: var(--bg); position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; }
 
-/* Estilos mejorados Configuración PRO */
+/* Estilos Configuración PRO */
 .config-section { border-left: 4px solid var(--accent); padding-left: 15px; margin-bottom: 25px; }
 .config-section h3 { font-size: 15px; color: var(--text); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
 .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
@@ -79,7 +79,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 </head>
 <body>
 
-<!-- PANTALLA DE LOGIN -->
+<!-- LOGIN -->
 <div id="auth-screen">
     <div class="auth-card">
         <h2>💰 Mis Finanzas Pro</h2>
@@ -95,7 +95,7 @@ input:checked + .slider:before { transform: translateX(20px); }
     </div>
 </div>
 
-<!-- PANTALLA DE BLOQUEO BIOMÉTRICO -->
+<!-- BLOQUEO BIOMÉTRICO -->
 <div id="lock-screen">
     <div class="auth-card" style="text-align: center;">
         <h2>🔒 App Bloqueada</h2>
@@ -105,7 +105,7 @@ input:checked + .slider:before { transform: translateX(20px); }
     </div>
 </div>
 
-<!-- APLICACIÓN PRINCIPAL -->
+<!-- APP PRINCIPAL -->
 <div id="app-screen" style="display:none;">
     <header>
       <h1>💰 Mis Finanzas Pro</h1>
@@ -121,9 +121,7 @@ input:checked + .slider:before { transform: translateX(20px); }
     </nav>
     <main>
       <section class="view active" id="view-dashboard">
-        <!-- ASESOR INTELIGENTE -->
         <div id="advisorBox" style="display:none; margin-bottom: 14px;"></div>
-        
         <div id="alerts"></div>
         <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
           <button class="primary" style="width:auto; background:var(--border); color:var(--text); font-size:12px;" onclick="toggleGlobalHide()" id="globalHideBtn">👁️ Ocultar todos los números</button>
@@ -186,11 +184,15 @@ input:checked + .slider:before { transform: translateX(20px); }
       </section>
 
       <section class="view" id="view-analisis">
-        <!-- ANÁLISIS EXPERTO 50/30/20 -->
         <div class="card">
           <h2>🏆 Regla de Oro Financiera (50/30/20)</h2>
           <p style="font-size: 11px; color: var(--muted); margin-bottom: 15px;">Los expertos sugieren: 50% Gastos Fijos, 30% Placer y 20% Ahorro.</p>
           <div id="expertAnalysis"></div>
+        </div>
+
+        <div class="card">
+          <h2>📝 Resúmenes Mensuales Guardados</h2>
+          <div id="monthlySummariesList" style="display:flex; flex-direction:column; gap:10px;"></div>
         </div>
 
         <div class="card">
@@ -250,10 +252,13 @@ input:checked + .slider:before { transform: translateX(20px); }
         <div class="card">
           <h2>Mis Deudas</h2>
           <div id="debtsList"></div>
-          <div style="margin-top:10px">
-            <input type="text" id="newDebtName" placeholder="Nombre (ej. ADDI)">
-            <input type="number" id="newDebtAmount" placeholder="Monto total de la deuda">
-            <label style="font-size:11px; color:var(--muted);">Fecha Límite de Pago (Opcional)</label>
+          <div style="margin-top:20px; border-top: 1px solid var(--border); padding-top: 15px;">
+            <h3 style="font-size: 14px; margin-bottom: 10px;">Registrar Nueva Deuda</h3>
+            <input type="text" id="newDebtName" placeholder="Nombre (ej. Crédito Vehículo)">
+            <input type="number" id="newDebtAmount" placeholder="Monto prestado ($)">
+            <input type="number" id="newDebtInterest" placeholder="Interés total (%) - Opcional">
+            <input type="number" id="newDebtInstallments" placeholder="Número de cuotas (ej. 12) - Opcional">
+            <label style="font-size:11px; color:var(--muted);">Fecha Límite de Pago Final (Opcional)</label>
             <input type="date" id="newDebtDate">
             <select id="newDebtType">
                 <option value="mala">Mala (Consumo)</option>
@@ -265,11 +270,43 @@ input:checked + .slider:before { transform: translateX(20px); }
         </div>
       </section>
 
-      <!-- CONFIGURACIÓN PRO -->
       <section class="view" id="view-config">
         
-        <!-- 1. Asesor Inteligente -->
-        <div class="card config-section">
+        <!-- 1. AUTOMATIZACIONES -->
+        <div class="card config-section" style="border-left-color: var(--accent);">
+          <h3>⚙️ Automatizaciones</h3>
+          
+          <div style="background: var(--bg); padding: 10px; border-radius: 6px; margin-bottom: 15px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+              <span style="font-size:13px; font-weight:bold;">Ahorro Automático</span>
+              <label class="switch">
+                <input type="checkbox" id="toggleAutoSave" onchange="toggleAutoSave()">
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div id="autoSaveConfig" style="display:none;">
+              <label style="font-size:11px; color:var(--muted);">Porcentaje del ingreso a ahorrar (%)</label>
+              <input type="number" id="autoSavePct" value="10" min="1" max="100" onchange="saveAutoSaveConfig()">
+              <label style="font-size:11px; color:var(--muted);">Bolsillo destino</label>
+              <select id="autoSavePocket" onchange="saveAutoSaveConfig()"></select>
+            </div>
+          </div>
+
+          <div style="background: var(--bg); padding: 10px; border-radius: 6px;">
+            <h4 style="font-size:13px; margin-bottom: 10px;">Gastos Recurrentes (Fijos)</h4>
+            <div id="recurringList" style="margin-bottom:10px;"></div>
+            <div style="border-top: 1px dashed var(--border); padding-top: 10px;">
+              <input type="text" id="recDetail" placeholder="Detalle (ej. Arriendo)">
+              <input type="number" id="recAmount" placeholder="Monto ($)">
+              <select id="recAcc"></select>
+              <input type="number" id="recDay" placeholder="Día del mes que se cobra (1-31)" min="1" max="31">
+              <button class="primary" onclick="addRecurring()" style="font-size: 12px;">+ Añadir Recurrente</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Asesor Inteligente -->
+        <div class="card config-section" style="border-left-color: var(--purple);">
           <h3>🤖 Asesor Financiero IA</h3>
           <p style="font-size: 12px; color: var(--muted); margin-bottom: 10px;">Muestra consejos automáticos en tu Panel Principal basados en tus gastos.</p>
           <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -281,21 +318,21 @@ input:checked + .slider:before { transform: translateX(20px); }
           </div>
         </div>
 
-        <!-- 2. Exportar Datos -->
+        <!-- 3. Exportar Datos -->
         <div class="card config-section" style="border-left-color: var(--green);">
           <h3>📥 Exportar Información</h3>
           <p style="font-size: 12px; color: var(--muted); margin-bottom: 10px;">Descarga un archivo Excel con todos los movimientos de este año.</p>
           <button class="primary" onclick="downloadExcel()" style="background: var(--green);">📊 Descargar Historial en Excel</button>
         </div>
 
-        <!-- 3. Metas Individuales -->
+        <!-- 4. Metas Individuales -->
         <div class="card config-section" style="border-left-color: var(--yellow);">
           <h3>🎯 Metas de Bolsillos</h3>
           <div id="goalsConfigList"></div>
         </div>
 
-        <!-- 4. Categorías de Gasto -->
-        <div class="card config-section" style="border-left-color: var(--purple);">
+        <!-- 5. Categorías -->
+        <div class="card config-section" style="border-left-color: var(--yellow);">
           <h3>🏷️ Categorías de Gasto</h3>
           <div id="configCatsList"></div>
           <div style="margin-top: 10px;">
@@ -305,7 +342,7 @@ input:checked + .slider:before { transform: translateX(20px); }
           </div>
         </div>
 
-        <!-- 5. Zona de Administrador -->
+        <!-- 6. Administrador -->
         <div class="card config-section" style="border-left-color: var(--red);">
           <h3>🔧 Zona de Administrador</h3>
           <p style="font-size:11px; color:var(--accent); margin-top:10px; margin-bottom:5px;">Desbloqueo de Saldos y Placer</p>
@@ -316,10 +353,9 @@ input:checked + .slider:before { transform: translateX(20px); }
           <button class="warning" onclick="unlockDebts()">🔓 Desbloquear Deudas Pagadas</button>
         </div>
 
-        <!-- 6. Cuenta y Seguridad -->
+        <!-- 7. Seguridad -->
         <div class="card config-section">
           <h3>🔒 Cuenta y Seguridad</h3>
-          
           <label style="font-size:11px; color:var(--muted);">Cambiar Contraseña</label>
           <input type="password" id="new-password" placeholder="Nueva contraseña (mín. 6 caracteres)" style="margin-bottom: 5px;">
           <button class="warning" onclick="changePassword()" style="width: 100%; margin-bottom: 15px;">Actualizar Contraseña</button>
@@ -329,14 +365,14 @@ input:checked + .slider:before { transform: translateX(20px); }
           <button class="primary" id="btn-bio-toggle" onclick="toggleBiometric()" style="background: var(--purple);">Configurar Huella/PIN</button>
         </div>
 
-        <!-- 7. Gestión de Años -->
+        <!-- 8. Años -->
         <div class="card config-section">
           <h3>📅 Gestión de Años</h3>
           <button class="primary" onclick="createNextYear()">+ Crear año siguiente (Arrastra todo)</button>
           <button class="primary" onclick="toggleLock()" id="lockBtn">🔒 Cerrar año actual</button>
         </div>
 
-        <!-- 8. Cerrar Sesión -->
+        <!-- 9. Logout -->
         <div style="margin-top: 30px; margin-bottom: 50px;">
           <button class="danger" onclick="logout()" style="padding: 15px; font-size: 16px; width: 100%;">Cerrar Sesión</button>
         </div>
@@ -364,7 +400,7 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // ==========================================
-// 2. LÓGICA DE AUTENTICACIÓN Y BIOMETRÍA
+// 2. AUTENTICACIÓN Y BIOMETRÍA
 // ==========================================
 let bioCredentialId = localStorage.getItem('bioCredentialId');
 
@@ -418,25 +454,16 @@ function changePassword() {
     user.updatePassword(newPassword).then(() => { toast('✅ Contraseña actualizada.'); document.getElementById('new-password').value = ''; }).catch(error => { toast('Error: ' + error.message); });
 }
 
-// BIOMETRÍA
 function b64urlToBuf(b64url) { return Uint8Array.from(atob(b64url.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0)).buffer; }
 function bufToB64url(buf) { return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, ''); }
 async function toggleBiometric() {
-    if (bioCredentialId) {
-        localStorage.removeItem('bioCredentialId'); bioCredentialId = null; actualizarEstadoBio(); toast('Desactivado.');
-    } else {
+    if (bioCredentialId) { localStorage.removeItem('bioCredentialId'); bioCredentialId = null; actualizarEstadoBio(); toast('Desactivado.'); } 
+    else {
         if (!window.PublicKeyCredential) return alert('No soportado.');
         try {
-            const challenge = new Uint8Array(32); window.crypto.getRandomValues(challenge);
-            const userId = new Uint8Array(16); window.crypto.getRandomValues(userId);
-            const credential = await navigator.credentials.create({ publicKey: {
-                challenge: challenge, rp: { name: "Mis Finanzas Pro" },
-                user: { id: userId, name: auth.currentUser.email, displayName: auth.currentUser.email },
-                pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
-                authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" }, timeout: 60000
-            }});
-            bioCredentialId = bufToB64url(credential.rawId); localStorage.setItem('bioCredentialId', bioCredentialId);
-            actualizarEstadoBio(); toast('✅ Huella/PIN configurado.');
+            const challenge = new Uint8Array(32); window.crypto.getRandomValues(challenge); const userId = new Uint8Array(16); window.crypto.getRandomValues(userId);
+            const credential = await navigator.credentials.create({ publicKey: { challenge: challenge, rp: { name: "Mis Finanzas Pro" }, user: { id: userId, name: auth.currentUser.email, displayName: auth.currentUser.email }, pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }], authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" }, timeout: 60000 }});
+            bioCredentialId = bufToB64url(credential.rawId); localStorage.setItem('bioCredentialId', bioCredentialId); actualizarEstadoBio(); toast('✅ Huella/PIN configurado.');
         } catch (error) { alert('Error: ' + error.message); }
     }
 }
@@ -455,7 +482,6 @@ function actualizarEstadoBio() {
     else { txt.innerText = '❌ No configurado.'; txt.style.color = 'var(--muted)'; btn.innerText = 'Configurar'; btn.style.background = 'var(--purple)'; }
 }
 
-// BADGE
 function actualizarBadgeDeudas() {
     if (!navigator.setAppBadge) return;
     const today = new Date(); today.setHours(0,0,0,0); let alertas = 0;
@@ -469,7 +495,6 @@ function actualizarBadgeDeudas() {
     if (alertas > 0) navigator.setAppBadge(alertas).catch(()=>{}); else navigator.clearAppBadge().catch(()=>{});
 }
 
-// SYNC
 let unsubscribeSnapshot = null;
 function syncData() {
     const user = auth.currentUser; if (!user) return;
@@ -477,43 +502,58 @@ function syncData() {
     unsubscribeSnapshot = db.collection('finanzas').doc(user.uid).onSnapshot(doc => {
         if (doc.exists) {
             const cloudData = doc.data();
-            if (cloudData.state) { state = cloudData.state; localStorage.setItem(KEY, JSON.stringify(state)); renderAll(); toast('Datos sincronizados'); }
+            if (cloudData.state) { 
+                state = cloudData.state; 
+                migrateState(); 
+                localStorage.setItem(KEY, JSON.stringify(state)); 
+                processRecurring(); 
+                checkMonthlySummary(); 
+                renderAll(); 
+                toast('Datos sincronizados'); 
+            }
         } else { db.collection('finanzas').doc(user.uid).set({ state: state }); }
     });
 }
 
 // ==========================================
-// 3. LÓGICA DE LA APP
+// 3. LÓGICA DE LA APP Y ESTADO
 // ==========================================
 const KEY = 'fin_v12_0'; 
-let state = JSON.parse(localStorage.getItem(KEY) || 'null') || {
-  config: { 
-    placer: 30, chartType: 'bar', pieType: 'doughnut', projChartType: 'line', advisorEnabled: true,
-    cats: [
-      {id:'fijo', name:'Fijo (mensual)', desc:'Arriendo, mercado, servicios', color:'#3b82f6'},
-      {id:'necesario', name:'Necesario', desc:'Imprevistos, reparaciones, salud', color:'#eab308'},
-      {id:'placer', name:'Placer', desc:'Ocio, salidas, gustos', color:'#a855f7'}
-    ]
-  },
-  accounts: [ {id:'nequi', name:'Nequi'}, {id:'banco', name:'Bancolombia'}, {id:'billetera', name:'Billetera (Efectivo)'} ],
-  pockets: [ {id:'ahorro_gen', name:'Ahorro General', meta: 0}, {id:'ahorro_emg', name:'Ahorro Emergencias', meta: 0}, {id:'ahorro_car', name:'Ahorro Carro', meta: 0} ],
-  debts: [], years: {}, active: new Date().getFullYear(), hidden: { global: false, stats: {}, locks: {} }, placerLimits: {} 
-};
+let state = JSON.parse(localStorage.getItem(KEY) || 'null') || {};
 
-if(!state.hidden) state.hidden = { global: false, stats: {}, locks: {} };
-if(!state.hidden.stats) state.hidden.stats = {};
-if(!state.hidden.locks) state.hidden.locks = {};
-if(!state.config.chartType) state.config.chartType = 'bar';
-if(!state.config.pieType) state.config.pieType = 'doughnut';
-if(!state.config.projChartType) state.config.projChartType = 'line';
-if(state.config.advisorEnabled === undefined) state.config.advisorEnabled = true;
-if(!state.placerLimits) state.placerLimits = {};
+function migrateState() {
+    if(!state.config) state.config = {};
+    if(!state.config.cats) state.config.cats = [{id:'fijo', name:'Fijo (mensual)', desc:'Arriendo, mercado, servicios', color:'#3b82f6'},{id:'necesario', name:'Necesario', desc:'Imprevistos, reparaciones, salud', color:'#eab308'},{id:'placer', name:'Placer', desc:'Ocio, salidas, gustos', color:'#a855f7'}];
+    if(state.config.placer === undefined) state.config.placer = 30;
+    if(!state.config.chartType) state.config.chartType = 'bar';
+    if(!state.config.pieType) state.config.pieType = 'doughnut';
+    if(!state.config.projChartType) state.config.projChartType = 'line';
+    if(state.config.advisorEnabled === undefined) state.config.advisorEnabled = true;
+    
+    // AUTO SAVE
+    if(!state.config.autoSave) state.config.autoSave = { enabled: false, pct: 10, pocketId: '' };
+    
+    // RECURRENTES Y RESUMENES
+    if(!state.recurring) state.recurring = [];
+    if(!state.summaries) state.summaries = {};
+    
+    if(!state.accounts) state.accounts = [{id:'nequi', name:'Nequi'},{id:'banco', name:'Bancolombia'},{id:'billetera', name:'Billetera (Efectivo)'}];
+    if(!state.pockets) state.pockets = [{id:'ahorro_gen', name:'Ahorro General', meta: 0},{id:'ahorro_emg', name:'Ahorro Emergencias', meta: 0},{id:'ahorro_car', name:'Ahorro Carro', meta: 0}];
+    if(!state.debts) state.debts = [];
+    if(!state.years) state.years = {};
+    if(!state.active) state.active = new Date().getFullYear();
+    if(!state.hidden) state.hidden = { global: false, stats: {}, locks: {} };
+    if(!state.hidden.stats) state.hidden.stats = {};
+    if(!state.hidden.locks) state.hidden.locks = {};
+    if(!state.placerLimits) state.placerLimits = {};
 
-if(!state.years[state.active]) {
-    state.years[state.active] = { locked:false, lockedInit: false, openingBalances: {}, txs:[] };
-    state.accounts.forEach(a => state.years[state.active].openingBalances[a.id] = 0);
-    state.pockets.forEach(p => state.years[state.active].openingBalances[p.id] = 0);
+    if(!state.years[state.active]) {
+        state.years[state.active] = { locked:false, lockedInit: false, openingBalances: {}, txs:[] };
+        state.accounts.forEach(a => state.years[state.active].openingBalances[a.id] = 0);
+        state.pockets.forEach(p => state.years[state.active].openingBalances[p.id] = 0);
+    }
 }
+migrateState();
 
 function save(){ 
     localStorage.setItem(KEY, JSON.stringify(state)); 
@@ -524,7 +564,70 @@ function fmt(n){ return new Intl.NumberFormat('es-CO',{style:'currency',currency
 function genId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 function toast(m){ const d=document.createElement('div'); d.className='toast'; d.textContent=m; document.body.appendChild(d); setTimeout(()=>d.remove(),3000); }
 
-// LÓGICA DEL ASESOR INTELIGENTE Y 50/30/20
+// ==========================================
+// 4. AUTOMATIZACIONES (RECURRENTES Y AHORRO)
+// ==========================================
+function processRecurring() {
+    const today = new Date();
+    const currentMonthStr = `${today.getFullYear()}-${today.getMonth()}`;
+    let changed = false;
+
+    if (!state.recurring) return;
+
+    state.recurring.forEach(r => {
+        // Si el día de hoy es mayor o igual al día de cobro, y no se ha ejecutado este mes
+        if (today.getDate() >= r.day && r.lastRun !== currentMonthStr) {
+            const tx = {
+                id: genId(),
+                date: new Date().toISOString().slice(0, 10),
+                detail: r.detail,
+                amount: r.amount,
+                type: 'Gasto',
+                from: r.from,
+                cat: 'fijo' // Forzamos categoría fijo para recurrentes
+            };
+            state.years[state.active].txs.push(tx);
+            r.lastRun = currentMonthStr;
+            changed = true;
+            toast(`Gasto recurrente aplicado: ${r.detail}`);
+        }
+    });
+
+    if (changed) save();
+}
+
+function toggleAutoSave() {
+    state.config.autoSave.enabled = document.getElementById('toggleAutoSave').checked;
+    document.getElementById('autoSaveConfig').style.display = state.config.autoSave.enabled ? 'block' : 'none';
+    save();
+}
+
+function saveAutoSaveConfig() {
+    state.config.autoSave.pct = parseFloat(document.getElementById('autoSavePct').value) || 10;
+    state.config.autoSave.pocketId = document.getElementById('autoSavePocket').value;
+    save();
+}
+
+function addRecurring() {
+    const detail = document.getElementById('recDetail').value;
+    const amount = parseFloat(document.getElementById('recAmount').value);
+    const from = document.getElementById('recAcc').value;
+    const day = parseInt(document.getElementById('recDay').value);
+    if (!detail || !amount || !from || !day) return toast('Completa todos los campos.');
+    state.recurring.push({ id: genId(), detail, amount, from, day, lastRun: null });
+    save(); renderAll(); toast('Recurrente añadido.');
+    document.getElementById('recDetail').value = ''; document.getElementById('recAmount').value = ''; document.getElementById('recDay').value = '';
+}
+
+function delRecurring(id) {
+    if(!confirm('¿Eliminar este gasto recurrente?')) return;
+    state.recurring = state.recurring.filter(r => r.id !== id);
+    save(); renderAll();
+}
+
+// ==========================================
+// 5. ASESOR INTELIGENTE Y RESUMEN MENSUAL
+// ==========================================
 function generateAdvice() {
     const box = document.getElementById('advisorBox');
     if (!state.config.advisorEnabled) { box.style.display = 'none'; return; }
@@ -535,14 +638,16 @@ function generateAdvice() {
     const currentYear = now.getFullYear();
     
     let inc = 0, expFijo = 0, expNecesario = 0, expPlacer = 0;
+    const detailsPlacer = {}, detailsFijo = {};
+
     yr.txs.forEach(t => {
         const d = new Date(t.date);
         if(d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
             if(t.type === 'Ingreso') inc += t.amount;
             if(t.type === 'Gasto' || t.type === 'PagoDeuda') {
-                if(t.cat === 'fijo') expFijo += t.amount;
+                if(t.cat === 'fijo') { expFijo += t.amount; detailsFijo[t.detail] = (detailsFijo[t.detail]||0) + t.amount; }
                 else if(t.cat === 'necesario') expNecesario += t.amount;
-                else if(t.cat === 'placer') expPlacer += t.amount;
+                else if(t.cat === 'placer') { expPlacer += t.amount; detailsPlacer[t.detail] = (detailsPlacer[t.detail]||0) + t.amount; }
             }
         }
     });
@@ -556,12 +661,22 @@ function generateAdvice() {
         const ahorroPots = state.pockets.reduce((s,p)=>s+getPocBal(p.id),0);
         const pctAhorro = (ahorroPots / inc) * 100;
 
-        if (pctFijo > 50) adviceHtml += `<div class="alert warn">📉 <strong>Asesor:</strong> Tus gastos fijos son el ${pctFijo.toFixed(0)}% de tus ingresos (lo ideal es <50%). Intenta recortar servicios o buscar alternativas más económicas.</div>`;
-        if (pctPlacer > 30) adviceHtml += `<div class="alert warn">🎉 <strong>Asesor:</strong> Has destinado el ${pctPlacer.toFixed(0)}% a Placer. Los expertos recomiendan máximo 30%. ¡Guarda un poco más!</div>`;
-        if (ahorroPots < (inc * 0.20)) adviceHtml += `<div class="alert danger">🐖 <strong>Asesor:</strong> Te sugiero ahorrar al menos el 20% de tus ingresos. Aún te faltan ${fmt((inc*0.20) - ahorroPots)} para cumplir la meta de este mes.</div>`;
-        if (state.debts.some(d=>getDebtBal(d.id) > 0)) adviceHtml += `<div class="alert danger">💳 <strong>Asesor:</strong> Tienes deudas activas. Prioriza pagar las deudas "malas" (consumo) antes de darte gustos.</div>`;
+        if (pctFijo > 50) {
+            let topFijo = Object.keys(detailsFijo).reduce((a, b) => detailsFijo[a] > detailsFijo[b] ? a : b, "");
+            adviceHtml += `<div class="alert warn">📉 <strong>Asesor:</strong> Tus gastos fijos son el ${pctFijo.toFixed(0)}% de tus ingresos. Tu mayor gasto fijo es <strong>${topFijo}</strong> (${fmt(detailsFijo[topFijo])}). Intenta recortar allí.</div>`;
+        }
+        if (pctPlacer > 30) {
+            let topPlacer = Object.keys(detailsPlacer).reduce((a, b) => detailsPlacer[a] > detailsPlacer[b] ? a : b, "");
+            adviceHtml += `<div class="alert warn">🎉 <strong>Asesor:</strong> Has destinado el ${pctPlacer.toFixed(0)}% a Placer. Estás gastando mucho en <strong>${topPlacer}</strong>. ¡Intenta moderarlo un poco!</div>`;
+        }
+        if (ahorroPots < (inc * 0.20)) {
+            adviceHtml += `<div class="alert danger">🐖 <strong>Asesor:</strong> Te sugiero ahorrar al menos el 20% de tus ingresos. Aún te faltan ${fmt((inc*0.20) - ahorroPots)} para cumplir la meta de este mes.</div>`;
+        }
+        if (state.debts.some(d=>getDebtBal(d.id) > 0)) {
+            adviceHtml += `<div class="alert danger">💳 <strong>Asesor:</strong> Tienes deudas activas. Prioriza pagar las deudas "malas" (consumo) antes de darte gustos.</div>`;
+        }
         if (pctFijo <= 50 && pctPlacer <= 30 && ahorroPots >= (inc*0.20) && !state.debts.some(d=>getDebtBal(d.id) > 0)) {
-            adviceHtml += `<div class="alert" style="background:rgba(34,197,94,.1); border-color:var(--green); color:var(--green);">🌟 <strong>¡Excelente!</strong> Tus finanzas están equilibradas este mes. Sigue así.</div>`;
+            adviceHtml += `<div class="alert" style="background:rgba(34,197,94,.1); border-color:var(--green); color:var(--green);">🌟 <strong>¡Excelente!</strong> Tus finanzas están equilibradas este mes y estás cumpliendo tus metas de ahorro. ¡Sigue así!</div>`;
         }
     }
 
@@ -569,107 +684,127 @@ function generateAdvice() {
     box.style.display = adviceHtml ? 'block' : 'none';
 }
 
-function renderExpertAnalysis() {
-    const box = document.getElementById('expertAnalysis');
-    const yr = state.years[state.active];
+function checkMonthlySummary() {
     const now = new Date();
-    let inc = 0, expFijo = 0, expPlacer = 0;
+    // Revisamos el mes anterior
+    let prevMonth = now.getMonth() - 1;
+    let prevYear = now.getFullYear();
+    if (prevMonth < 0) { prevMonth = 11; prevYear--; }
     
-    // Calculamos solo del mes actual para ser precisos
+    const key = `${prevYear}-${prevMonth}`;
+    if (state.summaries[key]) return; // Ya existe
+
+    // Calcular datos del mes anterior
+    const yr = state.years[prevYear];
+    if (!yr) return;
+
+    let inc = 0, exp = 0, ahorro = 0;
+    const details = {};
+
     yr.txs.forEach(t => {
         const d = new Date(t.date);
-        if(d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
-            if(t.type === 'Ingreso') inc += t.amount;
-            if(t.type === 'Gasto' || t.type === 'PagoDeuda') {
-                if(t.cat === 'fijo') expFijo += t.amount;
-                if(t.cat === 'placer') expPlacer += t.amount;
+        if (d.getMonth() === prevMonth && d.getFullYear() === prevYear) {
+            if (t.type === 'Ingreso') inc += t.amount;
+            if (t.type === 'Gasto' || t.type === 'PagoDeuda') {
+                exp += t.amount;
+                details[t.detail] = (details[t.detail]||0) + t.amount;
             }
+            if (t.type === 'Transferencia' && state.pockets.some(p=>p.id===t.to)) ahorro += t.amount;
         }
     });
-    
-    const ahorroPots = state.pockets.reduce((s,p)=>s+getPocBal(p.id),0);
 
-    if (inc === 0) {
-        box.innerHTML = '<p style="color:var(--muted); font-size:13px;">Registra ingresos este mes para calcular tu regla 50/30/20.</p>';
-        return;
-    }
+    if (inc === 0 && exp === 0) return; // No hubo movimientos, no guardamos resumen.
 
-    const pctFijo = (expFijo / inc) * 100;
-    const pctPlacer = (expPlacer / inc) * 100;
-    const pctAhorro = (ahorroPots / inc) * 100;
+    let topExpense = Object.keys(details).reduce((a, b) => details[a] > details[b] ? a : b, "");
+    let advice = "";
+    if (exp > inc) advice = `Gastaste más de lo que ingresaste. Te sugerimos reducir los gastos en <strong>${topExpense}</strong>.`;
+    else if (ahorro < (inc * 0.2)) advice = `Te fue bien, pero podrías ahorrar un poco más. Tu mayor gasto fue en <strong>${topExpense}</strong>.`;
+    else advice = `¡Excelente mes! Ahorraste una buena cantidad. Tu mayor gasto fue en <strong>${topExpense}</strong>.`;
 
-    const createBar = (label, pct, target, color) => {
-        let actualColor = color;
-        if (pct > target) actualColor = 'var(--red)';
-        else if (pct > target * 0.9) actualColor = 'var(--yellow)';
-        
-        return `
-        <div style="margin-bottom:12px;">
-            <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
-                <span>${label} <span style="color:var(--muted)">(Ideal: ${target}%)</span></span>
-                <strong style="color:${actualColor}">${pct.toFixed(1)}% (${fmt(pct === 0 ? 0 : (pct/100)*inc)})</strong>
-            </div>
-            <div class="bar" style="height:10px; position:relative;">
-                <div class="bar-fill" style="width:${Math.min(pct,100)}%; background:${actualColor};"></div>
-                <div style="position:absolute; left:${target}%; top:0; bottom:0; width:2px; background:white; z-index:10; opacity:0.8;"></div>
-            </div>
-        </div>`;
+    state.summaries[key] = {
+        mes: prevMonth, anio: prevYear, inc, exp, ahorro, topExpense, advice
     };
-
-    box.innerHTML = 
-        createBar('Gastos Fijos', pctFijo, 50, 'var(--accent)') +
-        createBar('Gastos Placer', pctPlacer, 30, 'var(--purple)') +
-        createBar('Ahorro', pctAhorro, 20, 'var(--green)');
-}
-
-// EXPORTAR A EXCEL
-function downloadExcel() {
-    const yr = state.years[state.active];
-    if (yr.txs.length === 0) return toast('No hay movimientos para exportar.');
-    
-    const data = yr.txs.map(t => {
-        let origen = t.from ? (getAccName(t.from) || getPocName(t.from)) : '';
-        let destino = t.to ? (getAccName(t.to) || getPocName(t.to)) : '';
-        if(t.type === 'Gasto') destino = 'Gasto';
-        if(t.type === 'Ingreso') origen = 'Ingreso';
-        if(t.type === 'PagoDeuda') destino = 'Deuda: ' + getDebtName(t.debtId);
-
-        return {
-            "Fecha": t.date,
-            "Detalle": t.detail,
-            "Tipo": t.type,
-            "Categoría": t.cat ? getCatName(t.cat) : '',
-            "Origen": origen,
-            "Destino": destino,
-            "Monto ($)": t.amount
-        };
-    });
-
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Movimientos");
-    XLSX.writeFile(wb, `Mis_Finanzas_${state.active}.xlsx`);
-    toast('📥 Archivo descargado.');
-}
-
-function toggleAdvisor() {
-    state.config.advisorEnabled = document.getElementById('toggleAdvisor').checked;
     save();
-    renderAll();
-    toast(state.config.advisorEnabled ? 'Asesor Activado' : 'Asesor Desactivado');
 }
 
-// RENDERIZADO GENERAL
-function toggleGlobalHide() {
-    state.hidden.global = !state.hidden.global;
-    if(state.hidden.global) state.hidden.stats = {};
-    save(); renderAll();
+// ==========================================
+// 6. LÓGICA DE MOVIMIENTOS Y DEUDAS
+// ==========================================
+function addTx() {
+  if(!canEdit()) return toast('Año bloqueado'); 
+  const d=document.getElementById('fDate').value; 
+  const det=document.getElementById('fDetail').value; 
+  const a=parseFloat(document.getElementById('fAmount').value); 
+  const ty=document.getElementById('fType').value;
+  
+  if(!d || !det || isNaN(a) || a<=0) return toast('Completa bien los datos');
+  
+  if(ty === 'PagoDeuda') { if(a > getDebtBal(document.getElementById('fDebtSelect').value)) return toast('La deuda es menor.'); }
+  if(ty === 'Gasto' && document.getElementById('fCategory').value === 'placer') { 
+      const placerInfo = getPlacerLimitInfo(); 
+      if(placerInfo.isLocked && (placerInfo.spent + a) > placerInfo.limit) return toast(`¡Alto! Supera tu límite disponible de ${fmt(placerInfo.available)}.`); 
+  }
+
+  let tx = {id:genId(), date:d, detail:det, amount:a, type:ty};
+  if(ty==='Ingreso') tx.to = document.getElementById('fTo').value;
+  if(ty==='Gasto') { tx.from = document.getElementById('fFrom').value; tx.cat = document.getElementById('fCategory').value; }
+  if(ty==='Transferencia') { tx.from = document.getElementById('fFrom').value; tx.to = document.getElementById('fTo').value; }
+  if(ty==='PagoDeuda') { tx.from = document.getElementById('fFrom').value; tx.debtId = document.getElementById('fDebtSelect').value; tx.cat = document.getElementById('fCategory').value; }
+  
+  state.years[state.active].txs.push(tx); 
+
+  // Lógica de Ahorro Automático
+  if (ty === 'Ingreso' && state.config.autoSave.enabled && state.config.autoSave.pocketId && state.config.autoSave.pct > 0) {
+      const saveAmount = a * (state.config.autoSave.pct / 100);
+      const txAutoSave = {
+          id: genId(),
+          date: d,
+          detail: 'Ahorro Automático',
+          amount: saveAmount,
+          type: 'Transferencia',
+          from: tx.to,
+          to: state.config.autoSave.pocketId
+      };
+      state.years[state.active].txs.push(txAutoSave);
+      toast(`Se ahorraron ${fmt(saveAmount)} automáticamente.`);
+  }
+
+  save(); renderAll(); toast('Guardado');
+  document.getElementById('fDetail').value=''; document.getElementById('fAmount').value='';
 }
-function toggleHideIndividual(key) {
-    if(state.hidden.global) { state.hidden.global = false; state.hidden.stats[key] = false; } 
-    else { state.hidden.stats[key] = !state.hidden.stats[key]; }
-    save(); renderAll();
+
+function addDebt() { 
+    const n = document.getElementById('newDebtName').value; 
+    const a = parseFloat(document.getElementById('newDebtAmount').value); 
+    const interest = parseFloat(document.getElementById('newDebtInterest').value) || 0;
+    const installments = parseInt(document.getElementById('newDebtInstallments').value) || 0;
+    const date = document.getElementById('newDebtDate').value;
+    const type = document.getElementById('newDebtType').value;
+    
+    if(!n || !a) return toast('Faltan datos (Nombre y Monto son obligatorios)'); 
+    
+    // Calculamos el total con intereses
+    const totalWithInterest = a * (1 + (interest / 100));
+    
+    state.debts.push({
+        id: genId(), name: n, total: totalWithInterest, baseAmount: a, interest: interest, 
+        installments: installments, type: type, dateLimit: date || null
+    }); 
+    
+    save(); renderAll(); 
+    document.getElementById('newDebtName').value=''; 
+    document.getElementById('newDebtAmount').value=''; 
+    document.getElementById('newDebtInterest').value='';
+    document.getElementById('newDebtInstallments').value='';
+    document.getElementById('newDebtDate').value=''; 
+    toast('Deuda registrada');
 }
+
+// ==========================================
+// 7. RENDERIZADO GENERAL Y UTILIDADES
+// ==========================================
+function toggleGlobalHide() { state.hidden.global = !state.hidden.global; if(state.hidden.global) state.hidden.stats = {}; save(); renderAll(); }
+function toggleHideIndividual(key) { if(state.hidden.global) { state.hidden.global = false; state.hidden.stats[key] = false; } else { state.hidden.stats[key] = !state.hidden.stats[key]; } save(); renderAll(); }
 function toggleLockHide(id) { state.hidden.locks[id] = !state.hidden.locks[id]; save(); renderAll(); }
 function renderVal(key, val) { if(state.hidden.global || state.hidden.stats[key]) return '***'; return fmt(val); }
 
@@ -782,6 +917,9 @@ function renderTable() {
 
 function renderAll() {
   document.getElementById('toggleAdvisor').checked = state.config.advisorEnabled;
+  document.getElementById('toggleAutoSave').checked = state.config.autoSave.enabled;
+  document.getElementById('autoSaveConfig').style.display = state.config.autoSave.enabled ? 'block' : 'none';
+  document.getElementById('autoSavePct').value = state.config.autoSave.pct;
 
   const yn=document.getElementById('yearNav'); yn.innerHTML='';
   Object.keys(state.years).sort((a,b)=>b-a).forEach(y => {
@@ -802,7 +940,6 @@ function renderAll() {
     document.getElementById('addAccWrap').style.display='block'; document.getElementById('addPocWrap').style.display='block';
   }
 
-  // RENDER ASESOR
   generateAdvice();
 
   const flow = getFlow(state.active); const balanceAnual = flow.inc - flow.exp;
@@ -875,11 +1012,30 @@ function renderAll() {
         else if(diffDays <= 5) dateInfo = `<span style="color:var(--yellow); font-size:11px; font-weight:bold;">🟡 Vence en ${diffDays} días</span>`;
         else dateInfo = `<span style="color:var(--muted); font-size:11px;">📅 Vence: ${d.dateLimit}</span>`;
     }
-    return `<div class="row-item" style="flex-direction:column;align-items:flex-start"><div style="display:flex;width:100%;justify-content:space-between;margin-bottom:5px;"><input value="${d.name}" onchange="renameDebt('${d.id}', this.value)" style="width:50%" ${isPaid?'disabled':''}><span style="color:${isPaid?'var(--green)':'var(--red)'}">${isPaid?'¡PAGADA!':fmt(saldo)+' restante'}</span>${canEdit() && !isPaid || (canEdit() && d.adminUnlock) ?`<button class="danger" onclick="delDebt('${d.id}')">X</button>`:''}</div>${dateInfo}<div class="bar" style="width:100%"><div class="bar-fill" style="width:${pct}%;background:${isPaid?'var(--green)':'var(--yellow)'}"></div></div>${isPaid?'<small style="color:var(--green); font-size:10px;">Historial guardado</small>':''}</div>`;
+    let infoCuotas = '';
+    if (d.installments > 0) {
+        infoCuotas = `<div style="font-size:11px; color:var(--accent); margin-top:3px;">💳 Cuota aprox: ${fmt(d.total / d.installments)} x ${d.installments} meses</div>`;
+    }
+    let infoInteres = '';
+    if (d.interest > 0) {
+        infoInteres = `<div style="font-size:11px; color:var(--red); margin-top:3px;">💸 Interés: ${d.interest}% (Pagas ${fmt(d.total - d.baseAmount)} extra)</div>`;
+    }
+    return `<div class="row-item" style="flex-direction:column;align-items:flex-start"><div style="display:flex;width:100%;justify-content:space-between;margin-bottom:5px;"><input value="${d.name}" onchange="renameDebt('${d.id}', this.value)" style="width:50%" ${isPaid?'disabled':''}><span style="color:${isPaid?'var(--green)':'var(--red)'}">${isPaid?'¡PAGADA!':fmt(saldo)+' restante'}</span>${canEdit() && !isPaid || (canEdit() && d.adminUnlock) ?`<button class="danger" onclick="delDebt('${d.id}')">X</button>`:''}</div>${dateInfo}${infoInteres}${infoCuotas}<div class="bar" style="width:100%"><div class="bar-fill" style="width:${pct}%;background:${isPaid?'var(--green)':'var(--yellow)'}"></div></div>${isPaid?'<small style="color:var(--green); font-size:10px;">Historial guardado</small>':''}</div>`;
   }).join('')||'<p style="text-align:center;color:var(--muted)">No hay deudas</p>';
 
+  // Renderizar Configuración y Automatizaciones
   document.getElementById('goalsConfigList').innerHTML=state.pockets.map(p=>`<div class="row-item"><span style="width:50%">${p.name}</span><input type="number" value="${p.meta||0}" onchange="setMetaPoc('${p.id}', this.value)" placeholder="Meta $" style="width:40%; text-align:right;"></div>`).join('');
   document.getElementById('configCatsList').innerHTML=state.config.cats.map(c=>`<div class="row-item"><input value="${c.name}" onchange="renameCat('${c.id}', 'name', this.value)" style="border:none; width:30%; font-weight:bold;"><input value="${c.desc||''}" onchange="renameCat('${c.id}', 'desc', this.value)" style="border:none; width:45%; font-size:11px; color:var(--muted);" placeholder="Guía..."><span style="background:${c.color}; width:15px; height:15px; border-radius:50%;"></span><button class="danger" onclick="delCat('${c.id}')">X</button></div>`).join('');
+  
+  document.getElementById('recurringList').innerHTML = state.recurring.map(r=>`
+    <div class="row-item">
+      <div style="width: 60%; font-size: 12px;">
+        <strong>${r.detail}</strong> - ${fmt(r.amount)}<br>
+        <span style="color:var(--muted)">Los días ${r.day} de ${getAccName(r.from)}</span>
+      </div>
+      <button class="danger" onclick="delRecurring('${r.id}')">X</button>
+    </div>
+  `).join('') || '<p style="font-size:11px; color:var(--muted);">No hay gastos recurrentes configurados.</p>';
 
   const allOrigins = [...state.accounts.map(a=>({id:a.id, name:a.name})), ...state.pockets.map(p=>({id:p.id, name:p.name}))];
   const allOpts = allOrigins.map(o=>`<option value="${o.id}">${o.name}</option>`).join('');
@@ -887,62 +1043,171 @@ function renderAll() {
   document.getElementById('fCategory').innerHTML = state.config.cats.map(c=>`<option value="${c.id}">${c.name} (${c.desc})</option>`).join('');
   document.getElementById('fDebtSelect').innerHTML = state.debts.filter(d=>getDebtBal(d.id)>0).map(d=>`<option value="${d.id}">${d.name} (Debe: ${fmt(getDebtBal(d.id))})</option>`).join('');
   
+  // Opciones para recurrentes y auto-save
+  document.getElementById('recAcc').innerHTML = state.accounts.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
+  document.getElementById('autoSavePocket').innerHTML = state.pockets.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  if(state.config.autoSave.pocketId) document.getElementById('autoSavePocket').value = state.config.autoSave.pocketId;
+
   document.getElementById('flowChartType').value = state.config.chartType; document.getElementById('pieChartType').value = state.config.pieType; document.getElementById('projChartType').value = state.config.projChartType;
   document.getElementById('fType').dispatchEvent(new Event('change'));
 
   renderAnalisis();
-  renderExpertAnalysis(); // NUEVA BARRA 50/30/20
+  renderExpertAnalysis();
+  renderMonthlySummaries();
   actualizarEstadoBio();
   actualizarBadgeDeudas();
 }
 
-let flowChartInstance = null; let pieChartInstance = null; let projChartInstance = null;
-function drawFlowChart(incM, gasM) { const canvas = document.getElementById('flowChart'); if(!canvas) return; if(flowChartInstance) flowChartInstance.destroy(); const type = state.config.chartType || 'bar'; flowChartInstance = new Chart(canvas, { type: type, data:{labels:['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'], datasets:[{label:'Ingresos',data:incM,backgroundColor: type==='line'?'#22c55e':'rgba(34,197,94,0.7)', borderColor: '#22c55e', fill: false},{label:'Gastos',data:gasM,backgroundColor: type==='line'?'#ef4444':'rgba(239,68,68,0.7)', borderColor: '#ef4444', fill: false}]}, options:{plugins:{legend:{labels:{color:'#e2e8f0'}}}, scales:{x:{ticks:{color:'#94a3b8'}},y:{ticks:{color:'#94a3b8'}}}} }); }
-function drawPieChart(flow) { const canvas = document.getElementById('pieChart'); if(!canvas) return; if(pieChartInstance) pieChartInstance.destroy(); const cats = {}; state.config.cats.forEach(c => cats[c.name] = flow.catTotals[c.id] || 0); const catColors = state.config.cats.map(c => c.color || '#3b82f6'); const type = state.config.pieType || 'doughnut'; pieChartInstance = new Chart(canvas, { type:type, data:{labels:Object.keys(cats), datasets:[{data:Object.values(cats), backgroundColor:catColors}]}, options:{plugins:{legend:{labels:{color:'#e2e8f0'}}}} }); }
-
-function changeFlowChart() { state.config.chartType = document.getElementById('flowChartType').value; save(); const yr = state.years[state.active]; const incM=Array(12).fill(0), gasM=Array(12).fill(0); yr.txs.forEach(t => { const m=new Date(t.date).getMonth(); if(t.type==='Ingreso') incM[m]+=t.amount; if(t.type==='Gasto'||t.type==='PagoDeuda') gasM[m]+=t.amount; }); drawFlowChart(incM, gasM); toast('Gráfico actualizado'); }
-function changePieChart() { state.config.pieType = document.getElementById('pieChartType').value; save(); drawPieChart(getFlow(state.active)); toast('Gráfico actualizado'); }
-function changeProjChart() { state.config.projChartType = document.getElementById('projChartType').value; save(); renderProjection(); toast('Proyección actualizada'); }
-
-function renderProjection() {
-    const yr = state.years[state.active]; const currentMonth = new Date().getMonth();
-    let totalEfectivo = 0, totalAhorros = 0; state.accounts.forEach(a => { if(a.id !== 'billetera') totalEfectivo += getAccBal(a.id); }); state.pockets.forEach(p => totalAhorros += getPocBal(p.id));
-    const totalDeudas = state.debts.reduce((s,d)=>s+getDebtBal(d.id),0); const cashBilletera = getAccBal('billetera'); const patrimonioActual = totalEfectivo + totalAhorros + cashBilletera - totalDeudas;
-    let monthsWithData = 0; let totalInc = 0, totalExp = 0;
-    for(let i=0; i<12; i++) { let hasTx = yr.txs.some(t => new Date(t.date).getMonth() === i); if(hasTx) { monthsWithData++; yr.txs.forEach(t => { if(new Date(t.date).getMonth() === i) { if(t.type==='Ingreso') totalInc += t.amount; if(t.type==='Gasto' || t.type==='PagoDeuda') totalExp += t.amount; } }); } }
-    const avgInc = monthsWithData > 0 ? totalInc / monthsWithData : 0; const avgExp = monthsWithData > 0 ? totalExp / monthsWithData : 0; const avgBalance = avgInc - avgExp;
-    const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']; const projectionData = []; let currentBalance = patrimonioActual;
-    for(let i=0; i<12; i++) { if(i < currentMonth) projectionData.push(null); else if(i === currentMonth) projectionData.push(currentBalance); else { currentBalance += avgBalance; projectionData.push(currentBalance); } }
-    const canvas = document.getElementById('projChart'); if(!canvas) return; if(projChartInstance) projChartInstance.destroy();
-    projChartInstance = new Chart(canvas, { type: state.config.projChartType || 'line', data: { labels: months, datasets: [{ label: 'Proyección', data: projectionData, backgroundColor: 'rgba(59, 130, 246, 0.2)', borderColor: '#3b82f6', borderWidth: 3, fill: true, tension: 0.3, pointBackgroundColor: '#3b82f6', pointRadius: 4 }] }, options: { plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => ctx.parsed.y ? fmt(ctx.parsed.y) : 'Sin datos' } } }, scales: { x: { ticks: { color: '#94a3b8' } }, y: { ticks: { color: '#94a3b8', callback: v => fmt(v) } } } } });
+function renderMonthlySummaries() {
+    const box = document.getElementById('monthlySummariesList');
+    const keys = Object.keys(state.summaries).sort().reverse(); // Más recientes primero
+    if (keys.length === 0) {
+        box.innerHTML = '<p style="color:var(--muted); font-size:13px;">Los resúmenes aparecerán aquí al finalizar cada mes.</p>';
+        return;
+    }
+    
+    const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    
+    box.innerHTML = keys.map(k => {
+        const s = state.summaries[k];
+        const balance = s.inc - s.exp;
+        const color = balance >= 0 ? 'var(--green)' : 'var(--red)';
+        return `
+        <div style="background: var(--bg); padding: 12px; border-radius: 8px; border-left: 4px solid ${color};">
+            <h4 style="font-size: 14px; margin-bottom: 8px;">${monthNames[s.mes]} ${s.anio}</h4>
+            <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
+                <span>Ingresos: <span style="color:var(--green)">${fmt(s.inc)}</span></span>
+                <span>Gastos: <span style="color:var(--red)">${fmt(s.exp)}</span></span>
+                <span>Ahorro: <span style="color:var(--yellow)">${fmt(s.ahorro)}</span></span>
+            </div>
+            <div style="font-size:11px; color:var(--muted); background:rgba(255,255,255,0.05); padding:8px; border-radius:4px; margin-top:8px;">
+                <strong>🤖 Resumen:</strong> ${s.advice}
+            </div>
+        </div>
+        `;
+    }).join('');
 }
 
-function renderAnalisis() {
-  const yr = state.years[state.active]; const months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-  let rowsHtml = ''; let sumInc = 0, sumExp = 0, sumAhorro = 0; let activeMonths = 0;
-  months.forEach((mName, i) => {
-    let mInc = 0, mExp = 0, mAhorro = 0; const mCats = {}; state.config.cats.forEach(c => mCats[c.id] = 0);
+// ... (Resto de funciones de gráficos, 50/30/20, Excel, CRUD, etc.) ...
+function renderExpertAnalysis() {
+    const box = document.getElementById('expertAnalysis');
+    const yr = state.years[state.active]; const now = new Date();
+    let inc = 0, expFijo = 0, expPlacer = 0;
     yr.txs.forEach(t => {
-      if(new Date(t.date).getMonth() !== i) return;
-      if(t.type === 'Ingreso') mInc += t.amount;
-      if(t.type === 'Gasto' || t.type === 'PagoDeuda') { mExp += t.amount; if(t.cat && mCats[t.cat] !== undefined) mCats[t.cat] += t.amount; }
-      if(t.type === 'Transferencia') { if(state.pockets.some(p => p.id === t.to)) mAhorro += t.amount; if(state.pockets.some(p => p.id === t.from)) mAhorro -= t.amount; }
+        const d = new Date(t.date);
+        if(d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
+            if(t.type === 'Ingreso') inc += t.amount;
+            if(t.type === 'Gasto' || t.type === 'PagoDeuda') { if(t.cat === 'fijo') expFijo += t.amount; if(t.cat === 'placer') expPlacer += t.amount; }
+        }
     });
-    if(mInc > 0 || mExp > 0 || mAhorro !== 0) activeMonths++; sumInc += mInc; sumExp += mExp; sumAhorro += mAhorro;
-    let catDetails = ''; state.config.cats.forEach(c => { if(mCats[c.id] > 0) catDetails += `<span style="color:${c.color}; font-size:11px; margin-right:5px;">▪ ${c.name}: ${fmt(mCats[c.id])}</span><br>`; });
-    rowsHtml += `<tr><td>${mName}</td><td style="color:var(--green)">${renderVal('an_inc_'+i, mInc)}</td><td style="color:var(--red)">${renderVal('an_exp_'+i, mExp)}</td><td style="color:var(--yellow)">${renderVal('an_ahorro_'+i, mAhorro)}</td><td style="color:${mInc-mExp>=0?'var(--green)':'var(--red)'}">${renderVal('an_bal_'+i, mInc-mExp)}</td><td>${catDetails || '<span style="color:var(--muted); font-size:11px;">Sin gastos</span>'}</td></tr>`;
-  });
-  document.querySelector('#analisisTable tbody').innerHTML = rowsHtml;
-  if(activeMonths === 0) activeMonths = 1;
-  const avgInc = sumInc / activeMonths; const avgExp = sumExp / activeMonths; const avgAhorro = sumAhorro / activeMonths; const avgDiff = avgInc - avgExp;
-  document.getElementById('analisisPromedios').innerHTML=`<div class="stat green"><span class="eye-btn" onclick="toggleHideIndividual('avg_inc')">${state.hidden.global||state.hidden.stats['avg_inc']?'👁️':'👁️‍🗨️'}</span><div class="label">Promedio Ingresos Mensual</div><div class="value">${renderVal('avg_inc', avgInc)}</div></div><div class="stat red"><span class="eye-btn" onclick="toggleHideIndividual('avg_exp')">${state.hidden.global||state.hidden.stats['avg_exp']?'👁️':'👁️‍🗨️'}</span><div class="label">Promedio Gastos Mensual</div><div class="value">${renderVal('avg_exp', avgExp)}</div></div><div class="stat ${avgDiff>=0?'green':'red'}"><span class="eye-btn" onclick="toggleHideIndividual('avg_diff')">${state.hidden.global||state.hidden.stats['avg_diff']?'👁️':'👁️‍🗨️'}</span><div class="label">Diferencia Promedio (Ing - Gas)</div><div class="value">${renderVal('avg_diff', avgDiff)}</div></div><div class="stat yellow"><span class="eye-btn" onclick="toggleHideIndividual('avg_ahorro')">${state.hidden.global||state.hidden.stats['avg_ahorro']?'👁️':'👁️‍🗨️'}</span><div class="label">Promedio Ahorro Real Mensual</div><div class="value">${renderVal('avg_ahorro', avgAhorro)}</div></div>`;
+    const ahorroPots = state.pockets.reduce((s,p)=>s+getPocBal(p.id),0);
+    if (inc === 0) { box.innerHTML = '<p style="color:var(--muted); font-size:13px;">Registra ingresos este mes para calcular tu regla 50/30/20.</p>'; return; }
+    const pctFijo = (expFijo / inc) * 100; const pctPlacer = (expPlacer / inc) * 100; const pctAhorro = (ahorroPots / inc) * 100;
+    const createBar = (label, pct, target, color) => {
+        let actualColor = color; if (pct > target) actualColor = 'var(--red)'; else if (pct > target * 0.9) actualColor = 'var(--yellow)';
+        return `<div style="margin-bottom:12px;"><div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;"><span>${label} <span style="color:var(--muted)">(Ideal: ${target}%)</span></span><strong style="color:${actualColor}">${pct.toFixed(1)}% (${fmt(pct === 0 ? 0 : (pct/100)*inc)})</strong></div><div class="bar" style="height:10px; position:relative;"><div class="bar-fill" style="width:${Math.min(pct,100)}%; background:${actualColor};"></div><div style="position:absolute; left:${target}%; top:0; bottom:0; width:2px; background:white; z-index:10; opacity:0.8;"></div></div></div>`;
+    };
+    box.innerHTML = createBar('Gastos Fijos', pctFijo, 50, 'var(--accent)') + createBar('Gastos Placer', pctPlacer, 30, 'var(--purple)') + createBar('Ahorro', pctAhorro, 20, 'var(--green)');
 }
 
+function downloadExcel() {
+    const yr = state.years[state.active]; if (yr.txs.length === 0) return toast('No hay movimientos para exportar.');
+    const data = yr.txs.map(t => {
+        let origen = t.from ? (getAccName(t.from) || getPocName(t.from)) : ''; let destino = t.to ? (getAccName(t.to) || getPocName(t.to)) : '';
+        if(t.type === 'Gasto') destino = 'Gasto'; if(t.type === 'Ingreso') origen = 'Ingreso'; if(t.type === 'PagoDeuda') destino = 'Deuda: ' + getDebtName(t.debtId);
+        return { "Fecha": t.date, "Detalle": t.detail, "Tipo": t.type, "Categoría": t.cat ? getCatName(t.cat) : '', "Origen": origen, "Destino": destino, "Monto ($)": t.amount };
+    });
+    const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Movimientos"); XLSX.writeFile(wb, `Mis_Finanzas_${state.active}.xlsx`); toast('📥 Archivo descargado.');
+}
+
+function toggleAdvisor() { state.config.advisorEnabled = document.getElementById('toggleAdvisor').checked; save(); renderAll(); toast(state.config.advisorEnabled ? 'Asesor Activado' : 'Asesor Desactivado'); }
+function toggleGlobalHide() { state.hidden.global = !state.hidden.global; if(state.hidden.global) state.hidden.stats = {}; save(); renderAll(); }
+function toggleHideIndividual(key) { if(state.hidden.global) { state.hidden.global = false; state.hidden.stats[key] = false; } else { state.hidden.stats[key] = !state.hidden.stats[key]; } save(); renderAll(); }
+function toggleLockHide(id) { state.hidden.locks[id] = !state.hidden.locks[id]; save(); renderAll(); }
+function renderVal(key, val) { if(state.hidden.global || state.hidden.stats[key]) return '***'; return fmt(val); }
+
+function getAccName(id){ const a=state.accounts.find(x=>x.id===id); return a?a.name:'?'; }
+function getPocName(id){ const p=state.pockets.find(x=>x.id===id); return p?p.name:'?'; }
+function getDebtName(id){ const d=state.debts.find(x=>x.id===id); return d?d.name:'?'; }
+function getCatName(id){ const c=state.config.cats.find(x=>x.id===id); return c?c.name:id; }
+
+function getFlow(y) {
+  let inc=0, exp=0; const yr=state.years[y]; const catTotals = {};
+  state.config.cats.forEach(c => catTotals[c.id] = 0);
+  if(!yr) return {inc:0, exp:0, catTotals};
+  yr.txs.forEach(t => { if(t.type==='Ingreso') inc+=t.amount; if(t.type==='Gasto' || t.type==='PagoDeuda') { exp+=t.amount; if(t.cat && catTotals[t.cat] !== undefined) catTotals[t.cat] += t.amount; } });
+  return {inc, exp, catTotals};
+}
+
+function getAccBal(accId) {
+  let b = state.years[state.active].openingBalances[accId] || 0;
+  state.years[state.active].txs.forEach(t => {
+    if(t.type==='Ingreso' && t.to===accId) b+=t.amount; if(t.type==='Gasto' && t.from===accId) b-=t.amount; if(t.type==='PagoDeuda' && t.from===accId) b-=t.amount; if(t.type==='Transferencia' && t.from===accId) b-=t.amount; if(t.type==='Transferencia' && t.to===accId) b+=t.amount;
+  });
+  return b;
+}
+function getPocBal(pocId) {
+  let b = state.years[state.active].openingBalances[pocId] || 0;
+  state.years[state.active].txs.forEach(t => {
+    if(t.type==='Transferencia' && t.to===pocId) b+=t.amount; if(t.type==='Transferencia' && t.from===pocId) b-=t.amount; if(t.type==='PagoDeuda' && t.from===pocId) b-=t.amount;
+  });
+  return b;
+}
+function getDebtBal(debtId) {
+  const debt = state.debts.find(d=>d.id===debtId); if(!debt) return 0;
+  let paid=0; state.years[state.active].txs.forEach(t => { if(t.type==='PagoDeuda' && t.debtId===debtId) paid+=t.amount; });
+  return debt.total - paid;
+}
+function checkDebtAlerts() {
+    const today = new Date(); today.setHours(0,0,0,0); let alertsHtml = '';
+    state.debts.forEach(d => {
+        const saldo = getDebtBal(d.id);
+        if(saldo > 0 && d.dateLimit) {
+            const diffDays = Math.ceil((new Date(d.dateLimit + 'T00:00:00') - today) / (1000 * 60 * 60 * 24));
+            if(diffDays < 0) alertsHtml += `<div class="alert danger">🚨 ¡ALERTA! La deuda <strong>${d.name}</strong> venció hace ${Math.abs(diffDays)} días y aún debes ${fmt(saldo)}.</div>`;
+            else if(diffDays <= 5) alertsHtml += `<div class="alert warn">⚠️ Atención: La deuda <strong>${d.name}</strong> vence en ${diffDays} días (${d.dateLimit}) y debes ${fmt(saldo)}.</div>`;
+        }
+    });
+    return alertsHtml;
+}
+function canEdit(){ return !state.years[state.active].locked; }
+function canEditInit(){ return !state.years[state.active].lockedInit; }
+function tieneMovimientos(id) { return state.years[state.active].txs.some(t => t.from === id || t.to === id); }
+function getPlacerLimitInfo() {
+    const now = new Date(); const key = `${now.getFullYear()}-${now.getMonth()}`; const yr = state.years[state.active];
+    const monthPlacerSpent = yr.txs.filter(t => { const d = new Date(t.date); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() && (t.type === 'Gasto' || t.type === 'PagoDeuda') && t.cat === 'placer'; }).reduce((s, t) => s + t.amount, 0);
+    const isLocked = state.placerLimits[key] !== undefined; const limit = state.placerLimits[key] || 0;
+    return { key, limit, spent: monthPlacerSpent, available: limit - monthPlacerSpent, isLocked };
+}
+function calculateAndLockPlacer() {
+    const pct = parseFloat(document.getElementById('placerPercentageInput').value); if(isNaN(pct) || pct < 1 || pct > 100) return toast('Porcentaje inválido (1-100)');
+    const now = new Date(); const key = `${now.getFullYear()}-${now.getMonth()}`;
+    const monthIncome = state.years[state.active].txs.filter(t => { const d = new Date(t.date); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() && t.type === 'Ingreso'; }).reduce((s, t) => s + t.amount, 0);
+    state.placerLimits[key] = monthIncome * (pct / 100); state.placerLimits[key + '_pct'] = pct; save(); renderAll(); toast(`Límite bloqueado: ${fmt(state.placerLimits[key])}`);
+}
+function unlockPlacerLimit() {
+    const key = `${new Date().getFullYear()}-${new Date().getMonth()}`; if(state.placerLimits[key] === undefined) return toast('No está bloqueado.');
+    if(!confirm('⚠️ ¿Desbloquear límite de Placer?')) return;
+    delete state.placerLimits[key]; delete state.placerLimits[key + '_pct']; save(); renderAll(); toast('Desbloqueado.');
+}
+function renderTable() {
+  const tb=document.querySelector('#txTable tbody'); const q=document.getElementById('txSearch').value.toLowerCase();
+  const list=state.years[state.active].txs.filter(t=>t.detail.toLowerCase().includes(q)).sort((a,b)=>b.date.localeCompare(a.date));
+  document.getElementById('txCount').textContent=list.length+' registros';
+  tb.innerHTML=list.map(t=>{
+    let ruta = ''; if(t.type==='Ingreso') ruta = '➔ ' + (getAccName(t.to) || getPocName(t.to));
+    if(t.type==='Gasto') ruta = (getAccName(t.from) || getPocName(t.from)) + ' ➔ Gasto';
+    if(t.type==='Transferencia') ruta = (getAccName(t.from)||getPocName(t.from)) + ' ➔ ' + (getAccName(t.to) || getPocName(t.to));
+    if(t.type==='PagoDeuda') ruta = (getAccName(t.from)||getPocName(t.from)) + ' ➔ Deuda: ' + getDebtName(t.debtId);
+    let catStr = t.cat ? `<br><small style="color:var(--accent)">${getCatName(t.cat)}</small>` : '';
+    let colorMonto = 'var(--red)'; if(t.type === 'Ingreso') colorMonto = 'var(--green)'; if(t.type === 'Transferencia') colorMonto = 'var(--yellow)'; 
+    return `<tr><td>${t.date}</td><td>${t.detail}</td><td>${t.type}${catStr}<br><small style="color:var(--muted)">${ruta}</small></td><td style="text-align:right; color:${colorMonto}; font-weight:bold;">${fmt(t.amount)}</td><td>${canEdit()?`<button class="danger" onclick="delTx('${t.id}')">X</button>`:''}</td></tr>`;
+  }).join('')||'<tr><td colspan="5" style="text-align:center">Sin datos</td></tr>';
+}
 function unlockOpeningBalances() { if(!state.years[state.active].lockedInit) return toast('Ya desbloqueado.'); if(!confirm('⚠️ ¿Desbloquear saldos iniciales?')) return; state.years[state.active].lockedInit = false; save(); renderAll(); toast('Desbloqueado.'); }
 function unlockDebts() { if(!confirm('⚠️ ¿Desbloquear deudas pagadas?')) return; state.debts.forEach(d => d.adminUnlock = true); save(); renderAll(); toast('Desbloqueado.'); }
 function lockOpeningBalances() { if(!confirm('¿Seguro? No podrás modificar saldos iniciales.')) return; state.years[state.active].lockedInit = true; save(); renderAll(); toast('Saldos bloqueados.'); }
 function setOpeningBal(id, val) { if(!canEditInit()) return; state.years[state.active].openingBalances[id] = parseFloat(val) || 0; save(); renderAll(); }
-
 document.getElementById('fType').onchange = (e) => {
   const v = e.target.value; document.getElementById('wrapFrom').style.display = 'none'; document.getElementById('wrapTo').style.display = 'none'; document.getElementById('wrapCat').style.display = 'none'; document.getElementById('wrapDebt').style.display = 'none';
   if(v==='Ingreso') document.getElementById('wrapTo').style.display='block';
@@ -950,21 +1215,6 @@ document.getElementById('fType').onchange = (e) => {
   if(v==='Transferencia') { document.getElementById('wrapFrom').style.display='block'; document.getElementById('wrapTo').style.display='block'; }
   if(v==='PagoDeuda') { document.getElementById('wrapFrom').style.display='block'; document.getElementById('wrapDebt').style.display='block'; document.getElementById('wrapCat').style.display='block'; }
 };
-
-function addTx() {
-  if(!canEdit()) return toast('Año bloqueado'); const d=document.getElementById('fDate').value; const det=document.getElementById('fDetail').value; const a=parseFloat(document.getElementById('fAmount').value); const ty=document.getElementById('fType').value;
-  if(!d || !det || isNaN(a) || a<=0) return toast('Completa bien los datos');
-  if(ty === 'PagoDeuda') { if(a > getDebtBal(document.getElementById('fDebtSelect').value)) return toast('La deuda es menor.'); }
-  if(ty === 'Gasto' && document.getElementById('fCategory').value === 'placer') { const placerInfo = getPlacerLimitInfo(); if(placerInfo.isLocked && (placerInfo.spent + a) > placerInfo.limit) return toast(`¡Alto! Supera tu límite disponible de ${fmt(placerInfo.available)}.`); }
-  let tx = {id:genId(), date:d, detail:det, amount:a, type:ty};
-  if(ty==='Ingreso') tx.to = document.getElementById('fTo').value;
-  if(ty==='Gasto') { tx.from = document.getElementById('fFrom').value; tx.cat = document.getElementById('fCategory').value; }
-  if(ty==='Transferencia') { tx.from = document.getElementById('fFrom').value; tx.to = document.getElementById('fTo').value; }
-  if(ty==='PagoDeuda') { tx.from = document.getElementById('fFrom').value; tx.debtId = document.getElementById('fDebtSelect').value; tx.cat = document.getElementById('fCategory').value; }
-  state.years[state.active].txs.push(tx); save(); renderAll(); toast('Guardado');
-  document.getElementById('fDetail').value=''; document.getElementById('fAmount').value='';
-}
-
 function delTx(id){ if(!canEdit())return; state.years[state.active].txs=state.years[state.active].txs.filter(t=>t.id!==id); save(); renderAll(); }
 function addAcc(){ if(!canEditInit()) return toast('Bloquea primero los saldos para añadir cuentas.'); const n=document.getElementById('newAccName').value; if(!n)return; const id=genId(); state.accounts.push({id,name:n}); state.years[state.active].openingBalances[id]=0; save(); renderAll(); document.getElementById('newAccName').value=''; }
 function renameAcc(id, n){ if(!n)return; const a=state.accounts.find(x=>x.id===id); if(a){a.name=n;save();} }
@@ -976,10 +1226,8 @@ function setMetaPoc(id, val) { const p = state.pockets.find(x=>x.id===id); if(p)
 function addCat() { const name = document.getElementById('newCatName').value; const desc = document.getElementById('newCatDesc').value; if(!name) return toast('Falta el nombre'); state.config.cats.push({id: genId(), name: name, desc: desc, color: '#' + Math.floor(Math.random()*16777215).toString(16)}); save(); renderAll(); document.getElementById('newCatName').value=''; document.getElementById('newCatDesc').value=''; toast('Categoría añadida'); }
 function renameCat(id, field, val) { const c = state.config.cats.find(x=>x.id===id); if(c) { c[field] = val; save(); } }
 function delCat(id) { if(!confirm('¿Borrar categoría?')) return; state.config.cats = state.config.cats.filter(x=>x.id!==id); save(); renderAll(); }
-function addDebt(){ const n=document.getElementById('newDebtName').value; const a=parseFloat(document.getElementById('newDebtAmount').value); const date = document.getElementById('newDebtDate').value; const type=document.getElementById('newDebtType').value; if(!n||!a)return toast('Faltan datos'); state.debts.push({id:genId(),name:n,total:a,type:type,dateLimit: date || null}); save(); renderAll(); document.getElementById('newDebtName').value=''; document.getElementById('newDebtAmount').value=''; document.getElementById('newDebtDate').value=''; }
 function renameDebt(id, n){ if(!n)return; const d=state.debts.find(x=>x.id===id); if(d){d.name=n;save();} }
 function delDebt(id){ const d = state.debts.find(x=>x.id===id); if(!d) return; if(!d.adminUnlock && getDebtBal(id) <= 0) return toast('No puedes borrar una deuda pagada. Usa la Zona de Administrador.'); if(!confirm('¿Borrar esta deuda?'))return; state.debts=state.debts.filter(x=>x.id!==id); save(); renderAll(); }
-function saveConfig(){ state.config.placer=parseFloat(document.getElementById('cfgPlacerLimit').value); save(); renderAll(); toast('Guardado'); }
 function createNextYear(){ const y=Math.max(...Object.keys(state.years).map(Number)); if(!state.years[y].locked)return toast('Cierra el año primero'); const newYear = y+1; state.years[newYear] = { locked:false, lockedInit: false, openingBalances: {}, txs:[] }; state.accounts.forEach(a => { state.years[newYear].openingBalances[a.id] = getAccBal(a.id); }); state.pockets.forEach(p => { state.years[newYear].openingBalances[p.id] = getPocBal(p.id); }); state.active = newYear; save(); renderAll(); toast(`¡Año ${newYear} creado!`); }
 function toggleLock(){ state.years[state.active].locked=!state.years[state.active].locked; save(); renderAll(); }
 
