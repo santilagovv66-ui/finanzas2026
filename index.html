@@ -467,9 +467,15 @@ async function toggleBiometric() {
         if (!window.PublicKeyCredential) return alert('No soportado.');
         try {
             const challenge = new Uint8Array(32); window.crypto.getRandomValues(challenge); const userId = new Uint8Array(16); window.crypto.getRandomValues(userId);
-            const credential = await navigator.credentials.create({ publicKey: { challenge: challenge, rp: { name: "Mis Finanzas Pro" }, user: { id: userId, name: auth.currentUser.email, displayName: auth.currentUser.email }, pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }], authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" }, timeout: 60000 }});
+            const credential = await navigator.credentials.create({ publicKey: { challenge: challenge, rp: { name: "Mis Finanzas Pro" }, user: { id: userId, name: auth.currentUser.email + Math.random(), displayName: auth.currentUser.email }, pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }], authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" }, timeout: 60000 }});
             bioCredentialId = bufToB64url(credential.rawId); localStorage.setItem('bioCredentialId', bioCredentialId); actualizarEstadoBio(); toast('✅ Huella/PIN configurado.');
-        } catch (error) { alert('Error: ' + error.message); }
+        } catch (error) { 
+            if (error.name === 'InvalidStateError') {
+                alert('❌ Este dispositivo ya tiene una huella o PIN registrado para la app. Si quieres registrar uno nuevo, debes borrar el anterior desde la configuración de seguridad de tu teléfono o PC.');
+            } else {
+                alert('Error: ' + error.message); 
+            }
+        }
     }
 }
 async function desbloquearHuella() {
@@ -506,10 +512,8 @@ function actualizarBadgeDeudas() {
 const KEY = 'fin_v13_0'; 
 let state = {};
 
-// 🛡️ FUNCIÓN DE MIGRACIÓN ULTRA-BLINDADA
 function migrateState() {
-    if (!state || typeof state !== 'object') state = {}; // Evitar nulos
-    
+    if (!state || typeof state !== 'object') state = {};
     if(!state.config) state.config = {};
     if(!state.config.cats || state.config.cats.length === 0) state.config.cats = [{id:'fijo', name:'Fijo (mensual)', desc:'Arriendo, mercado, servicios', color:'#3b82f6'},{id:'necesario', name:'Necesario', desc:'Imprevistos, reparaciones, salud', color:'#eab308'},{id:'placer', name:'Placer', desc:'Ocio, salidas, gustos', color:'#a855f7'}];
     if(state.config.placer === undefined) state.config.placer = 30;
@@ -522,7 +526,6 @@ function migrateState() {
     if(!state.recurring) state.recurring = [];
     if(!state.summaries) state.summaries = {};
     
-    // 🚨 AQUÍ ESTÁ LA MAGIA PARA QUE NUNCA DESAPAREZCAN
     if(!state.accounts || !Array.isArray(state.accounts) || state.accounts.length === 0) {
         state.accounts = [{id:'nequi', name:'Nequi'},{id:'banco', name:'Bancolombia'},{id:'billetera', name:'Billetera (Efectivo)'}];
     }
@@ -550,10 +553,7 @@ function migrateState() {
     });
 }
 
-// Intentar cargar estado inicial
-try {
-    state = JSON.parse(localStorage.getItem(KEY) || 'null') || {};
-} catch(e) { state = {}; }
+try { state = JSON.parse(localStorage.getItem(KEY) || 'null') || {}; } catch(e) { state = {}; }
 migrateState();
 
 function save(){ 
@@ -577,7 +577,6 @@ function syncData() {
             if (cloudData.state) { 
                 let localState = JSON.parse(JSON.stringify(state));
                 state = cloudData.state;
-                // Si la nube viene vacía, rescatamos la local
                 if (!state.accounts || state.accounts.length === 0) state.accounts = localState.accounts;
                 if (!state.pockets || state.pockets.length === 0) state.pockets = localState.pockets;
                 migrateState(); 
@@ -939,7 +938,7 @@ function lockOpeningBalances() {
 function unlockDebts() { 
     if(!confirm('⚠️ ¿Desbloquear deudas pagadas?')) return; 
     state.debts.forEach(d => d.adminUnlock = true); 
-    save(); renderAll(); toast('Desbloqueado.'); 
+    save(); renderAll(); toast('Deudas pagadas desbloqueadas para borrar.'); 
 }
 
 function setOpeningBal(id, val) { if(!canEditInit()) return; state.years[state.active].openingBalances[id] = parseFloat(val) || 0; save(); renderAll(); }
@@ -998,7 +997,6 @@ function delDebt(id){ const d = state.debts.find(x=>x.id===id); if(!d) return; i
 function createNextYear(){ const y=Math.max(...Object.keys(state.years).map(Number)); if(!state.years[y].locked)return toast('Cierra el año primero'); const newYear = y+1; state.years[newYear] = { locked:false, lockedInit: false, openingBalances: {}, txs:[] }; state.accounts.forEach(a => { state.years[newYear].openingBalances[a.id] = getAccBal(a.id); }); state.pockets.forEach(p => { state.years[newYear].openingBalances[p.id] = getPocBal(p.id); }); state.active = newYear; save(); renderAll(); toast(`¡Año ${newYear} creado!`); }
 function toggleLock(){ state.years[state.active].locked=!state.years[state.active].locked; save(); renderAll(); }
 
-// 🛡️ RENDERIZADO BLINDADO (Evita que la app se congele si un gráfico falla)
 function renderAll() {
     try { renderDashboard(); } catch(e) { console.error("Fallo en Dashboard:", e); }
     try { renderCuentas(); } catch(e) { console.error("Fallo en Cuentas:", e); }
@@ -1117,7 +1115,11 @@ function renderDeudas() {
     }
     let infoInteres = '';
     if (d.rate > 0) infoInteres = `<div style="font-size:11px; color:var(--red); margin-top:3px;">💸 Interés: ${d.rate}% mensual. Pagas ${fmt(d.total - d.baseAmount)} extra en total.</div>`;
-    return `<div class="row-item" style="flex-direction:column;align-items:flex-start; padding-bottom:15px; margin-bottom:15px;"><div style="display:flex;width:100%;justify-content:space-between;margin-bottom:5px;"><input value="${d.name}" onchange="renameDebt('${d.id}', this.value)" style="width:50%; font-weight:bold;" ${isPaid?'disabled':''}><span style="color:${isPaid?'var(--green)':'var(--red)'}">${isPaid?'¡PAGADA!':fmt(saldo)+' restante'}</span>${canEdit() && !isPaid ?`<button class="danger" onclick="delDebt('${d.id}')">X</button>`:''}</div>${infoInteres}${scheduleHtml}</div>`;
+    
+    // Corregido: La X de borrar aparece si la deuda no está pagada (y el año está abierto) O si tiene adminUnlock
+    const showDeleteBtn = (!isPaid && canEdit()) || d.adminUnlock;
+    
+    return `<div class="row-item" style="flex-direction:column;align-items:flex-start; padding-bottom:15px; margin-bottom:15px;"><div style="display:flex;width:100%;justify-content:space-between;margin-bottom:5px;"><input value="${d.name}" onchange="renameDebt('${d.id}', this.value)" style="width:50%; font-weight:bold;" ${isPaid?'disabled':''}><span style="color:${isPaid?'var(--green)':'var(--red)'}">${isPaid?'¡PAGADA!':fmt(saldo)+' restante'}</span>${showDeleteBtn ?`<button class="danger" onclick="delDebt('${d.id}')">X</button>`:''}</div>${infoInteres}${scheduleHtml}</div>`;
   }).join('')||'<p style="text-align:center;color:var(--muted)">No hay deudas registradas</p>';
 }
 
