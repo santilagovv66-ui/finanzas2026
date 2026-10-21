@@ -1192,7 +1192,7 @@ async function sendChatMessage() {
         const prompt = `${context}\n\nEres un asesor financiero personal experto, amigable y conciso. Basándote en estos datos, responde a la siguiente pregunta del usuario: "${text}". Responde en español.`;
 
         // 2. Llamar a la API de Gemini
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${state.config.geminiKey}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${state.config.geminiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
