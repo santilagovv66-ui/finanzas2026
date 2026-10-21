@@ -36,7 +36,7 @@ main{padding:14px;max-width:1400px;margin:0 auto}
 .stat.green .value{color:var(--green)}.stat.red .value{color:var(--red)}.stat.yellow .value{color:var(--yellow)}.stat.blue .value{color:var(--accent)}.stat.purple .value{color:var(--purple)}
 .eye-btn{position:absolute; top:10px; right:10px; cursor:pointer; font-size:16px; opacity:0.7; user-select:none;}
 .eye-btn:hover{opacity:1;}
-input,select{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:9px;border-radius:6px;width:100%;margin-bottom:5px}
+input,select,textarea{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:9px;border-radius:6px;width:100%;margin-bottom:5px;font-family:inherit;}
 button.primary{background:var(--accent);color:#fff;border:none;padding:10px 18px;border-radius:6px;cursor:pointer;width:100%}
 button.danger{background:var(--red);color:#fff;border:none;padding:5px 8px;border-radius:6px;cursor:pointer;font-size:11px}
 button.warning{background:var(--yellow);color:#000;border:none;padding:8px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:bold}
@@ -74,6 +74,12 @@ input:checked + .slider { background-color: var(--green); }
 input:checked + .slider:before { transform: translateX(20px); }
 
 #payModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; align-items: center; justify-content: center; padding: 20px; }
+
+/* Estilos del Chat IA */
+#chat-messages { height: 350px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; padding: 10px; margin-bottom: 10px; background: var(--bg); display: flex; flex-direction: column; gap: 10px; }
+.message { max-width: 80%; padding: 8px 12px; border-radius: 8px; font-size: 13px; line-height: 1.4; }
+.message.user { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 0; }
+.message.ai { align-self: flex-start; background: var(--card); border: 1px solid var(--border); border-bottom-left-radius: 0; white-space: pre-wrap; }
 </style>
 </head>
 <body>
@@ -126,6 +132,7 @@ input:checked + .slider:before { transform: translateX(20px); }
       <button data-view="analisis">📈 Análisis</button>
       <button data-view="cuentas">🏦 Cuentas y Bolsillos</button>
       <button data-view="deudas">💳 Deudas</button>
+      <button data-view="chat">🤖 Chat IA</button>
       <button data-view="config">⚙️ Configuración</button>
     </nav>
     <main>
@@ -205,7 +212,7 @@ input:checked + .slider:before { transform: translateX(20px); }
         </div>
 
         <div class="card">
-          <h2>Promedios Mensuales</h2>
+          <h2>Promedios Mensuales y Cobertura</h2>
           <div class="grid" id="analisisPromedios"></div>
         </div>
 
@@ -280,6 +287,21 @@ input:checked + .slider:before { transform: translateX(20px); }
         </div>
       </section>
 
+      <section class="view" id="view-chat">
+        <div class="card">
+          <h2>🤖 Asesor Financiero IA (Gemini)</h2>
+          <p style="font-size: 12px; color: var(--muted); margin-bottom: 10px;">Pregúntame sobre tus finanzas. Leo tus datos actuales para darte consejos personalizados. (Requiere API Key en Configuración).</p>
+          <div id="chat-messages">
+              <!-- Mensajes aquí -->
+          </div>
+          <div style="display:flex; gap:10px;">
+              <input type="text" id="chat-input" placeholder="Pregúntame algo..." onkeypress="if(event.key === 'Enter') sendChatMessage()">
+              <button class="primary" onclick="sendChatMessage()" style="width:auto;">Enviar</button>
+          </div>
+          <button class="danger" onclick="clearChat()" style="margin-top:10px; width:100%;">Borrar Chat</button>
+        </div>
+      </section>
+
       <section class="view" id="view-config">
         <div class="card config-section" style="border-left-color: var(--accent);">
           <h3>⚙️ Automatizaciones</h3>
@@ -314,13 +336,15 @@ input:checked + .slider:before { transform: translateX(20px); }
         <div class="card config-section" style="border-left-color: var(--purple);">
           <h3>🤖 Asesor Financiero IA</h3>
           <p style="font-size: 12px; color: var(--muted); margin-bottom: 10px;">Muestra consejos automáticos en tu Panel Principal basados en tus gastos.</p>
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-size:13px; font-weight:bold;">Activar Consejos</span>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
+            <span style="font-size:13px; font-weight:bold;">Activar Consejos Básicos</span>
             <label class="switch">
               <input type="checkbox" id="toggleAdvisor" onchange="toggleAdvisor()">
               <span class="slider"></span>
             </label>
           </div>
+          <p style="font-size: 12px; color: var(--muted); margin-bottom: 10px;">API Key de Gemini (para el Chat IA): <br><small>Consíguela gratis en <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--accent);">Google AI Studio</a></small></p>
+          <input type="password" id="geminiKey" placeholder="Pega tu API Key aquí..." onchange="saveGeminiKey()">
         </div>
         <div class="card config-section" style="border-left-color: var(--green);">
           <h3>📥 Exportar Información</h3>
@@ -330,6 +354,7 @@ input:checked + .slider:before { transform: translateX(20px); }
         <div class="card config-section" style="border-left-color: var(--yellow);">
           <h3>🎯 Metas de Bolsillos</h3>
           <div id="goalsConfigList"></div>
+          <button class="warning" onclick="lockGoals()" style="margin-top:10px;" id="lockGoalsBtn">🔒 Bloquear Metas</button>
         </div>
         <div class="card config-section" style="border-left-color: var(--yellow);">
           <h3>🏷️ Categorías de Gasto</h3>
@@ -345,6 +370,8 @@ input:checked + .slider:before { transform: translateX(20px); }
           <p style="font-size:11px; color:var(--accent); margin-top:10px; margin-bottom:5px;">Desbloqueo de Saldos y Placer</p>
           <button class="warning" onclick="unlockOpeningBalances()">🔓 Desbloquear Saldos Iniciales</button>
           <button class="warning" onclick="unlockPlacerLimit()">🔓 Desbloquear Límite de Placer</button>
+          <p style="font-size:11px; color:var(--accent); margin-top:15px; margin-bottom:5px;">Desbloqueo de Metas</p>
+          <button class="warning" onclick="unlockGoals()">🔓 Desbloquear Metas de Bolsillos</button>
           <p style="font-size:11px; color:var(--accent); margin-top:15px; margin-bottom:5px;">Desbloqueo de Deudas Pagadas</p>
           <button class="warning" onclick="unlockDebts()">🔓 Desbloquear Deudas Pagadas</button>
         </div>
@@ -575,9 +602,12 @@ function migrateState() {
     if(!state.config.projChartType) state.config.projChartType = 'line';
     if(state.config.advisorEnabled === undefined) state.config.advisorEnabled = true;
     if(!state.config.autoSave) state.config.autoSave = { enabled: false, pct: 10, pocketId: '' };
+    if(state.config.geminiKey === undefined) state.config.geminiKey = '';
     
     if(!state.recurring) state.recurring = [];
     if(!state.summaries) state.summaries = {};
+    if(!state.chatHistory) state.chatHistory = [];
+    if(state.lockedGoals === undefined) state.lockedGoals = false;
     
     if(!state.accounts || !Array.isArray(state.accounts) || state.accounts.length === 0) {
         state.accounts = [{id:'nequi', name:'Nequi'},{id:'banco', name:'Bancolombia'},{id:'billetera', name:'Billetera (Efectivo)'}];
@@ -1008,6 +1038,19 @@ function unlockDebts() {
     save(); renderAll(); toast('Deudas pagadas desbloqueadas para borrar.'); 
 }
 
+function lockGoals() {
+    if(!confirm('¿Bloquear metas de bolsillos? No podrás editarlas hasta desbloquearlas en Administrador.')) return;
+    state.lockedGoals = true;
+    save(); renderAll(); toast('Metas bloqueadas');
+}
+
+function unlockGoals() {
+    if(!state.lockedGoals) return toast('Las metas ya están desbloqueadas.');
+    if(!confirm('⚠️ ¿Desbloquear metas de bolsillos?')) return;
+    state.lockedGoals = false;
+    save(); renderAll(); toast('Metas desbloqueadas');
+}
+
 function setOpeningBal(id, val) { if(!canEditInit()) return; state.years[state.active].openingBalances[id] = parseFloat(val) || 0; save(); renderAll(); }
 
 document.getElementById('fType').onchange = (e) => {
@@ -1063,7 +1106,7 @@ function delAcc(id){ if(!confirm('¿Borrar?'))return; if(tieneMovimientos(id)) r
 function addPocket(){ if(!canEditInit()) return toast('Bloquea primero los saldos para añadir bolsillos.'); const n=document.getElementById('newPocketName').value; if(!n)return; const id=genId(); state.pockets.push({id,name:n, meta:0}); state.years[state.active].openingBalances[id]=0; save(); renderAll(); document.getElementById('newPocketName').value=''; }
 function renamePoc(id, n){ if(!n)return; const p=state.pockets.find(x=>x.id===id); if(p){p.name=n;save();} }
 function delPoc(id){ if(!confirm('¿Borrar?'))return; if(tieneMovimientos(id)) return toast('Tiene movimientos asociados.'); state.pockets=state.pockets.filter(x=>x.id!==id); save(); renderAll(); }
-function setMetaPoc(id, val) { const p = state.pockets.find(x=>x.id===id); if(p) { p.meta = parseFloat(val) || 0; save(); renderAll(); } }
+function setMetaPoc(id, val) { if(state.lockedGoals) return toast('Metas bloqueadas'); const p = state.pockets.find(x=>x.id===id); if(p) { p.meta = parseFloat(val) || 0; save(); renderAll(); } }
 function addCat() { const name = document.getElementById('newCatName').value; const desc = document.getElementById('newCatDesc').value; if(!name) return toast('Falta el nombre'); state.config.cats.push({id: genId(), name: name, desc: desc, color: '#' + Math.floor(Math.random()*16777215).toString(16)}); save(); renderAll(); document.getElementById('newCatName').value=''; document.getElementById('newCatDesc').value=''; toast('Categoría añadida'); }
 function renameCat(id, field, val) { const c = state.config.cats.find(x=>x.id===id); if(c) { c[field] = val; save(); } }
 function delCat(id) { if(!confirm('¿Borrar categoría?')) return; state.config.cats = state.config.cats.filter(x=>x.id!==id); save(); renderAll(); }
@@ -1071,6 +1114,113 @@ function renameDebt(id, n){ if(!n)return; const d=state.debts.find(x=>x.id===id)
 function delDebt(id){ const d = state.debts.find(x=>x.id===id); if(!d) return; if(getDebtBal(id) <= 0 && !d.adminUnlock) return toast('No puedes borrar una deuda pagada. Usa la Zona de Administrador.'); if(!confirm('¿Borrar esta deuda?'))return; state.debts=state.debts.filter(x=>x.id!==id); save(); renderAll(); }
 function createNextYear(){ const y=Math.max(...Object.keys(state.years).map(Number)); if(!state.years[y].locked)return toast('Cierra el año primero'); const newYear = y+1; state.years[newYear] = { locked:false, lockedInit: false, openingBalances: {}, txs:[] }; state.accounts.forEach(a => { state.years[newYear].openingBalances[a.id] = getAccBal(a.id); }); state.pockets.forEach(p => { state.years[newYear].openingBalances[p.id] = getPocBal(p.id); }); state.active = newYear; save(); renderAll(); toast(`¡Año ${newYear} creado!`); }
 function toggleLock(){ state.years[state.active].locked=!state.years[state.active].locked; save(); renderAll(); }
+
+// Configuración de la API Key de Gemini
+function saveGeminiKey() {
+    state.config.geminiKey = document.getElementById('geminiKey').value.trim();
+    save();
+    toast('API Key guardada');
+}
+
+// Funciones del Chat IA
+function renderChat() {
+    const box = document.getElementById('chat-messages');
+    box.innerHTML = state.chatHistory.map(msg => `
+        <div class="message ${msg.role}">
+            ${msg.text.replace(/\n/g, '<br>')}
+        </div>
+    `).join('');
+    box.scrollTop = box.scrollHeight; // Auto-scroll to bottom
+}
+
+function clearChat() {
+    if(!confirm('¿Borrar todo el historial del chat?')) return;
+    state.chatHistory = [];
+    save();
+    renderChat();
+}
+
+async function sendChatMessage() {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text) return;
+
+    if (!state.config.geminiKey) {
+        return alert('⚠️ Para usar el chat, primero debes pegar tu API Key de Gemini en Configuración.');
+    }
+
+    // Añadir mensaje del usuario al historial
+    state.chatHistory.push({ role: 'user', text: text });
+    input.value = '';
+    renderChat();
+
+    // Añadir mensaje de "escribiendo..."
+    state.chatHistory.push({ role: 'ai', text: 'Pensando...' });
+    renderChat();
+
+    try {
+        // 1. Crear un resumen de las finanzas para dar contexto a la IA
+        const yr = state.years[state.active];
+        const flow = getFlow(state.active);
+        
+        let totalEfectivo = 0, totalAhorros = 0;
+        state.accounts.forEach(a => { if(a.id !== 'billetera') totalEfectivo += getAccBal(a.id); });
+        state.pockets.forEach(p => totalAhorros += getPocBal(p.id));
+        const totalDeudas = state.debts.reduce((s,d)=>s+getDebtBal(d.id),0);
+        const cashBilletera = getAccBal('billetera');
+        const patrimonioNeto = totalEfectivo + totalAhorros + cashBilletera - totalDeudas;
+
+        let topExpenses = {};
+        yr.txs.filter(t => t.type === 'Gasto').forEach(t => {
+            topExpenses[t.detail] = (topExpenses[t.detail] || 0) + t.amount;
+        });
+        const sortedExpenses = Object.entries(topExpenses).sort((a,b) => b[1] - a[1]).slice(0, 5).map(e => `${e[0]}: $${e[1]}`).join(', ');
+
+        const context = `
+        [CONTEXTO FINANCIERO DEL USUARIO - AÑO ${state.active}]
+        Patrimonio Total Actual: $${patrimonioNeto}
+        Dinero en Cuentas: $${totalEfectivo}
+        Dinero en Bolsillos de Ahorro: $${totalAhorros}
+        Efectivo (Billetera): $${cashBilletera}
+        Total Deudas Activas: $${totalDeudas}
+        Ingresos Totales del Año: $${flow.inc}
+        Gastos Totales del Año: $${flow.exp}
+        Top 5 Gastos (Detalle): ${sortedExpenses || 'Sin gastos'}
+        [FIN DEL CONTEXTO]
+        `;
+
+        const prompt = `${context}\n\nEres un asesor financiero personal experto, amigable y conciso. Basándote en estos datos, responde a la siguiente pregunta del usuario: "${text}". Responde en español.`;
+
+        // 2. Llamar a la API de Gemini
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${state.config.geminiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }]
+            })
+        });
+
+        const data = await response.json();
+
+        // 3. Procesar respuesta
+        if (data.error) {
+            throw new Error(data.error.message);
+        }
+
+        const aiResponse = data.candidates[0].content.parts[0].text;
+        
+        // Reemplazar "Pensando..." con la respuesta real
+        state.chatHistory[state.chatHistory.length - 1].text = aiResponse;
+        renderChat();
+
+    } catch (error) {
+        console.error(error);
+        state.chatHistory[state.chatHistory.length - 1].text = `❌ Error: ${error.message}. Verifica tu API Key en Configuración.`;
+        renderChat();
+    }
+}
+
+// Fin funciones Chat IA
 
 function renderAll() {
     try { renderDashboard(); } catch(e) { console.error("Fallo en Dashboard:", e); }
@@ -1080,6 +1230,7 @@ function renderAll() {
     try { renderAnalisis(); } catch(e) { console.error("Fallo en Analisis:", e); }
     try { renderExpertAnalysis(); } catch(e) { console.error("Fallo en Expert:", e); }
     try { renderMonthlySummaries(); } catch(e) { console.error("Fallo en Resumenes:", e); }
+    try { renderChat(); } catch(e) { console.error("Fallo en Chat:", e); }
     try { actualizarEstadoBio(); actualizarBadgeDeudas(); } catch(e) {}
     
     try {
@@ -1099,6 +1250,8 @@ function renderAll() {
 
 function renderDashboard() {
   document.getElementById('toggleAdvisor').checked = state.config.advisorEnabled;
+  document.getElementById('geminiKey').value = state.config.geminiKey || '';
+  
   const yn=document.getElementById('yearNav'); yn.innerHTML='';
   Object.keys(state.years).sort((a,b)=>b-a).forEach(y => {
     const b=document.createElement('button'); b.textContent=(state.years[y].locked?'🔒 ':'')+y;
@@ -1216,7 +1369,18 @@ function renderConfig() {
   document.getElementById('autoSaveConfig').style.display = state.config.autoSave.enabled ? 'block' : 'none';
   document.getElementById('autoSavePct').value = state.config.autoSave.pct;
 
-  document.getElementById('goalsConfigList').innerHTML=state.pockets.map(p=>`<div class="row-item"><span style="width:50%">${p.name}</span><input type="number" value="${p.meta||0}" onchange="setMetaPoc('${p.id}', this.value)" placeholder="Meta $" style="width:40%; text-align:right;"></div>`).join('');
+  const lockBtn = document.getElementById('lockGoalsBtn');
+  if(state.lockedGoals) {
+      lockBtn.innerText = '🔒 Metas Bloqueadas';
+      lockBtn.disabled = true;
+      lockBtn.style.opacity = '0.5';
+  } else {
+      lockBtn.innerText = '🔒 Bloquear Metas';
+      lockBtn.disabled = false;
+      lockBtn.style.opacity = '1';
+  }
+
+  document.getElementById('goalsConfigList').innerHTML=state.pockets.map(p=>`<div class="row-item"><span style="width:50%">${p.name}</span>${state.lockedGoals ? `<strong>${fmt(p.meta||0)}</strong>` : `<input type="number" value="${p.meta||0}" onchange="setMetaPoc('${p.id}', this.value)" placeholder="Meta $" style="width:40%; text-align:right;">`}</div>`).join('');
   document.getElementById('configCatsList').innerHTML=state.config.cats.map(c=>`<div class="row-item"><input value="${c.name}" onchange="renameCat('${c.id}', 'name', this.value)" style="border:none; width:30%; font-weight:bold;"><input value="${c.desc||''}" onchange="renameCat('${c.id}', 'desc', this.value)" style="border:none; width:45%; font-size:11px; color:var(--muted);" placeholder="Guía..."><span style="background:${c.color}; width:15px; height:15px; border-radius:50%;"></span><button class="danger" onclick="delCat('${c.id}')">X</button></div>`).join('');
   
   document.getElementById('recurringList').innerHTML = state.recurring.map(r=>`<div class="row-item"><div style="width: 60%; font-size: 12px;"><strong>${r.detail}</strong> - ${fmt(r.amount)}<br><span style="color:var(--muted)">Los días ${r.day} de ${getAccName(r.from) || getPocName(r.from)}</span></div><button class="danger" onclick="delRecurring('${r.id}')">X</button></div>`).join('') || '<p style="font-size:11px; color:var(--muted);">No hay gastos recurrentes configurados.</p>';
@@ -1459,6 +1623,17 @@ function renderAnalisis() {
   const avgAhorro = sumAhorro / activeMonths;
   const avgDiff = avgInc - avgExp;
 
+  // Calcular Patrimonio Total Actual para la Cobertura
+  let totalEfectivo = 0, totalAhorros = 0;
+  state.accounts.forEach(a => { if(a.id !== 'billetera') totalEfectivo += getAccBal(a.id); });
+  state.pockets.forEach(p => totalAhorros += getPocBal(p.id));
+  const totalDeudas = state.debts.reduce((s,d)=>s+getDebtBal(d.id),0);
+  const cashBilletera = getAccBal('billetera');
+  const patrimonioTotal = totalEfectivo + totalAhorros + cashBilletera - totalDeudas;
+
+  // Cálculo de meses de cobertura
+  const monthsCoverage = avgExp > 0 ? (patrimonioTotal / avgExp).toFixed(1) : '∞';
+
   document.getElementById('analisisPromedios').innerHTML=`
     <div class="stat green">
       <span class="eye-btn" onclick="toggleHideIndividual('avg_inc')">${state.hidden.global||state.hidden.stats['avg_inc']?'👁️':'👁️‍🗨️'}</span>
@@ -1475,6 +1650,10 @@ function renderAnalisis() {
     <div class="stat yellow">
       <span class="eye-btn" onclick="toggleHideIndividual('avg_ahorro')">${state.hidden.global||state.hidden.stats['avg_ahorro']?'👁️':'👁️‍🗨️'}</span>
       <div class="label">Promedio Ahorro Real Mensual</div><div class="value">${renderVal('avg_ahorro', avgAhorro)}</div>
+    </div>
+    <div class="stat purple">
+      <div class="label">Meses de Cobertura (Runway)</div>
+      <div class="value">${monthsCoverage} meses</div>
     </div>
   `;
 }
@@ -1538,6 +1717,9 @@ document.querySelectorAll('#mainNav button').forEach(b=>{
     }
     if(b.dataset.view === 'analisis') { 
         try { renderProjection(); } catch(e) { console.error("Fallo gráfico proyección", e); }
+    }
+    if(b.dataset.view === 'chat') { 
+        renderChat(); 
     }
   };
 });
