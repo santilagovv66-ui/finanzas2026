@@ -195,7 +195,13 @@ input:checked + .slider:before { transform: translateX(20px); }
         <div class="card">
           <h2>Historial <span id="txCount" style="float:right;color:var(--muted)"></span></h2>
           <input type="text" id="txSearch" placeholder="🔍 Buscar..." oninput="renderTable()">
-          <div style="overflow-x:auto"><table id="txTable"><thead><tr><th>Fecha</th><th>Detalle</th><th>Acción</th><th style="text-align:right">Monto</th><th></th></tr></thead><tbody></tbody></table></div>
+          <div style="overflow-x:auto">
+            <table id="txTable">
+              <thead><tr><th>Fecha</th><th>Detalle</th><th>Acción</th><th style="text-align:right">Monto</th><th></th></tr></thead>
+              <tbody></tbody>
+              <tfoot id="txTableFooter"></tfoot>
+            </table>
+          </div>
         </div>
       </section>
 
@@ -1505,9 +1511,16 @@ function renderConfig() {
 }
 
 function renderTable() {
-  const tb=document.querySelector('#txTable tbody'); const q=document.getElementById('txSearch').value.toLowerCase();
-  const list=state.years[state.active].txs.filter(t=>t.detail.toLowerCase().includes(q)).sort((a,b)=>b.date.localeCompare(a.date));
+  const tb=document.querySelector('#txTable tbody'); 
+  const tfoot = document.querySelector('#txTable tfoot');
+  const q=document.getElementById('txSearch').value.toLowerCase();
+  const yr=state.years[state.active];
+  
+  let list=yr.txs.filter(t=>t.detail.toLowerCase().includes(q)).sort((a,b)=>b.date.localeCompare(a.date));
   document.getElementById('txCount').textContent=list.length+' registros';
+
+  let totalSum = list.reduce((sum, t) => sum + t.amount, 0);
+  
   tb.innerHTML=list.map(t=>{
     let ruta = ''; if(t.type==='Ingreso') ruta = '➔ ' + (getAccName(t.to) || getPocName(t.to));
     if(t.type==='Gasto') ruta = (getAccName(t.from) || getPocName(t.from)) + ' ➔ Gasto';
@@ -1517,6 +1530,19 @@ function renderTable() {
     let colorMonto = 'var(--red)'; if(t.type === 'Ingreso') colorMonto = 'var(--green)'; if(t.type === 'Transferencia') colorMonto = 'var(--yellow)'; 
     return `<tr><td>${t.date}</td><td>${t.detail}</td><td>${t.type}${catStr}<br><small style="color:var(--muted)">${ruta}</small></td><td style="text-align:right; color:${colorMonto}; font-weight:bold;">${fmt(t.amount)}</td><td>${canEdit()?`<button class="danger" onclick="delTx('${t.id}')">X</button>`:''}</td></tr>`;
   }).join('')||'<tr><td colspan="5" style="text-align:center">Sin datos</td></tr>';
+
+  // Actualizar el pie de la tabla con la suma
+  if (list.length > 0) {
+      tfoot.innerHTML = `
+          <tr style="background: var(--bg); border-top: 2px solid var(--border);">
+              <td colspan="3" style="text-align:right; font-weight:bold; color:var(--muted);">Total de la búsqueda:</td>
+              <td style="text-align:right; font-weight:bold; color:var(--accent); font-size:15px;">${fmt(totalSum)}</td>
+              <td></td>
+          </tr>
+      `;
+  } else {
+      tfoot.innerHTML = '';
+  }
 }
 
 let flowChartInstance = null;
