@@ -442,7 +442,6 @@ function signup() {
 function loginWithGoogle() {
     const provider = new firebase.auth.GoogleAuthProvider();
     document.getElementById('auth-error').innerText = '';
-    // 👇 ÚNICO CAMBIO: Se cambió signInWithPopup por signInWithRedirect
     auth.signInWithRedirect(provider).catch(error => { document.getElementById('auth-error').innerText = error.message; });
 }
 function logout() { auth.signOut(); }
@@ -1082,6 +1081,20 @@ function renderAll() {
     try { renderExpertAnalysis(); } catch(e) { console.error("Fallo en Expert:", e); }
     try { renderMonthlySummaries(); } catch(e) { console.error("Fallo en Resumenes:", e); }
     try { actualizarEstadoBio(); actualizarBadgeDeudas(); } catch(e) {}
+    
+    try {
+        const yr = state.years[state.active];
+        const incM=Array(12).fill(0), gasM=Array(12).fill(0);
+        yr.txs.forEach(t => {
+            const m=new Date(t.date).getMonth();
+            if(t.type==='Ingreso') incM[m]+=t.amount;
+            if(t.type==='Gasto'||t.type==='PagoDeuda') gasM[m]+=t.amount;
+        });
+        if (document.getElementById('view-dashboard').classList.contains('active')) {
+            drawFlowChart(incM, gasM);
+            drawPieChart(getFlow(state.active));
+        }
+    } catch(e) { console.error("Fallo al renderizar gráficos iniciales:", e); }
 }
 
 function renderDashboard() {
@@ -1257,7 +1270,7 @@ function drawFlowChart(incM, gasM) {
       {label:'Ingresos',data:incM,backgroundColor: type==='line'?'#22c55e':'rgba(34,197,94,0.7)', borderColor: '#22c55e', fill: false},
       {label:'Gastos',data:gasM,backgroundColor: type==='line'?'#ef4444':'rgba(239,68,68,0.7)', borderColor: '#ef4444', fill: false}
     ]}, 
-    options:{plugins:{legend:{labels:{color:'#e2e8f0'}}}, scales:{x:{ticks:{color:'#94a3b8'}},y:{ticks:{color:'#94a3b8'}}}}
+    options:{plugins:{legend:{labels:{color:'#e2e8f0'}}}, scales:{x:{ticks:{color:'#94a3b8'}},y:{beginAtZero: true, ticks:{color:'#94a3b8'}}}}
   });
 }
 
