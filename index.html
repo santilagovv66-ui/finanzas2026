@@ -271,6 +271,21 @@ input:checked + .slider:before { transform: translateX(20px); }
       </section>
 
       <section class="view" id="view-deudas">
+        
+        <!-- NUEVO: Total de Deudas -->
+        <div class="card" style="border-left-color: var(--red);">
+          <h2>Total de Deudas Pendientes</h2>
+          <div id="totalDebtDisplay" style="font-size: 24px; font-weight: bold; color: var(--red); margin-top: 10px;">$0</div>
+        </div>
+
+        <!-- NUEVO: Asesor de Deudas con IA -->
+        <div class="card" style="border-left-color: var(--purple);">
+          <h2>🤖 Asesor de Deudas (IA)</h2>
+          <p style="font-size: 12px; color: var(--muted); margin-bottom: 10px;">Analiza tus deudas y tu dinero actual para sugerirte cómo pagarlas.</p>
+          <button class="primary" onclick="analyzeDebtsWithAI()" id="btnAnalyzeDebts" style="background: var(--purple);">Analizar Deudas con IA</button>
+          <div id="debtAIAnalysis" style="margin-top: 15px; font-size: 13px; display: none; background: var(--bg); padding: 10px; border-radius: 6px; border: 1px solid var(--border); white-space: pre-wrap;"></div>
+        </div>
+
         <div class="card">
           <h2>Mis Deudas Activas</h2>
           <div id="debtsList"></div>
@@ -1311,6 +1326,60 @@ async function sendChatMessage() {
     }
 }
 
+// NUEVO: Análisis de Deudas con IA
+async function analyzeDebtsWithAI() {
+    if (!state.config.geminiKey) {
+        return alert('⚠️ Para usar el asesor de deudas, primero debes pegar tu API Key de Gemini en Configuración.');
+    }
+
+    const btn = document.getElementById('btnAnalyzeDebts');
+    const box = document.getElementById('debtAIAnalysis');
+    btn.innerText = 'Analizando...';
+    btn.disabled = true;
+    box.style.display = 'block';
+    box.innerText = 'La IA está pensando tu mejor estrategia de pago...';
+
+    try {
+        const totalDebt = state.debts.reduce((s,d)=>s+getDebtBal(d.id),0);
+        let totalMoney = 0;
+        state.accounts.forEach(a => totalMoney += getAccBal(a.id));
+        state.pockets.forEach(p => totalMoney += getPocBal(p.id));
+        
+        const debtListStr = state.debts.filter(d => getDebtBal(d.id) > 0).map(d => 
+            `- ${d.name}: Debes ${fmt(getDebtBal(d.id))}, con un interés mensual del ${d.rate || 0}% (Fecha límite: ${d.dateLimit || 'sin fecha'})`
+        ).join('\n');
+
+        const prompt = `
+        Eres un asesor financiero personal experto. 
+        Dinero total disponible (Cuentas + Bolsillos): ${fmt(totalMoney)}.
+        Deuda total: ${fmt(totalDebt)}.
+        Lista de deudas activas:
+        ${debtListStr || 'No hay deudas activas.'}
+
+        Basándote en estos datos, dame un consejo conciso (máximo 150 palabras) sobre cuál deuda debo priorizar pagar primero (ej. la de mayor interés o la más pequeña para motivación) y cómo debo distribuir mi dinero para salir de ellas. Responde en español.
+        `;
+
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${state.config.geminiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        });
+
+        const data = await response.json();
+        if (data.error) throw new Error(data.error.message);
+
+        const aiResponse = data.candidates[0].content.parts[0].text;
+        box.innerText = aiResponse;
+
+    } catch (error) {
+        console.error(error);
+        box.innerText = `❌ Error: ${error.message}. Verifica tu API Key en Configuración.`;
+    } finally {
+        btn.innerText = 'Analizar Deudas con IA';
+        btn.disabled = false;
+    }
+}
+
 // Fin funciones Chat IA
 
 function renderAll() {
@@ -1431,6 +1500,9 @@ function renderCuentas() {
 }
 
 function renderDeudas() {
+  const totalDebt = state.debts.reduce((s,d)=>s+getDebtBal(d.id),0);
+  document.getElementById('totalDebtDisplay').innerText = fmt(totalDebt);
+
   document.getElementById('debtsList').innerHTML=state.debts.map(d=>{
     const saldo = getDebtBal(d.id); const isPaid = saldo <= 0;
     let scheduleHtml = '';
