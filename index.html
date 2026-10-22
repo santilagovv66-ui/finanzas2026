@@ -214,7 +214,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 
         <div class="card">
           <h2>📝 Resúmenes Mensuales (Historial del Año)</h2>
-          <p style="font-size: 11px; color: var(--muted); margin-bottom: 15px;">Se calculan automáticamente desde tus movimientos. Si editas o borras algo, el resumen se actualiza solo.</p>
+          <p style="font-size: 11px; color: var(--muted); margin-bottom: 15px;">Toca cada mes para desplegar u ocultar su resumen. Se calculan automáticamente desde tus movimientos.</p>
           <div id="monthlySummariesList" style="display:flex; flex-direction:column; gap:10px;"></div>
         </div>
 
@@ -682,6 +682,7 @@ function migrateState() {
     if(!state.recurring) state.recurring = [];
     if(!state.summaries) state.summaries = {};
     if(!state.debtAdvices) state.debtAdvices = [];
+    if(!state.summariesOpen) state.summariesOpen = {};
     
     if (state.chats === undefined) {
         state.chats = [];
@@ -1586,7 +1587,6 @@ async function importExcel() {
     
     try {
         const data = await file.arrayBuffer();
-        // NO usar cellDates: true — leer seriales y parsear sin timezone
         const wb = XLSX.read(data, { type: 'array' });
         
         let sheetName = wb.SheetNames.find(n => normText(n).includes('finanza')) || wb.SheetNames[0];
@@ -1804,11 +1804,9 @@ function parseFecha(v) {
     if(v === null || v === undefined || v === '') return null;
     if(v instanceof Date) {
         if(isNaN(v.getTime())) return null;
-        // getUTC* para evitar shift de zona horaria
         return `${v.getUTCFullYear()}-${String(v.getUTCMonth()+1).padStart(2,'0')}-${String(v.getUTCDate()).padStart(2,'0')}`;
     }
     if(typeof v === 'number') {
-        // Serial de Excel → parsear sin timezone
         const d = XLSX.SSF.parse_date_code(v);
         if(d) return `${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`;
     }
@@ -2369,11 +2367,13 @@ function renderExpertAnalysis() {
     box.innerHTML = createBar('Gastos Fijos', pctFijo, 50, 'var(--accent)') + createBar('Gastos Placer', pctPlacer, 30, 'var(--purple)') + createBar('Ahorro', pctAhorro, 20, 'var(--green)');
 }
 
-// NUEVO: Resúmenes calculados dinámicamente desde los movimientos
+// Resúmenes Mensuales — ahora con bloques plegables por mes
 function renderMonthlySummaries() {
     const box = document.getElementById('monthlySummariesList');
     const yr = state.years[state.active];
     if (!yr) { box.innerHTML = '<p style="color:var(--muted); font-size:13px;">Sin datos.</p>'; return; }
+    
+    if(!state.summariesOpen) state.summariesOpen = {};
     
     const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
     const summaries = [];
@@ -2416,18 +2416,37 @@ function renderMonthlySummaries() {
         return;
     }
     
-    box.innerHTML = summaries.map(s => `
-        <div style="background: var(--bg); padding: 12px; border-radius: 8px; border-left: 4px solid ${s.color};">
-            <h4 style="font-size: 14px; margin-bottom: 8px;">${monthNames[s.month]} ${state.active} <span style="font-size:11px; color:var(--muted); font-weight:normal;">(${s.count} movimientos)</span></h4>
-            <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px; flex-wrap:wrap; gap:8px;">
-                <span>Ingresos: <span style="color:var(--green)">${fmt(s.inc)}</span></span>
-                <span>Gastos: <span style="color:var(--red)">${fmt(s.exp)}</span></span>
-                <span>Ahorro: <span style="color:var(--yellow)">${fmt(s.ahorro)}</span></span>
-                <span>Balance: <span style="color:${s.color}">${fmt(s.balance)}</span></span>
+    box.innerHTML = summaries.map(s => {
+        const isOpen = !!state.summariesOpen[s.month];
+        return `
+        <div style="background: var(--bg); border-radius: 8px; border-left: 4px solid ${s.color}; overflow: hidden;">
+            <div onclick="toggleMonthSummary(${s.month})" style="padding: 12px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none;">
+                <div>
+                    <h4 style="font-size: 14px; margin: 0;">${monthNames[s.month]} ${state.active}</h4>
+                    <span style="font-size:11px; color:var(--muted);">${s.count} movimientos · Balance: <span style="color:${s.color}">${fmt(s.balance)}</span></span>
+                </div>
+                <span style="font-size: 16px; color: var(--muted);">${isOpen ? '▼' : '▶'}</span>
             </div>
-            <div style="font-size:11px; color:var(--muted); background:rgba(255,255,255,0.05); padding:8px; border-radius:4px; margin-top:8px;"><strong>🤖 Resumen:</strong> ${s.advice}</div>
+            ${isOpen ? `
+            <div style="padding: 0 12px 12px 12px;">
+                <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px; flex-wrap:wrap; gap:8px;">
+                    <span>Ingresos: <span style="color:var(--green)">${fmt(s.inc)}</span></span>
+                    <span>Gastos: <span style="color:var(--red)">${fmt(s.exp)}</span></span>
+                    <span>Ahorro: <span style="color:var(--yellow)">${fmt(s.ahorro)}</span></span>
+                </div>
+                <div style="font-size:11px; color:var(--muted); background:rgba(255,255,255,0.05); padding:8px; border-radius:4px; margin-top:8px;"><strong>🤖 Resumen:</strong> ${s.advice}</div>
+            </div>
+            ` : ''}
         </div>
-    `).join('');
+        `;
+    }).join('');
+}
+
+function toggleMonthSummary(month) {
+    if(!state.summariesOpen) state.summariesOpen = {};
+    state.summariesOpen[month] = !state.summariesOpen[month];
+    save();
+    renderMonthlySummaries();
 }
 
 function downloadExcel() {
