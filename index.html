@@ -281,12 +281,24 @@ input:checked + .slider:before { transform: translateX(20px); }
           <h2>🤖 Asesor de Deudas (IA)</h2>
           <p style="font-size: 12px; color: var(--muted); margin-bottom: 10px;">Analiza tus deudas y tu dinero actual para sugerirte cómo pagarlas.</p>
           <button class="primary" onclick="analyzeDebtsWithAI()" id="btnAnalyzeDebts" style="background: var(--purple);">Analizar Deudas con IA</button>
-          <div id="debtAIAnalysis" style="margin-top: 15px; font-size: 13px; display: none; background: var(--bg); padding: 10px; border-radius: 6px; border: 1px solid var(--border); white-space: pre-wrap;"></div>
-          <div id="debtAIActions" style="display:none; margin-top: 10px; gap: 10px;">
-              <button class="warning" onclick="saveDebtAdvice()" style="flex:1;">💾 Guardar Consejo</button>
-              <button class="danger" onclick="clearDebtAdvice()" style="flex:1; padding:10px;">🗑️ Borrar Consejo</button>
+          
+          <div id="debtAIResultWrap" style="display:none; margin-top: 15px;">
+            <div id="debtAIAnalysis" style="font-size: 13px; background: var(--bg); padding: 10px; border-radius: 6px; border: 1px solid var(--border); white-space: pre-wrap;"></div>
+            <div id="debtAIActions" style="display:none; margin-top: 10px; gap: 10px;">
+                <button class="warning" onclick="saveDebtAdvice()" style="flex:1;">💾 Guardar Consejo</button>
+                <button class="danger" onclick="clearDebtAdvice()" style="flex:1; padding:10px;">🗑️ Borrar Consejo</button>
+            </div>
           </div>
-          <div id="debtSavedAdvices" style="margin-top: 15px;"></div>
+
+          <div style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 15px;">
+            <h3 style="font-size: 13px; color: var(--muted); text-transform: uppercase; margin-bottom: 10px;">📚 Consejos Guardados</h3>
+            <div id="debtSavedSelectorWrap" style="display:none; gap:10px;">
+              <select id="debtSavedSelector" onchange="viewSavedDebtAdvice(this.value)" style="flex:1; margin:0;"></select>
+              <button class="danger" onclick="deleteCurrentSavedDebtAdvice()" style="width:auto;">🗑️</button>
+            </div>
+            <p id="debtSavedEmpty" style="font-size:12px; color:var(--muted);">Aún no tienes consejos guardados.</p>
+            <div id="debtSavedViewer" style="display:none; margin-top: 10px; font-size: 13px; background: var(--bg); padding: 10px; border-radius: 6px; border: 1px solid var(--border); white-space: pre-wrap;"></div>
+          </div>
         </div>
 
         <div class="card">
@@ -1463,10 +1475,12 @@ async function analyzeDebtsWithAI() {
     }
 
     const btn = document.getElementById('btnAnalyzeDebts');
+    const wrap = document.getElementById('debtAIResultWrap');
     const box = document.getElementById('debtAIAnalysis');
     const actions = document.getElementById('debtAIActions');
     btn.innerText = 'Analizando...';
     btn.disabled = true;
+    wrap.style.display = 'block';
     box.style.display = 'block';
     box.innerText = 'La IA está pensando tu mejor estrategia de pago...';
     actions.style.display = 'none';
@@ -1516,7 +1530,7 @@ async function analyzeDebtsWithAI() {
     }
 }
 
-// NUEVO: guardar/borrar consejos de deuda
+// NUEVO: guardar/borrar consejos de deuda (con limpieza al guardar y selector tipo chat)
 function saveDebtAdvice() {
     if(!currentDebtAdviceText) return toast('No hay consejo para guardar');
     if(!state.debtAdvices) state.debtAdvices = [];
@@ -1526,44 +1540,79 @@ function saveDebtAdvice() {
         text: currentDebtAdviceText
     });
     save();
+    // Limpiar el chat/análisis actual
+    currentDebtAdviceText = '';
+    document.getElementById('debtAIResultWrap').style.display = 'none';
+    document.getElementById('debtAIAnalysis').innerText = '';
+    document.getElementById('debtAIActions').style.display = 'none';
     renderSavedDebtAdvices();
     toast('💾 Consejo guardado');
 }
 
 function clearDebtAdvice() {
-    if(!confirm('¿Borrar el consejo actual? Si lo guardaste, seguirá en la lista de guardados.')) return;
+    if(!confirm('¿Borrar este consejo actual? Si lo guardaste, seguirá en la lista de guardados.')) return;
     currentDebtAdviceText = '';
-    document.getElementById('debtAIAnalysis').style.display = 'none';
+    document.getElementById('debtAIResultWrap').style.display = 'none';
     document.getElementById('debtAIAnalysis').innerText = '';
     document.getElementById('debtAIActions').style.display = 'none';
     toast('Consejo borrado');
 }
 
-function deleteSavedDebtAdvice(id) {
+function renderSavedDebtAdvices() {
+    const wrap = document.getElementById('debtSavedSelectorWrap');
+    const selector = document.getElementById('debtSavedSelector');
+    const empty = document.getElementById('debtSavedEmpty');
+    const viewer = document.getElementById('debtSavedViewer');
+    if(!wrap || !selector) return;
+    if(!state.debtAdvices || state.debtAdvices.length === 0) {
+        wrap.style.display = 'none';
+        empty.style.display = 'block';
+        viewer.style.display = 'none';
+        selector.innerHTML = '';
+        return;
+    }
+    wrap.style.display = 'flex';
+    empty.style.display = 'none';
+    const prevVal = selector.value;
+    selector.innerHTML = '<option value="">— Selecciona un consejo guardado —</option>' + 
+        state.debtAdvices.map(a => {
+            const date = new Date(a.date);
+            const dateStr = `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
+            const preview = a.text.substring(0, 40).replace(/\n/g, ' ') + '...';
+            return `<option value="${a.id}">${dateStr} - ${preview}</option>`;
+        }).join('');
+    // Si el seleccionado previo aún existe, restaurarlo y actualizar visor
+    if(prevVal && state.debtAdvices.some(a => a.id === prevVal)) {
+        selector.value = prevVal;
+        viewSavedDebtAdvice(prevVal);
+    } else {
+        viewer.style.display = 'none';
+    }
+}
+
+function viewSavedDebtAdvice(id) {
+    const viewer = document.getElementById('debtSavedViewer');
+    if(!viewer) return;
+    if(!id) { viewer.style.display = 'none'; return; }
+    const advice = state.debtAdvices.find(a => a.id === id);
+    if(!advice) { viewer.style.display = 'none'; return; }
+    const date = new Date(advice.date);
+    const dateStr = `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
+    viewer.innerHTML = `<div style="font-size:10px; color:var(--muted); margin-bottom:5px;">${dateStr}</div><div>${advice.text.replace(/\n/g, '<br>')}</div>`;
+    viewer.style.display = 'block';
+}
+
+function deleteCurrentSavedDebtAdvice() {
+    const selector = document.getElementById('debtSavedSelector');
+    if(!selector) return;
+    const id = selector.value;
+    if(!id) return toast('Selecciona un consejo guardado para borrar');
     if(!confirm('¿Eliminar este consejo guardado?')) return;
     state.debtAdvices = state.debtAdvices.filter(a => a.id !== id);
     save();
+    document.getElementById('debtSavedViewer').style.display = 'none';
     renderSavedDebtAdvices();
     toast('Consejo eliminado');
-}
-
-function renderSavedDebtAdvices() {
-    const box = document.getElementById('debtSavedAdvices');
-    if(!box) return;
-    if(!state.debtAdvices || state.debtAdvices.length === 0) {
-        box.innerHTML = '';
-        return;
-    }
-    box.innerHTML = `<h3 style="font-size:13px; color:var(--muted); margin-bottom:8px; text-transform:uppercase;">📚 Consejos Guardados</h3>` + 
-    state.debtAdvices.map(a => {
-        const date = new Date(a.date);
-        const dateStr = `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
-        return `<div style="background:var(--bg); padding:10px; border-radius:6px; border-left:3px solid var(--purple); margin-bottom:8px; position:relative;">
-            <button class="danger" onclick="deleteSavedDebtAdvice('${a.id}')" style="position:absolute; top:8px; right:8px; padding:2px 6px; font-size:10px;">X</button>
-            <div style="font-size:10px; color:var(--muted); margin-bottom:5px;">${dateStr}</div>
-            <div style="font-size:12px; white-space:pre-wrap; padding-right:25px;">${a.text}</div>
-        </div>`;
-    }).join('');
 }
 
 // NUEVO: importar desde Excel
@@ -1901,7 +1950,7 @@ function renderDeudas() {
     return `<div class="row-item" style="flex-direction:column;align-items:flex-start; padding-bottom:15px; margin-bottom:15px;"><div style="display:flex;width:100%;justify-content:space-between;margin-bottom:5px;"><input value="${d.name}" onchange="renameDebt('${d.id}', this.value)" style="width:50%; font-weight:bold;" ${isPaid?'disabled':''}><span style="color:${isPaid?'var(--green)':'var(--red)'}">${isPaid?'¡PAGADA!':fmt(saldo)+' restante'}</span>${showDeleteBtn ?`<button class="danger" onclick="delDebt('${d.id}')">X</button>`:''}</div>${infoInteres}${scheduleHtml}</div>`;
   }).join('')||'<p style="text-align:center;color:var(--muted)">No hay deudas registradas</p>';
 
-  // NUEVO: renderizar consejos guardados
+  // NUEVO: renderizar consejos guardados (selector tipo chat)
   renderSavedDebtAdvices();
 }
 
