@@ -410,12 +410,12 @@ input:checked + .slider:before { transform: translateX(20px); }
           <p style="font-size: 12px; color: var(--muted); margin-bottom: 10px;">Descarga un archivo Excel con todos los movimientos de este año.</p>
           <button class="primary" onclick="downloadExcel()" style="background: var(--green);">📊 Descargar Historial en Excel</button>
           
-          <p style="font-size: 12px; color: var(--muted); margin-top: 15px; margin-bottom: 10px;">Importa movimientos desde un archivo Excel (.xlsx). El archivo debe tener las columnas: <strong>Fecha, Detalle, Monto, Tipo (Ingreso/Gasto), A donde ingresa o donde sale dinero, Tipo de gasto</strong>. Si una cuenta, bolsillo o categoría no existe, se creará automáticamente.</p>
+          <p style="font-size: 12px; color: var(--muted); margin-top: 15px; margin-bottom: 10px;">Importa movimientos desde un archivo Excel (.xlsx). El importador detecta automáticamente la fila de encabezados (busca "Fecha" y "Detalle") y las columnas <strong>Tipo (Ingreso/Gasto)</strong>, <strong>A donde ingresa o donde sale dinero</strong> y <strong>Tipo de gasto</strong>. Si una cuenta, bolsillo o categoría no existe, se creará automáticamente.</p>
           <label style="font-size: 11px; color: var(--muted);">🗓️ Omitir movimientos desde (opcional):</label>
           <input type="date" id="importOmitFrom" style="margin-bottom: 8px;">
           <input type="file" id="importExcelFile" accept=".xlsx,.xls" style="margin-bottom: 8px;">
           <button class="primary" onclick="importExcel()" style="background: var(--accent);">📤 Importar desde Excel</button>
-          <div id="importResult" style="margin-top: 10px; font-size: 12px;"></div>
+          <div id="importResult" style="margin-top: 10px; font-size: 12px; white-space: pre-wrap;"></div>
         </div>
         <div class="card config-section" style="border-left-color: var(--yellow);">
           <h3>🎯 Metas de Bolsillos</h3>
@@ -1605,15 +1605,13 @@ function deleteCurrentSavedDebtAdvice() {
 }
 
 // ==========================================================
-// NUEVO IMPORTADOR ADAPTADO AL FORMATO DEL EXCEL DEL USUARIO
-// Columnas esperadas: Fecha | Detalle | Monto | Tipo (Ingreso/Gasto) | A donde ingresa o donde sale dinero | Tipo de gasto
+// IMPORTADOR ROBUSTO — Detecta encabezados automáticamente
 // ==========================================================
 async function importExcel() {
     const fileInput = document.getElementById('importExcelFile');
     if(!fileInput.files || fileInput.files.length === 0) return toast('Selecciona un archivo primero');
     if(!canEdit()) return toast('El año actual está bloqueado, no se puede importar.');
     
-    // Filtro opcional: omitir movimientos con fecha >= este valor
     const omitInput = document.getElementById('importOmitFrom');
     const omitFrom = omitInput && omitInput.value ? omitInput.value : null;
     
@@ -1623,11 +1621,56 @@ async function importExcel() {
     
     try {
         const data = await file.arrayBuffer();
-        const wb = XLSX.read(data, { type: 'array' });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+        const wb = XLSX.read(data, { type: 'array', cellDates: true });
         
-        if(rows.length === 0) { resultBox.innerHTML = '❌ El archivo está vacío.'; return; }
+        // Preferir hoja cuyo nombre contenga "finanza"
+        let sheetName = wb.SheetNames.find(n => normText(n).includes('finanza')) || wb.SheetNames[0];
+        const ws = wb.Sheets[sheetName];
+        
+        // Leer como array de arrays (sin asumir encabezados)
+        const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', blankrows: false });
+        
+        if(raw.length === 0) { resultBox.innerHTML = '❌ El archivo está vacío.'; return; }
+        
+        // Detectar fila de encabezados (busca "fecha" y "detalle" en alguna fila)
+        let headerRowIdx = -1;
+        for (let i = 0; i < Math.min(raw.length, 30); i++) {
+            const row = raw[i] || [];
+            const joined = row.map(c => normText(c)).join('|');
+            if (joined.includes('fecha') && joined.includes('detalle')) {
+                headerRowIdx = i;
+                break;
+            }
+        }
+        if (headerRowIdx === -1) {
+            resultBox.innerHTML = '❌ No se encontró la fila de encabezados (buscando "Fecha" y "Detalle" en las primeras 30 filas). Revisa que el Excel tenga una fila con esos títulos.';
+            return;
+        }
+        
+        // Mapear índices de columnas
+        const headerRow = (raw[headerRowIdx] || []).map(h => normText(h));
+        const findCol = (names) => {
+            for (const n of names) {
+                const idx = headerRow.findIndex(h => h.includes(normText(n)));
+                if (idx !== -1) return idx;
+            }
+            return -1;
+        };
+        
+        const colFecha = findCol(['fecha']);
+        const colDetalle = findCol(['detalle']);
+        const colMonto = findCol(['monto']);
+        const colTipo = findCol(['tipo (ingreso/gasto)', 'tipo']);
+        const colCuenta = findCol(['a donde ingresa o donde sale', 'donde ingresa', 'cuenta']);
+        const colCat = findCol(['tipo de gasto', 'categoria', 'categoría']);
+        
+        // Debug info
+        const colsDetectadas = `Fecha=${colFecha}, Detalle=${colDetalle}, Monto=${colMonto}, Tipo=${colTipo}, Cuenta=${colCuenta}, Categoría=${colCat}`;
+        
+        if (colFecha === -1 || colDetalle === -1 || colMonto === -1) {
+            resultBox.innerHTML = `❌ No se pudieron mapear las columnas mínimas (Fecha, Detalle, Monto).<br>Fila de encabezados: ${headerRowIdx + 1}<br>Columnas detectadas: ${colsDetectadas}<br>Encabezados leídos: ${JSON.stringify(raw[headerRowIdx])}`;
+            return;
+        }
         
         let imported = 0, skipped = 0, omitted = 0;
         const errors = [];
@@ -1635,15 +1678,11 @@ async function importExcel() {
         const newPockets = new Set();
         const newCats = new Set();
         
-        // Normaliza texto: minúsculas, sin tildes, sin espacios extra
-        const norm = (s) => String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
-        
-        // Busca o crea cuenta por nombre (match exacto primero, luego case-insensitive)
         const findOrCreateAcc = (name) => {
             if(!name) return null;
             let a = state.accounts.find(x => x.name === name);
             if(a) return a.id;
-            a = state.accounts.find(x => norm(x.name) === norm(name));
+            a = state.accounts.find(x => normText(x.name) === normText(name));
             if(a) return a.id;
             const id = genId();
             state.accounts.push({ id, name });
@@ -1652,25 +1691,23 @@ async function importExcel() {
             return id;
         };
         
-        // Busca o crea bolsillo con match inteligente (evita duplicar "Ahorro Carro" vs "Ahorro serv Carro y Moto")
         const findOrCreatePocket = (name) => {
             if(!name) return null;
             let p = state.pockets.find(x => x.name === name);
             if(p) return p.id;
-            p = state.pockets.find(x => norm(x.name) === norm(name));
+            p = state.pockets.find(x => normText(x.name) === normText(name));
             if(p) return p.id;
-            const target = norm(name);
-            // Match semántico: carro/moto, emergencia, general
+            const target = normText(name);
             if(target.includes('carro') || target.includes('moto')) {
-                p = state.pockets.find(x => norm(x.name).includes('carro'));
+                p = state.pockets.find(x => normText(x.name).includes('carro'));
                 if(p) return p.id;
             }
             if(target.includes('emergencia')) {
-                p = state.pockets.find(x => norm(x.name).includes('emergencia'));
+                p = state.pockets.find(x => normText(x.name).includes('emergencia'));
                 if(p) return p.id;
             }
             if(target.includes('general')) {
-                p = state.pockets.find(x => norm(x.name).includes('general'));
+                p = state.pockets.find(x => normText(x.name).includes('general'));
                 if(p) return p.id;
             }
             const id = genId();
@@ -1680,22 +1717,21 @@ async function importExcel() {
             return id;
         };
         
-        // Busca o crea categoría con match inteligente (Fijo, Placer, Necesario)
         const findOrCreateCat = (name) => {
             if(!name) return 'fijo';
-            const target = norm(name);
-            let c = state.config.cats.find(x => norm(x.name) === target);
+            const target = normText(name);
+            let c = state.config.cats.find(x => normText(x.name) === target);
             if(c) return c.id;
             if(target.includes('fijo')) {
-                c = state.config.cats.find(x => norm(x.name).includes('fijo'));
+                c = state.config.cats.find(x => normText(x.name).includes('fijo'));
                 if(c) return c.id;
             }
             if(target.includes('placer')) {
-                c = state.config.cats.find(x => norm(x.name).includes('placer'));
+                c = state.config.cats.find(x => normText(x.name).includes('placer'));
                 if(c) return c.id;
             }
             if(target.includes('necesari')) {
-                c = state.config.cats.find(x => norm(x.name).includes('necesari'));
+                c = state.config.cats.find(x => normText(x.name).includes('necesari'));
                 if(c) return c.id;
             }
             const id = genId();
@@ -1704,128 +1740,67 @@ async function importExcel() {
             return id;
         };
         
-        const parseAmount = (v) => {
-            if(typeof v === 'number') return v;
-            if(!v) return 0;
-            let s = String(v).trim().replace(/[^\d.,-]/g, '');
-            if(!s) return 0;
-            if(s.includes('.') && s.includes(',')) {
-                const lastDot = s.lastIndexOf('.');
-                const lastComma = s.lastIndexOf(',');
-                if(lastDot > lastComma) s = s.replace(/,/g, '');
-                else s = s.replace(/\./g, '').replace(/,/g, '.');
-            } else if(s.includes(',')) {
-                const parts = s.split(',');
-                if(parts.length === 2 && parts[1].length <= 2) s = s.replace(',', '.');
-                else s = s.replace(/,/g, '');
-            } else if(s.includes('.')) {
-                const parts = s.split('.');
-                if(parts.length > 2 || (parts.length === 2 && parts[1].length === 3)) s = s.replace(/\./g, '');
-            }
-            return parseFloat(s) || 0;
-        };
-        
-        const parseDate = (v) => {
-            if(!v) return null;
-            if(typeof v === 'number') {
-                const d = XLSX.SSF.parse_date_code(v);
-                if(d) return `${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`;
-            }
-            const s = String(v).trim();
-            if(/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0,10);
-            const dt = new Date(s);
-            if(!isNaN(dt.getTime())) return dt.toISOString().slice(0,10);
-            return null;
-        };
-        
-        // Lee una columna aceptando varios nombres posibles
-        const getCol = (row, names) => {
-            for (const n of names) {
-                if (row[n] !== undefined && row[n] !== null && row[n] !== '') return row[n];
-            }
-            return '';
-        };
-        
-        rows.forEach((row, idx) => {
+        // Procesar desde la fila siguiente a los encabezados
+        for (let i = headerRowIdx + 1; i < raw.length; i++) {
             try {
-                const fecha = parseDate(getCol(row, ['Fecha']));
-                const detalle = String(getCol(row, ['Detalle']) || '').trim();
-                const monto = parseAmount(getCol(row, ['Monto ($)', 'Monto', 'Monto COP']));
-                const tipoRaw = String(getCol(row, ['Tipo (Ingreso/Gasto)', 'Tipo']) || '').trim();
-                const cuentaRaw = String(getCol(row, ['A donde ingresa o donde sale dinero', 'Origen', 'Destino']) || '').trim();
-                const catRaw = String(getCol(row, ['Tipo de gasto', 'Categoría', 'Categoria']) || '').trim();
+                const row = raw[i] || [];
+                const fecha = parseFecha(row[colFecha]);
+                const detalle = String(row[colDetalle] || '').trim();
+                const monto = parseMonto(row[colMonto]);
+                const tipoRaw = String(row[colTipo] || '').trim();
+                const cuentaRaw = colCuenta !== -1 ? String(row[colCuenta] || '').trim() : '';
+                const catRaw = colCat !== -1 ? String(row[colCat] || '').trim() : '';
                 
-                if(!fecha || !detalle) {
-                    skipped++;
-                    return;
-                }
-                
-                // Filtro opcional de fecha
-                if(omitFrom && fecha >= omitFrom) {
-                    omitted++;
-                    return;
-                }
-                
-                if(monto <= 0) {
-                    skipped++;
-                    return;
-                }
+                if(!fecha || !detalle) { skipped++; continue; }
+                if(omitFrom && fecha >= omitFrom) { omitted++; continue; }
+                if(monto <= 0) { skipped++; continue; }
                 
                 let tx = null;
-                const cuentaNorm = norm(cuentaRaw);
+                const cuentaNorm = normText(cuentaRaw);
                 
-                // 1) Transferencia a bolsillo de ahorro (columna E empieza con "Ahorro")
                 if(cuentaRaw && /^Ahorro\s+/i.test(cuentaRaw)) {
                     const pocketId = findOrCreatePocket(cuentaRaw);
-                    if(!pocketId) { skipped++; return; }
+                    if(!pocketId) { skipped++; continue; }
                     const fromId = findOrCreateAcc('Billetera (Efectivo)');
                     tx = { id: genId(), date: fecha, detail: detalle, amount: monto, type: 'Transferencia', from: fromId, to: pocketId };
                 }
-                // 2) Saque de ahorro (retiro de bolsillo)
                 else if(cuentaRaw && /^Saque ahorro/i.test(cuentaRaw)) {
                     const pocketName = cuentaRaw.replace(/^Saque ahorro\s*/i, 'Ahorro ');
                     const pocketId = findOrCreatePocket(pocketName);
-                    if(!pocketId) { skipped++; return; }
+                    if(!pocketId) { skipped++; continue; }
                     const toId = findOrCreateAcc('Billetera (Efectivo)');
                     tx = { id: genId(), date: fecha, detail: detalle, amount: monto, type: 'Transferencia', from: pocketId, to: toId };
                 }
-                // 3) NequiIngreso + Ingreso → ingreso a Nequi
                 else if(cuentaNorm === 'nequiingreso' && tipoRaw === 'Ingreso') {
                     const toId = findOrCreateAcc('Nequi');
                     tx = { id: genId(), date: fecha, detail: detalle, amount: monto, type: 'Ingreso', to: toId };
                 }
-                // 4) NequiIngreso sin tipo (depósito de efectivo a Nequi) → transferencia Billetera→Nequi
                 else if(cuentaNorm === 'nequiingreso') {
                     const toId = findOrCreateAcc('Nequi');
                     const fromId = findOrCreateAcc('Billetera (Efectivo)');
                     tx = { id: genId(), date: fecha, detail: detalle, amount: monto, type: 'Transferencia', from: fromId, to: toId };
                 }
-                // 5) NequiGasto + Gasto → gasto desde Nequi
                 else if(cuentaNorm === 'nequigasto' && tipoRaw === 'Gasto') {
                     const fromId = findOrCreateAcc('Nequi');
                     tx = { id: genId(), date: fecha, detail: detalle, amount: monto, type: 'Gasto', from: fromId, cat: findOrCreateCat(catRaw) };
                 }
-                // 6) NequiGasto sin tipo (retiro de Nequi a efectivo) → transferencia Nequi→Billetera
                 else if(cuentaNorm === 'nequigasto') {
                     const fromId = findOrCreateAcc('Nequi');
                     const toId = findOrCreateAcc('Billetera (Efectivo)');
                     tx = { id: genId(), date: fecha, detail: detalle, amount: monto, type: 'Transferencia', from: fromId, to: toId };
                 }
-                // 7) Ingreso normal (efectivo) → a Billetera
                 else if(tipoRaw === 'Ingreso') {
                     const toId = findOrCreateAcc('Billetera (Efectivo)');
                     tx = { id: genId(), date: fecha, detail: detalle, amount: monto, type: 'Ingreso', to: toId };
                 }
-                // 8) Gasto normal (efectivo) → desde Billetera
                 else if(tipoRaw === 'Gasto') {
                     const fromId = findOrCreateAcc('Billetera (Efectivo)');
                     tx = { id: genId(), date: fecha, detail: detalle, amount: monto, type: 'Gasto', from: fromId, cat: findOrCreateCat(catRaw) };
                 }
-                // 9) Otros tipos no reconocidos
                 else {
                     skipped++;
-                    if(errors.length < 5) errors.push(`Fila ${idx+2}: tipo "${tipoRaw}" / cuenta "${cuentaRaw}" no reconocido`);
-                    return;
+                    if(errors.length < 5) errors.push(`Fila ${i+1}: tipo "${tipoRaw}" / cuenta "${cuentaRaw}" no reconocido`);
+                    continue;
                 }
                 
                 if(tx) {
@@ -1834,9 +1809,9 @@ async function importExcel() {
                 }
             } catch(e) {
                 skipped++;
-                if(errors.length < 5) errors.push(`Fila ${idx+2}: ${e.message}`);
+                if(errors.length < 5) errors.push(`Fila ${i+1}: ${e.message}`);
             }
-        });
+        }
         
         save();
         renderAll();
@@ -1847,6 +1822,12 @@ async function importExcel() {
         if(newPockets.size) msg += `<br>➕ Bolsillos nuevos: ${[...newPockets].join(', ')}`;
         if(newCats.size) msg += `<br>➕ Categorías nuevas: ${[...newCats].join(', ')}`;
         if(errors.length) msg += `<br><br>⚠️ Errores:<br>${errors.join('<br>')}`;
+        
+        // Si importó 0, mostrar diagnóstico
+        if(imported === 0) {
+            msg += `<br><br>🔍 <strong>Diagnóstico:</strong><br>Hoja: "${sheetName}" · Fila de encabezados: ${headerRowIdx + 1}<br>${colsDetectadas}<br>Primeras 2 filas de datos leídas:<br>${JSON.stringify(raw[headerRowIdx+1] || [])}<br>${JSON.stringify(raw[headerRowIdx+2] || [])}`;
+        }
+        
         resultBox.innerHTML = msg;
         toast(`Importados ${imported} registros`);
         fileInput.value = '';
@@ -1854,6 +1835,48 @@ async function importExcel() {
         console.error(e);
         resultBox.innerHTML = `❌ Error al leer el archivo: ${e.message}`;
     }
+}
+
+// Helpers globales para el importador
+function normText(s) {
+    return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
+}
+function parseFecha(v) {
+    if(v === null || v === undefined || v === '') return null;
+    if(v instanceof Date) {
+        if(isNaN(v.getTime())) return null;
+        return `${v.getFullYear()}-${String(v.getMonth()+1).padStart(2,'0')}-${String(v.getDate()).padStart(2,'0')}`;
+    }
+    if(typeof v === 'number') {
+        const d = XLSX.SSF.parse_date_code(v);
+        if(d) return `${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`;
+    }
+    const s = String(v).trim();
+    const m = s.match(/^(\d{4})[-\/](\d{2})[-\/](\d{2})/);
+    if(m) return `${m[1]}-${m[2]}-${m[3]}`;
+    const dt = new Date(s);
+    if(!isNaN(dt.getTime())) return dt.toISOString().slice(0,10);
+    return null;
+}
+function parseMonto(v) {
+    if(typeof v === 'number') return v;
+    if(!v) return 0;
+    let s = String(v).trim().replace(/[^\d.,-]/g, '');
+    if(!s) return 0;
+    if(s.includes('.') && s.includes(',')) {
+        const lastDot = s.lastIndexOf('.');
+        const lastComma = s.lastIndexOf(',');
+        if(lastDot > lastComma) s = s.replace(/,/g, '');
+        else s = s.replace(/\./g, '').replace(/,/g, '.');
+    } else if(s.includes(',')) {
+        const parts = s.split(',');
+        if(parts.length === 2 && parts[1].length <= 2) s = s.replace(',', '.');
+        else s = s.replace(/,/g, '');
+    } else if(s.includes('.')) {
+        const parts = s.split('.');
+        if(parts.length > 2 || (parts.length === 2 && parts[1].length === 3)) s = s.replace(/\./g, '');
+    }
+    return parseFloat(s) || 0;
 }
 
 function renderAll() {
