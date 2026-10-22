@@ -410,7 +410,9 @@ input:checked + .slider:before { transform: translateX(20px); }
           <p style="font-size: 12px; color: var(--muted); margin-bottom: 10px;">Descarga un archivo Excel con todos los movimientos de este año.</p>
           <button class="primary" onclick="downloadExcel()" style="background: var(--green);">📊 Descargar Historial en Excel</button>
           
-          <p style="font-size: 12px; color: var(--muted); margin-top: 15px; margin-bottom: 10px;">Importa movimientos desde un archivo Excel (.xlsx). El archivo debe tener columnas: <strong>Fecha, Detalle, Tipo, Categoría, Origen, Destino, Monto</strong>. Si una cuenta, bolsillo o categoría no existe, se creará automáticamente.</p>
+          <p style="font-size: 12px; color: var(--muted); margin-top: 15px; margin-bottom: 10px;">Importa movimientos desde un archivo Excel (.xlsx). El archivo debe tener las columnas: <strong>Fecha, Detalle, Monto, Tipo (Ingreso/Gasto), A donde ingresa o donde sale dinero, Tipo de gasto</strong>. Si una cuenta, bolsillo o categoría no existe, se creará automáticamente.</p>
+          <label style="font-size: 11px; color: var(--muted);">🗓️ Omitir movimientos desde (opcional):</label>
+          <input type="date" id="importOmitFrom" style="margin-bottom: 8px;">
           <input type="file" id="importExcelFile" accept=".xlsx,.xls" style="margin-bottom: 8px;">
           <button class="primary" onclick="importExcel()" style="background: var(--accent);">📤 Importar desde Excel</button>
           <div id="importResult" style="margin-top: 10px; font-size: 12px;"></div>
@@ -664,7 +666,6 @@ function migrateState() {
     if (!state || typeof state !== 'object') state = {};
     if(!state.config) state.config = {};
     if(!state.config.cats || state.config.cats.length === 0) state.config.cats = [{id:'fijo', name:'Fijo (mensual)', desc:'Arriendo, mercado, servicios', color:'#3b82f6'},{id:'necesario', name:'Necesario', desc:'Imprevistos, reparaciones, salud', color:'#eab308'},{id:'placer', name:'Placer', desc:'Ocio, salidas, gustos', color:'#a855f7'}];
-    // NUEVO: asegurar límite mensual en cada categoría existente
     state.config.cats.forEach(c => { if(c.limit === undefined) c.limit = 0; });
     if(state.config.placer === undefined) state.config.placer = 30;
     if(!state.config.chartType) state.config.chartType = 'bar';
@@ -672,7 +673,6 @@ function migrateState() {
     if(!state.config.projChartType) state.config.projChartType = 'line';
     if(state.config.advisorEnabled === undefined) state.config.advisorEnabled = true;
     if(!state.config.autoSave) state.config.autoSave = { enabled: false, pct: 10, pocketId: '' };
-    // NUEVO: campos para ahorro multi-bolsillo
     if(state.config.autoSave.mode === undefined) state.config.autoSave.mode = 'single';
     if(!state.config.autoSave.multiple) state.config.autoSave.multiple = [];
     if(state.config.geminiKey === undefined) state.config.geminiKey = '';
@@ -680,10 +680,8 @@ function migrateState() {
     
     if(!state.recurring) state.recurring = [];
     if(!state.summaries) state.summaries = {};
-    // NUEVO: consejos de deuda guardados
     if(!state.debtAdvices) state.debtAdvices = [];
     
-    // Migración del chat antiguo al nuevo sistema de chats múltiples
     if (state.chats === undefined) {
         state.chats = [];
         if (state.chatHistory && state.chatHistory.length > 0) {
@@ -692,7 +690,7 @@ function migrateState() {
             state.chats.push({ id: genId(), title: 'Chat 1', messages: [] });
         }
         state.activeChatId = state.chats[0].id;
-        delete state.chatHistory; // Limpiamos la variable vieja
+        delete state.chatHistory;
     }
 
     if(state.lockedGoals === undefined) state.lockedGoals = false;
@@ -828,7 +826,6 @@ function saveAutoSaveConfig() {
     save();
 }
 
-// NUEVO: funciones para ahorro automático multi-bolsillo
 function changeAutoSaveMode() {
     state.config.autoSave.mode = document.getElementById('autoSaveMode').value;
     save();
@@ -1265,7 +1262,6 @@ function addTx() {
   if(ty==='PagoDeuda') { tx.from = document.getElementById('fFrom').value; tx.debtId = document.getElementById('fDebtSelect').value; tx.cat = document.getElementById('fCategory').value; }
   state.years[state.active].txs.push(tx); 
   
-  // NUEVO: soporta modo "single" y "multiple" para ahorro automático
   if (ty === 'Ingreso' && state.config.autoSave.enabled) {
       const autoSaveCfg = state.config.autoSave;
       if(autoSaveCfg.mode === 'multiple' && autoSaveCfg.multiple && autoSaveCfg.multiple.length > 0) {
@@ -1300,7 +1296,6 @@ function renamePoc(id, n){ if(!n)return; const p=state.pockets.find(x=>x.id===id
 function delPoc(id){ if(!confirm('¿Borrar?'))return; if(tieneMovimientos(id)) return toast('Tiene movimientos asociados.'); state.pockets=state.pockets.filter(x=>x.id!==id); save(); renderAll(); }
 function setMetaPoc(id, val) { if(state.lockedGoals) return toast('Metas bloqueadas'); const p = state.pockets.find(x=>x.id===id); if(p) { p.meta = parseFloat(val) || 0; save(); renderAll(); } }
 
-// NUEVO: límite mensual por categoría
 function setCatLimit(id, val) {
     const c = state.config.cats.find(x => x.id === id);
     if(c) { c.limit = parseFloat(val) || 0; save(); renderAll(); }
@@ -1332,7 +1327,6 @@ function saveGeminiKey() {
     toast('API Key guardada');
 }
 
-// Funciones del Chat IA
 function renderChat() {
     const box = document.getElementById('chat-messages');
     const selector = document.getElementById('chat-history-select');
@@ -1465,10 +1459,8 @@ async function sendChatMessage() {
     }
 }
 
-// NUEVO: variable para el consejo actual de deudas
 let currentDebtAdviceText = '';
 
-// NUEVO: análisis de deudas con IA + botones guardar/borrar
 async function analyzeDebtsWithAI() {
     if (!state.config.geminiKey) {
         return alert('⚠️ Para usar el asesor de deudas, primero debes pegar tu API Key de Gemini en Configuración.');
@@ -1530,7 +1522,6 @@ async function analyzeDebtsWithAI() {
     }
 }
 
-// NUEVO: guardar/borrar consejos de deuda (con limpieza al guardar y selector tipo chat)
 function saveDebtAdvice() {
     if(!currentDebtAdviceText) return toast('No hay consejo para guardar');
     if(!state.debtAdvices) state.debtAdvices = [];
@@ -1540,7 +1531,6 @@ function saveDebtAdvice() {
         text: currentDebtAdviceText
     });
     save();
-    // Limpiar el chat/análisis actual
     currentDebtAdviceText = '';
     document.getElementById('debtAIResultWrap').style.display = 'none';
     document.getElementById('debtAIAnalysis').innerText = '';
@@ -1581,7 +1571,6 @@ function renderSavedDebtAdvices() {
             const preview = a.text.substring(0, 40).replace(/\n/g, ' ') + '...';
             return `<option value="${a.id}">${dateStr} - ${preview}</option>`;
         }).join('');
-    // Si el seleccionado previo aún existe, restaurarlo y actualizar visor
     if(prevVal && state.debtAdvices.some(a => a.id === prevVal)) {
         selector.value = prevVal;
         viewSavedDebtAdvice(prevVal);
@@ -1615,12 +1604,18 @@ function deleteCurrentSavedDebtAdvice() {
     toast('Consejo eliminado');
 }
 
-// NUEVO: importar desde Excel
-const XLSX_MONTH_CACHE = {};
+// ==========================================================
+// NUEVO IMPORTADOR ADAPTADO AL FORMATO DEL EXCEL DEL USUARIO
+// Columnas esperadas: Fecha | Detalle | Monto | Tipo (Ingreso/Gasto) | A donde ingresa o donde sale dinero | Tipo de gasto
+// ==========================================================
 async function importExcel() {
     const fileInput = document.getElementById('importExcelFile');
     if(!fileInput.files || fileInput.files.length === 0) return toast('Selecciona un archivo primero');
     if(!canEdit()) return toast('El año actual está bloqueado, no se puede importar.');
+    
+    // Filtro opcional: omitir movimientos con fecha >= este valor
+    const omitInput = document.getElementById('importOmitFrom');
+    const omitFrom = omitInput && omitInput.value ? omitInput.value : null;
     
     const file = fileInput.files[0];
     const resultBox = document.getElementById('importResult');
@@ -1634,46 +1629,79 @@ async function importExcel() {
         
         if(rows.length === 0) { resultBox.innerHTML = '❌ El archivo está vacío.'; return; }
         
-        let imported = 0, skipped = 0;
+        let imported = 0, skipped = 0, omitted = 0;
         const errors = [];
         const newAccounts = new Set();
         const newPockets = new Set();
         const newCats = new Set();
         
-        const findAccOrPoc = (name) => {
+        // Normaliza texto: minúsculas, sin tildes, sin espacios extra
+        const norm = (s) => String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
+        
+        // Busca o crea cuenta por nombre (match exacto primero, luego case-insensitive)
+        const findOrCreateAcc = (name) => {
             if(!name) return null;
-            const a = state.accounts.find(x => x.name === name);
+            let a = state.accounts.find(x => x.name === name);
             if(a) return a.id;
-            const p = state.pockets.find(x => x.name === name);
-            if(p) return p.id;
-            return null;
-        };
-        const findOrCreateAccOrPoc = (name) => {
-            if(!name) return null;
-            const a = state.accounts.find(x => x.name === name);
+            a = state.accounts.find(x => norm(x.name) === norm(name));
             if(a) return a.id;
-            const p = state.pockets.find(x => x.name === name);
-            if(p) return p.id;
             const id = genId();
             state.accounts.push({ id, name });
             state.years[state.active].openingBalances[id] = 0;
             newAccounts.add(name);
             return id;
         };
+        
+        // Busca o crea bolsillo con match inteligente (evita duplicar "Ahorro Carro" vs "Ahorro serv Carro y Moto")
+        const findOrCreatePocket = (name) => {
+            if(!name) return null;
+            let p = state.pockets.find(x => x.name === name);
+            if(p) return p.id;
+            p = state.pockets.find(x => norm(x.name) === norm(name));
+            if(p) return p.id;
+            const target = norm(name);
+            // Match semántico: carro/moto, emergencia, general
+            if(target.includes('carro') || target.includes('moto')) {
+                p = state.pockets.find(x => norm(x.name).includes('carro'));
+                if(p) return p.id;
+            }
+            if(target.includes('emergencia')) {
+                p = state.pockets.find(x => norm(x.name).includes('emergencia'));
+                if(p) return p.id;
+            }
+            if(target.includes('general')) {
+                p = state.pockets.find(x => norm(x.name).includes('general'));
+                if(p) return p.id;
+            }
+            const id = genId();
+            state.pockets.push({ id, name, meta: 0 });
+            state.years[state.active].openingBalances[id] = 0;
+            newPockets.add(name);
+            return id;
+        };
+        
+        // Busca o crea categoría con match inteligente (Fijo, Placer, Necesario)
         const findOrCreateCat = (name) => {
             if(!name) return 'fijo';
-            let c = state.config.cats.find(x => x.name === name);
-            if(!c) {
-                const id = genId();
-                state.config.cats.push({ id, name, desc: 'Importada', color: '#' + Math.floor(Math.random()*16777215).toString(16), limit: 0 });
-                newCats.add(name);
-                return id;
+            const target = norm(name);
+            let c = state.config.cats.find(x => norm(x.name) === target);
+            if(c) return c.id;
+            if(target.includes('fijo')) {
+                c = state.config.cats.find(x => norm(x.name).includes('fijo'));
+                if(c) return c.id;
             }
-            return c.id;
-        };
-        const findDebtByName = (name) => {
-            const d = state.debts.find(x => x.name === name);
-            return d ? d.id : null;
+            if(target.includes('placer')) {
+                c = state.config.cats.find(x => norm(x.name).includes('placer'));
+                if(c) return c.id;
+            }
+            if(target.includes('necesari')) {
+                c = state.config.cats.find(x => norm(x.name).includes('necesari'));
+                if(c) return c.id;
+            }
+            const id = genId();
+            state.config.cats.push({ id, name, desc: 'Importada', color: '#' + Math.floor(Math.random()*16777215).toString(16), limit: 0 });
+            newCats.add(name);
+            return id;
         };
         
         const parseAmount = (v) => {
@@ -1710,56 +1738,100 @@ async function importExcel() {
             return null;
         };
         
+        // Lee una columna aceptando varios nombres posibles
+        const getCol = (row, names) => {
+            for (const n of names) {
+                if (row[n] !== undefined && row[n] !== null && row[n] !== '') return row[n];
+            }
+            return '';
+        };
+        
         rows.forEach((row, idx) => {
             try {
-                const fecha = parseDate(row['Fecha']);
-                const detalle = String(row['Detalle'] || '').trim();
-                const tipo = String(row['Tipo'] || '').trim();
-                const categoria = String(row['Categoría'] || row['Categoria'] || '').trim();
-                const origen = String(row['Origen'] || '').trim();
-                const destino = String(row['Destino'] || '').trim();
-                const monto = parseAmount(row['Monto ($)'] !== undefined ? row['Monto ($)'] : row['Monto']);
+                const fecha = parseDate(getCol(row, ['Fecha']));
+                const detalle = String(getCol(row, ['Detalle']) || '').trim();
+                const monto = parseAmount(getCol(row, ['Monto ($)', 'Monto', 'Monto COP']));
+                const tipoRaw = String(getCol(row, ['Tipo (Ingreso/Gasto)', 'Tipo']) || '').trim();
+                const cuentaRaw = String(getCol(row, ['A donde ingresa o donde sale dinero', 'Origen', 'Destino']) || '').trim();
+                const catRaw = String(getCol(row, ['Tipo de gasto', 'Categoría', 'Categoria']) || '').trim();
                 
-                if(!fecha || !detalle || !tipo || monto <= 0) {
+                if(!fecha || !detalle) {
                     skipped++;
-                    if(errors.length < 5) errors.push(`Fila ${idx+2}: datos incompletos`);
                     return;
                 }
                 
-                const tx = { id: genId(), date: fecha, detail: detalle, amount: monto, type: tipo };
-                
-                if(tipo === 'Ingreso') {
-                    const toId = findOrCreateAccOrPoc(destino);
-                    if(!toId) { skipped++; if(errors.length<5) errors.push(`Fila ${idx+2}: destino inválido`); return; }
-                    tx.to = toId;
-                } else if(tipo === 'Gasto') {
-                    const fromId = findAccOrPoc(origen);
-                    if(!fromId) { skipped++; if(errors.length<5) errors.push(`Fila ${idx+2}: origen "${origen}" no existe`); return; }
-                    tx.from = fromId;
-                    tx.cat = findOrCreateCat(categoria);
-                } else if(tipo === 'Transferencia') {
-                    const fromId = findAccOrPoc(origen);
-                    const toId = findAccOrPoc(destino);
-                    if(!fromId || !toId) { skipped++; if(errors.length<5) errors.push(`Fila ${idx+2}: cuenta origen/destino inválida`); return; }
-                    tx.from = fromId;
-                    tx.to = toId;
-                } else if(tipo === 'PagoDeuda') {
-                    const fromId = findAccOrPoc(origen);
-                    if(!fromId) { skipped++; if(errors.length<5) errors.push(`Fila ${idx+2}: origen inválido`); return; }
-                    tx.from = fromId;
-                    tx.cat = findOrCreateCat(categoria);
-                    const debtName = destino.replace(/^Deuda:\s*/, '').trim();
-                    const debtId = findDebtByName(debtName);
-                    if(debtId) tx.debtId = debtId;
-                    else { skipped++; if(errors.length<5) errors.push(`Fila ${idx+2}: deuda "${debtName}" no encontrada`); return; }
-                } else {
-                    skipped++;
-                    if(errors.length<5) errors.push(`Fila ${idx+2}: tipo "${tipo}" no reconocido`);
+                // Filtro opcional de fecha
+                if(omitFrom && fecha >= omitFrom) {
+                    omitted++;
                     return;
                 }
                 
-                state.years[state.active].txs.push(tx);
-                imported++;
+                if(monto <= 0) {
+                    skipped++;
+                    return;
+                }
+                
+                let tx = null;
+                const cuentaNorm = norm(cuentaRaw);
+                
+                // 1) Transferencia a bolsillo de ahorro (columna E empieza con "Ahorro")
+                if(cuentaRaw && /^Ahorro\s+/i.test(cuentaRaw)) {
+                    const pocketId = findOrCreatePocket(cuentaRaw);
+                    if(!pocketId) { skipped++; return; }
+                    const fromId = findOrCreateAcc('Billetera (Efectivo)');
+                    tx = { id: genId(), date: fecha, detail: detalle, amount: monto, type: 'Transferencia', from: fromId, to: pocketId };
+                }
+                // 2) Saque de ahorro (retiro de bolsillo)
+                else if(cuentaRaw && /^Saque ahorro/i.test(cuentaRaw)) {
+                    const pocketName = cuentaRaw.replace(/^Saque ahorro\s*/i, 'Ahorro ');
+                    const pocketId = findOrCreatePocket(pocketName);
+                    if(!pocketId) { skipped++; return; }
+                    const toId = findOrCreateAcc('Billetera (Efectivo)');
+                    tx = { id: genId(), date: fecha, detail: detalle, amount: monto, type: 'Transferencia', from: pocketId, to: toId };
+                }
+                // 3) NequiIngreso + Ingreso → ingreso a Nequi
+                else if(cuentaNorm === 'nequiingreso' && tipoRaw === 'Ingreso') {
+                    const toId = findOrCreateAcc('Nequi');
+                    tx = { id: genId(), date: fecha, detail: detalle, amount: monto, type: 'Ingreso', to: toId };
+                }
+                // 4) NequiIngreso sin tipo (depósito de efectivo a Nequi) → transferencia Billetera→Nequi
+                else if(cuentaNorm === 'nequiingreso') {
+                    const toId = findOrCreateAcc('Nequi');
+                    const fromId = findOrCreateAcc('Billetera (Efectivo)');
+                    tx = { id: genId(), date: fecha, detail: detalle, amount: monto, type: 'Transferencia', from: fromId, to: toId };
+                }
+                // 5) NequiGasto + Gasto → gasto desde Nequi
+                else if(cuentaNorm === 'nequigasto' && tipoRaw === 'Gasto') {
+                    const fromId = findOrCreateAcc('Nequi');
+                    tx = { id: genId(), date: fecha, detail: detalle, amount: monto, type: 'Gasto', from: fromId, cat: findOrCreateCat(catRaw) };
+                }
+                // 6) NequiGasto sin tipo (retiro de Nequi a efectivo) → transferencia Nequi→Billetera
+                else if(cuentaNorm === 'nequigasto') {
+                    const fromId = findOrCreateAcc('Nequi');
+                    const toId = findOrCreateAcc('Billetera (Efectivo)');
+                    tx = { id: genId(), date: fecha, detail: detalle, amount: monto, type: 'Transferencia', from: fromId, to: toId };
+                }
+                // 7) Ingreso normal (efectivo) → a Billetera
+                else if(tipoRaw === 'Ingreso') {
+                    const toId = findOrCreateAcc('Billetera (Efectivo)');
+                    tx = { id: genId(), date: fecha, detail: detalle, amount: monto, type: 'Ingreso', to: toId };
+                }
+                // 8) Gasto normal (efectivo) → desde Billetera
+                else if(tipoRaw === 'Gasto') {
+                    const fromId = findOrCreateAcc('Billetera (Efectivo)');
+                    tx = { id: genId(), date: fecha, detail: detalle, amount: monto, type: 'Gasto', from: fromId, cat: findOrCreateCat(catRaw) };
+                }
+                // 9) Otros tipos no reconocidos
+                else {
+                    skipped++;
+                    if(errors.length < 5) errors.push(`Fila ${idx+2}: tipo "${tipoRaw}" / cuenta "${cuentaRaw}" no reconocido`);
+                    return;
+                }
+                
+                if(tx) {
+                    state.years[state.active].txs.push(tx);
+                    imported++;
+                }
             } catch(e) {
                 skipped++;
                 if(errors.length < 5) errors.push(`Fila ${idx+2}: ${e.message}`);
@@ -1769,7 +1841,8 @@ async function importExcel() {
         save();
         renderAll();
         
-        let msg = `✅ Importación completa: <strong>${imported}</strong> registros importados, <strong>${skipped}</strong> omitidos.`;
+        let msg = `✅ Importación completa: <strong>${imported}</strong> registros importados, <strong>${skipped}</strong> omitidos por datos inválidos.`;
+        if(omitted > 0) msg += `<br>🗓️ <strong>${omitted}</strong> filas omitidas por el filtro de fecha (desde ${omitFrom}).`;
         if(newAccounts.size) msg += `<br>➕ Cuentas nuevas: ${[...newAccounts].join(', ')}`;
         if(newPockets.size) msg += `<br>➕ Bolsillos nuevos: ${[...newPockets].join(', ')}`;
         if(newCats.size) msg += `<br>➕ Categorías nuevas: ${[...newCats].join(', ')}`;
@@ -1826,7 +1899,6 @@ function renderDashboard() {
   let al = checkDebtAlerts();
   if(flow.exp > flow.inc && flow.inc > 0) al+=`<div class="alert danger">🚨 ¡ALERTA! Estás gastando más de lo que ganas este año. Déficit: ${fmt(flow.exp - flow.inc)}.</div>`;
 
-  // NUEVO: alertas de límite mensual por categoría
   const now = new Date();
   const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
@@ -1950,7 +2022,6 @@ function renderDeudas() {
     return `<div class="row-item" style="flex-direction:column;align-items:flex-start; padding-bottom:15px; margin-bottom:15px;"><div style="display:flex;width:100%;justify-content:space-between;margin-bottom:5px;"><input value="${d.name}" onchange="renameDebt('${d.id}', this.value)" style="width:50%; font-weight:bold;" ${isPaid?'disabled':''}><span style="color:${isPaid?'var(--green)':'var(--red)'}">${isPaid?'¡PAGADA!':fmt(saldo)+' restante'}</span>${showDeleteBtn ?`<button class="danger" onclick="delDebt('${d.id}')">X</button>`:''}</div>${infoInteres}${scheduleHtml}</div>`;
   }).join('')||'<p style="text-align:center;color:var(--muted)">No hay deudas registradas</p>';
 
-  // NUEVO: renderizar consejos guardados (selector tipo chat)
   renderSavedDebtAdvices();
 }
 
@@ -1988,7 +2059,6 @@ function renderConfig() {
 
   document.getElementById('goalsConfigList').innerHTML=state.pockets.map(p=>`<div class="row-item"><span style="width:50%">${p.name}</span>${state.lockedGoals ? `<strong>${fmt(p.meta||0)}</strong>` : `<input type="number" value="${p.meta||0}" onchange="setMetaPoc('${p.id}', this.value)" placeholder="Meta $" style="width:40%; text-align:right;">`}</div>`).join('');
   
-  // NUEVO: campo de límite mensual en cada categoría
   document.getElementById('configCatsList').innerHTML=state.config.cats.map(c=>`<div class="row-item" style="flex-wrap: wrap; gap: 5px;">
     <input value="${c.name}" onchange="renameCat('${c.id}', 'name', this.value)" style="border:none; width:25%; font-weight:bold;">
     <input value="${c.desc||''}" onchange="renameCat('${c.id}', 'desc', this.value)" style="border:none; width:30%; font-size:11px; color:var(--muted);" placeholder="Guía...">
