@@ -207,13 +207,16 @@ input:checked + .slider:before { transform: translateX(20px); }
 
       <section class="view" id="view-analisis">
         <div class="card">
-          <h2>🏆 Regla de Oro Financiera (50/30/20)</h2>
+          <h2>🏆 Regla de Oro Financiera (50/30/20) <span id="expertAnalysisMonth" style="font-size:12px; color:var(--accent); font-weight:normal;"></span></h2>
           <p style="font-size: 11px; color: var(--muted); margin-bottom: 15px;">Los expertos sugieren: 50% Gastos Fijos, 30% Placer y 20% Ahorro.</p>
           <div id="expertAnalysis"></div>
         </div>
 
         <div class="card">
-          <h2>📝 Resúmenes Mensuales (Historial del Año)</h2>
+          <div class="card-header">
+            <h2>📝 Resúmenes Mensuales (Historial del Año)</h2>
+            <button onclick="toggleAllMonths()" id="toggleAllMonthsBtn" style="background:var(--border); color:var(--text); border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:11px; width:auto;">▼ Desplegar todos</button>
+          </div>
           <p style="font-size: 11px; color: var(--muted); margin-bottom: 15px;">Toca cada mes para desplegar u ocultar su resumen. Se calculan automáticamente desde tus movimientos.</p>
           <div id="monthlySummariesList" style="display:flex; flex-direction:column; gap:10px;"></div>
         </div>
@@ -2346,9 +2349,17 @@ function renderAnalisis() {
   `;
 }
 
+// --- CAMBIO 1: Subtítulo dinámico de mes/año en Regla de Oro ---
 function renderExpertAnalysis() {
     const box = document.getElementById('expertAnalysis');
+    const monthLabel = document.getElementById('expertAnalysisMonth');
     const yr = state.years[state.active]; const now = new Date();
+    const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    
+    if (monthLabel) {
+        monthLabel.textContent = `— ${monthNames[now.getMonth()]} ${now.getFullYear()}`;
+    }
+    
     let inc = 0, expFijo = 0, expPlacer = 0;
     yr.txs.forEach(t => {
         const d = new Date(t.date);
@@ -2367,11 +2378,11 @@ function renderExpertAnalysis() {
     box.innerHTML = createBar('Gastos Fijos', pctFijo, 50, 'var(--accent)') + createBar('Gastos Placer', pctPlacer, 30, 'var(--purple)') + createBar('Ahorro', pctAhorro, 20, 'var(--green)');
 }
 
-// Resúmenes Mensuales — ahora con bloques plegables por mes
+// --- CAMBIO 2 y 3: Resúmenes Mensuales con 50/30/20 por mes + botón toggle-all ---
 function renderMonthlySummaries() {
     const box = document.getElementById('monthlySummariesList');
     const yr = state.years[state.active];
-    if (!yr) { box.innerHTML = '<p style="color:var(--muted); font-size:13px;">Sin datos.</p>'; return; }
+    if (!yr) { box.innerHTML = '<p style="color:var(--muted); font-size:13px;">Sin datos.</p>'; updateToggleAllBtn(); return; }
     
     if(!state.summariesOpen) state.summariesOpen = {};
     
@@ -2379,7 +2390,7 @@ function renderMonthlySummaries() {
     const summaries = [];
     
     for (let i = 0; i < 12; i++) {
-        let inc = 0, exp = 0, ahorro = 0, count = 0;
+        let inc = 0, exp = 0, ahorro = 0, expFijo = 0, expPlacer = 0, count = 0;
         const details = {};
         
         yr.txs.forEach(t => {
@@ -2389,7 +2400,9 @@ function renderMonthlySummaries() {
             if (t.type === 'Ingreso') inc += t.amount;
             if (t.type === 'Gasto' || t.type === 'PagoDeuda') { 
                 exp += t.amount; 
-                details[t.detail] = (details[t.detail]||0) + t.amount; 
+                details[t.detail] = (details[t.detail]||0) + t.amount;
+                if (t.cat === 'fijo') expFijo += t.amount;
+                if (t.cat === 'placer') expPlacer += t.amount;
             }
             if (t.type === 'Transferencia') {
                 if (state.pockets.some(p => p.id === t.to)) ahorro += t.amount;
@@ -2403,18 +2416,62 @@ function renderMonthlySummaries() {
         const color = balance >= 0 ? 'var(--green)' : 'var(--red)';
         let topExpense = Object.keys(details).reduce((a, b) => details[a] > details[b] ? a : b, '');
         
+        // Calcular 50/30/20 del mes
+        let pctFijo = 0, pctPlacer = 0, pctAhorro = 0;
+        let metFijo = false, metPlacer = false, metAhorro = false;
+        if (inc > 0) {
+            pctFijo = (expFijo / inc) * 100;
+            pctPlacer = (expPlacer / inc) * 100;
+            pctAhorro = (ahorro / inc) * 100;
+            metFijo = pctFijo <= 50;
+            metPlacer = pctPlacer <= 30;
+            metAhorro = pctAhorro >= 20;
+        }
+        
+        const colorFijo = !inc ? 'var(--muted)' : (pctFijo <= 50 ? 'var(--green)' : (pctFijo <= 60 ? 'var(--yellow)' : 'var(--red)'));
+        const colorPlacer = !inc ? 'var(--muted)' : (pctPlacer <= 30 ? 'var(--green)' : (pctPlacer <= 40 ? 'var(--yellow)' : 'var(--red)'));
+        const colorAhorro = !inc ? 'var(--muted)' : (pctAhorro >= 20 ? 'var(--green)' : (pctAhorro >= 10 ? 'var(--yellow)' : 'var(--red)'));
+        
+        let cumpleRegla = '';
+        let cumpleColor = 'var(--muted)';
+        if (inc > 0) {
+            const metCount = [metFijo, metPlacer, metAhorro].filter(Boolean).length;
+            if (metCount === 3) { cumpleRegla = '✅ Regla 50/30/20 cumplida'; cumpleColor = 'var(--green)'; }
+            else if (metCount === 2) { cumpleRegla = '⚠️ Parcialmente cumplida'; cumpleColor = 'var(--yellow)'; }
+            else { cumpleRegla = '❌ No cumplida'; cumpleColor = 'var(--red)'; }
+        } else {
+            cumpleRegla = '— Sin ingresos este mes';
+            cumpleColor = 'var(--muted)';
+        }
+        
         let advice = "";
         if (exp > inc) advice = `Gastaste más de lo que ingresaste. Te sugerimos reducir los gastos en <strong>${topExpense || 'otros'}</strong>.`;
         else if (ahorro < (inc * 0.2)) advice = `Te fue bien, pero podrías ahorrar un poco más. Tu mayor gasto fue en <strong>${topExpense || 'otros'}</strong>.`;
         else advice = `¡Excelente mes! Ahorraste una buena cantidad. Tu mayor gasto fue en <strong>${topExpense || 'otros'}</strong>.`;
         
-        summaries.push({ month: i, inc, exp, ahorro, balance, color, advice, count });
+        summaries.push({ month: i, inc, exp, ahorro, balance, color, advice, count, pctFijo, pctPlacer, pctAhorro, metFijo, metPlacer, metAhorro, colorFijo, colorPlacer, colorAhorro, cumpleRegla, cumpleColor });
     }
     
     if (summaries.length === 0) {
         box.innerHTML = '<p style="color:var(--muted); font-size:13px;">Los resúmenes aparecerán aquí al registrar movimientos.</p>';
+        updateToggleAllBtn();
         return;
     }
+    
+    const createBar5020 = (label, pct, target, isMax, color, met) => {
+        return `
+            <div>
+                <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:3px;">
+                    <span>${label} <span style="color:var(--muted);">(${isMax ? 'ideal ≤' : 'ideal ≥'}${target}%)</span></span>
+                    <strong style="color:${color};">${pct.toFixed(1)}% ${met ? '✅' : '❌'}</strong>
+                </div>
+                <div class="bar" style="height:8px; position:relative;">
+                    <div class="bar-fill" style="width:${Math.max(0, Math.min(pct,100))}%; background:${color};"></div>
+                    <div style="position:absolute; left:${target}%; top:0; bottom:0; width:2px; background:white; opacity:0.7;"></div>
+                </div>
+            </div>
+        `;
+    };
     
     box.innerHTML = summaries.map(s => {
         const isOpen = !!state.summariesOpen[s.month];
@@ -2434,12 +2491,27 @@ function renderMonthlySummaries() {
                     <span>Gastos: <span style="color:var(--red)">${fmt(s.exp)}</span></span>
                     <span>Ahorro: <span style="color:var(--yellow)">${fmt(s.ahorro)}</span></span>
                 </div>
+                
+                <div style="margin-top:10px; padding:10px; background:rgba(255,255,255,0.03); border-radius:6px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <span style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:bold;">Regla 50/30/20</span>
+                        <span style="font-size:11px; color:${s.cumpleColor}; font-weight:bold;">${s.cumpleRegla}</span>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                        ${createBar5020('Fijo', s.pctFijo, 50, true, s.colorFijo, s.metFijo)}
+                        ${createBar5020('Placer', s.pctPlacer, 30, true, s.colorPlacer, s.metPlacer)}
+                        ${createBar5020('Ahorro', s.pctAhorro, 20, false, s.colorAhorro, s.metAhorro)}
+                    </div>
+                </div>
+                
                 <div style="font-size:11px; color:var(--muted); background:rgba(255,255,255,0.05); padding:8px; border-radius:4px; margin-top:8px;"><strong>🤖 Resumen:</strong> ${s.advice}</div>
             </div>
             ` : ''}
         </div>
         `;
     }).join('');
+    
+    updateToggleAllBtn();
 }
 
 function toggleMonthSummary(month) {
@@ -2447,6 +2519,58 @@ function toggleMonthSummary(month) {
     state.summariesOpen[month] = !state.summariesOpen[month];
     save();
     renderMonthlySummaries();
+}
+
+function toggleAllMonths() {
+    if (!state.summariesOpen) state.summariesOpen = {};
+    const yr = state.years[state.active];
+    if (!yr) return;
+    
+    let anyOpen = false;
+    for (let i = 0; i < 12; i++) {
+        if (state.summariesOpen[i]) { anyOpen = true; break; }
+    }
+    
+    if (anyOpen) {
+        state.summariesOpen = {};
+    } else {
+        for (let i = 0; i < 12; i++) {
+            const hasTx = yr.txs.some(t => {
+                const d = new Date(t.date);
+                return d.getMonth() === i && d.getFullYear() === state.active;
+            });
+            if (hasTx) state.summariesOpen[i] = true;
+        }
+    }
+    save();
+    renderMonthlySummaries();
+}
+
+function updateToggleAllBtn() {
+    const btn = document.getElementById('toggleAllMonthsBtn');
+    if (!btn) return;
+    const yr = state.years[state.active];
+    if (!yr) { btn.style.display = 'none'; return; }
+    
+    let hasAny = false;
+    let anyOpen = false;
+    for (let i = 0; i < 12; i++) {
+        const hasTx = yr.txs.some(t => {
+            const d = new Date(t.date);
+            return d.getMonth() === i && d.getFullYear() === state.active;
+        });
+        if (hasTx) {
+            hasAny = true;
+            if (state.summariesOpen && state.summariesOpen[i]) anyOpen = true;
+        }
+    }
+    
+    if (!hasAny) {
+        btn.style.display = 'none';
+        return;
+    }
+    btn.style.display = 'inline-block';
+    btn.textContent = anyOpen ? '▶ Ocultar todos' : '▼ Desplegar todos';
 }
 
 function downloadExcel() {
