@@ -16,14 +16,17 @@
 :root{--bg:#0f172a;--card:#1e293b;--border:#334155;--text:#e2e8f0;--muted:#94a3b8;--accent:#3b82f6;--green:#22c55e;--red:#ef4444;--yellow:#eab308;--purple:#a855f7}
 *{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,sans-serif}
 body{background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:80px;transition:background 0.3s, color 0.3s}
-header{background:var(--card);border-bottom:1px solid var(--border);padding:12px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;position:sticky;top:0;z-index:100;transition:transform 0.3s ease}
-header.navbar-hidden{transform:translateY(-100%)}
+
+/* ═══ NUEVO: Sticky único que agrupa header + nav ═══ */
+#stickyTopWrap{position:sticky;top:0;z-index:100;transition:transform 0.3s ease}
+#stickyTopWrap.navbar-hidden{transform:translateY(-100%)}
+
+header{background:var(--card);border-bottom:1px solid var(--border);padding:12px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 header h1{font-size:17px;margin-right:auto}
 .year-nav{display:flex;gap:6px;flex-wrap:wrap}
 .year-nav button{background:var(--border);border:none;color:var(--text);padding:6px 12px;border-radius:6px;cursor:pointer}
 .year-nav button.active{background:var(--accent)}
-nav{background:var(--card);padding:8px;display:flex;gap:6px;overflow-x:auto;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:99;transition:transform 0.3s ease}
-nav.navbar-hidden{transform:translateY(-100%)}
+nav{background:var(--card);padding:8px;display:flex;gap:6px;overflow-x:auto;border-bottom:1px solid var(--border)}
 nav button{background:transparent;border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px;cursor:pointer;white-space:nowrap;font-size:13px}
 nav button.active{background:var(--accent);border-color:var(--accent)}
 main{padding:14px;max-width:1400px;margin:0 auto}
@@ -58,26 +61,10 @@ th{color:var(--muted);font-size:11px}
 .row-item .locked-val{font-size:12px;color:var(--muted);width:35%;text-align:right; display:flex; justify-content:flex-end; align-items:center; gap:6px;}
 @media(max-width:600px){header h1{font-size:15px}}
 
-/* ═══ Botón calculadora ═══ */
-.calc-toggle {
-    background: var(--border);
-    border: none;
-    color: var(--text);
-    padding: 6px;
-    border-radius: 6px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.15s;
-    width: 34px;
-    height: 34px;
-    flex-shrink: 0;
-}
+.calc-toggle { background: var(--border); border: none; color: var(--text); padding: 6px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s; width: 34px; height: 34px; flex-shrink: 0; }
 .calc-toggle:hover, .calc-toggle:active { background: var(--accent); }
 .calc-toggle svg { display: block; width: 18px; height: 18px; }
 
-/* ═══ Calculadora flotante ═══ */
 #calculatorPanel { position: fixed; bottom: 20px; right: 20px; width: 300px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 12px 40px rgba(0,0,0,0.6); z-index: 9997; display: none; flex-direction: column; padding: 12px; max-height: calc(100vh - 40px); }
 @media (max-width: 480px) { #calculatorPanel { left: 10px; right: 10px; bottom: 10px; width: auto; } }
 .calc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 12px; color: var(--muted); text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px; }
@@ -95,12 +82,10 @@ th{color:var(--muted);font-size:11px}
 .calc-grid button.calc-eq { background: var(--green); }
 .calc-grid button.calc-fn { background: #64748b; }
 
-/* ═══ Gráficos responsivos ═══ */
 .chart-wrapper { position: relative; width: 100%; height: 320px; }
 @media(max-width: 600px) { .chart-wrapper { height: 280px; } }
 .chart-wrapper canvas { display: block; width: 100% !important; height: 100% !important; }
 
-/* ═══ NUEVO: Acordeón de secciones de configuración ═══ */
 .config-section { border-left: 4px solid var(--accent); padding-left: 0; margin-bottom: 14px; }
 .config-section-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; padding: 10px 0 10px 15px; user-select: none; border-radius: 6px; transition: background 0.15s; }
 .config-section-header:hover { background: rgba(255,255,255,0.03); }
@@ -108,7 +93,6 @@ th{color:var(--muted);font-size:11px}
 .config-toggle { color: var(--muted); font-size: 14px; transition: transform 0.15s; }
 .config-section-content { padding-left: 15px; padding-top: 8px; }
 
-/* ═══ NUEVO: Opciones de tema ═══ */
 .themes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
 .theme-option { padding: 10px; border-radius: 8px; border: 2px solid var(--border); cursor: pointer; transition: all 0.15s; display: flex; flex-direction: column; gap: 8px; background: var(--bg); }
 .theme-option:hover { border-color: var(--muted); }
@@ -117,7 +101,6 @@ th{color:var(--muted);font-size:11px}
 .theme-option .theme-preview { display: flex; gap: 3px; }
 .theme-option .theme-preview span { width: 20px; height: 20px; border-radius: 4px; }
 
-/* ═══ NUEVO: Opciones de barra superior ═══ */
 .navmode-grid { display: flex; flex-direction: column; gap: 8px; }
 .navmode-option { padding: 12px; border-radius: 8px; border: 2px solid var(--border); cursor: pointer; transition: all 0.15s; background: var(--bg); display: flex; align-items: center; gap: 10px; }
 .navmode-option:hover { border-color: var(--muted); }
@@ -227,28 +210,33 @@ input:checked + .slider:before { transform: translateX(20px); }
 </div>
 
 <div id="app-screen" style="display:none;">
-    <header id="mainHeader">
-      <h1>💰 Mis Finanzas Pro</h1>
-      <button class="calc-toggle" onclick="toggleCalculator()" title="Abrir calculadora" aria-label="Calculadora">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="4" y="2" width="16" height="20" rx="2"/>
-            <line x1="8" y1="6" x2="16" y2="6"/>
-            <line x1="8" y1="10" x2="8" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/><line x1="16" y1="10" x2="16" y2="10"/>
-            <line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/>
-            <line x1="8" y1="18" x2="8" y2="18"/><line x1="12" y1="18" x2="12" y2="18"/><line x1="16" y1="18" x2="16" y2="18"/>
-        </svg>
-      </button>
-      <div class="year-nav" id="yearNav"></div>
-    </header>
-    <nav id="mainNav">
-      <button data-view="dashboard" class="active">📊 Panel</button>
-      <button data-view="movimientos">💸 Movimientos</button>
-      <button data-view="analisis">📈 Análisis</button>
-      <button data-view="cuentas">🏦 Cuentas y Bolsillos</button>
-      <button data-view="deudas">💳 Deudas</button>
-      <button data-view="chat">🤖 Chat IA</button>
-      <button data-view="config">⚙️ Configuración</button>
-    </nav>
+
+    <!-- ═══ NUEVO: Wrapper sticky que agrupa header + nav ═══ -->
+    <div id="stickyTopWrap">
+      <header id="mainHeader">
+        <h1>💰 Mis Finanzas Pro</h1>
+        <button class="calc-toggle" onclick="toggleCalculator()" title="Abrir calculadora" aria-label="Calculadora">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="4" y="2" width="16" height="20" rx="2"/>
+              <line x1="8" y1="6" x2="16" y2="6"/>
+              <line x1="8" y1="10" x2="8" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/><line x1="16" y1="10" x2="16" y2="10"/>
+              <line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/>
+              <line x1="8" y1="18" x2="8" y2="18"/><line x1="12" y1="18" x2="12" y2="18"/><line x1="16" y1="18" x2="16" y2="18"/>
+          </svg>
+        </button>
+        <div class="year-nav" id="yearNav"></div>
+      </header>
+      <nav id="mainNav">
+        <button data-view="dashboard" class="active">📊 Panel</button>
+        <button data-view="movimientos">💸 Movimientos</button>
+        <button data-view="analisis">📈 Análisis</button>
+        <button data-view="cuentas">🏦 Cuentas y Bolsillos</button>
+        <button data-view="deudas">💳 Deudas</button>
+        <button data-view="chat">🤖 Chat IA</button>
+        <button data-view="config">⚙️ Configuración</button>
+      </nav>
+    </div>
+
     <main>
       <section class="view active" id="view-dashboard">
         <div id="advisorBox" style="display:none; margin-bottom: 14px;"></div>
@@ -314,7 +302,7 @@ input:checked + .slider:before { transform: translateX(20px); }
       <section class="view" id="view-analisis">
         <div class="card">
           <h2>🏆 Regla de Oro Financiera (50/30/20) <span id="expertAnalysisMonth" style="font-size:12px; color:var(--accent); font-weight:normal;"></span></h2>
-          <p style="font-size: 11px; color: var(--muted); margin-bottom: 15px;">Los expertos sugieren: máximo 50% en Gastos Fijos, máximo 30% en Placer, mínimo 20% en Ahorro. Gastar menos en Fijo/Placer y ahorrar más es mejor.</p>
+          <p style="font-size: 11px; color: var(--muted); margin-bottom: 15px;">Los expertos sugieren: máximo 50% en Gastos Fijos, máximo 30% en Placer, mínimo 20% en Ahorro.</p>
           <div id="expertAnalysis"></div>
         </div>
         <div class="card" id="summariesCard">
@@ -444,7 +432,6 @@ input:checked + .slider:before { transform: translateX(20px); }
 
       <section class="view" id="view-config">
 
-        <!-- ═══ NUEVO: Apariencia ═══ -->
         <div class="config-section" style="border-left-color: var(--accent);">
           <div class="config-section-header" onclick="toggleConfigSection('theme')">
             <h3>🎨 Apariencia (Temas de color)</h3>
@@ -456,7 +443,6 @@ input:checked + .slider:before { transform: translateX(20px); }
           </div>
         </div>
 
-        <!-- ═══ NUEVO: Barra superior ═══ -->
         <div class="config-section" style="border-left-color: var(--accent);">
           <div class="config-section-header" onclick="toggleConfigSection('navbar')">
             <h3>📌 Barra superior</h3>
@@ -546,7 +532,7 @@ input:checked + .slider:before { transform: translateX(20px); }
           <div class="config-section-content" id="content-data" style="display:none;">
             <p style="font-size: 12px; color: var(--muted); margin-bottom: 10px;">Descarga un archivo Excel con todos los movimientos de este año.</p>
             <button class="primary" onclick="downloadExcel()" style="background: var(--green);">📊 Descargar Historial en Excel</button>
-            <p style="font-size: 12px; color: var(--muted); margin-top: 15px; margin-bottom: 10px;">Importa movimientos desde un archivo Excel (.xlsx). Se detecta la fila de encabezados automáticamente. Si una cuenta, bolsillo o categoría no existe, se crea.</p>
+            <p style="font-size: 12px; color: var(--muted); margin-top: 15px; margin-bottom: 10px;">Importa movimientos desde un archivo Excel (.xlsx). Se detecta la fila de encabezados automáticamente.</p>
             <label style="font-size: 11px; color: var(--muted);">🗓️ Omitir movimientos desde (opcional):</label>
             <input type="date" id="importOmitFrom" style="margin-bottom: 8px;">
             <input type="file" id="importExcelFile" accept=".xlsx,.xls" style="margin-bottom: 8px;">
@@ -748,7 +734,7 @@ function renderThemesGrid() {
 }
 
 // ═══════════════════════════════════════════
-// CONTROL DE BARRA SUPERIOR
+// CONTROL DE BARRA SUPERIOR (CORREGIDO)
 // ═══════════════════════════════════════════
 const NAV_MODES = {
     sticky: { name: 'Fija siempre', desc: 'Header y botones siempre visibles arriba' },
@@ -766,13 +752,14 @@ function setNavMode(mode) {
 
 function applyNavMode() {
     const mode = (state.config && state.config.navMode) || 'sticky';
-    const header = document.getElementById('mainHeader');
-    const nav = document.getElementById('mainNav');
-    if (!header || !nav) return;
+    const wrap = document.getElementById('stickyTopWrap');
+    if (!wrap) return;
+    // En modo sticky/fija siempre nos aseguramos de que esté visible
     if (mode !== 'autohide') {
-        header.classList.remove('navbar-hidden');
-        nav.classList.remove('navbar-hidden');
+        wrap.classList.remove('navbar-hidden');
     }
+    // Resetear lastScrollY para que no haya saltos al cambiar de modo
+    lastScrollY = window.scrollY;
 }
 
 function renderNavmodeGrid() {
@@ -793,16 +780,13 @@ let lastScrollY = 0;
 window.addEventListener('scroll', () => {
     const mode = (state.config && state.config.navMode) || 'sticky';
     if (mode !== 'autohide') return;
-    const header = document.getElementById('mainHeader');
-    const nav = document.getElementById('mainNav');
-    if (!header || !nav) return;
+    const wrap = document.getElementById('stickyTopWrap');
+    if (!wrap) return;
     const currentScrollY = window.scrollY;
     if (currentScrollY > lastScrollY && currentScrollY > 100) {
-        header.classList.add('navbar-hidden');
-        nav.classList.add('navbar-hidden');
+        wrap.classList.add('navbar-hidden');
     } else if (currentScrollY < lastScrollY) {
-        header.classList.remove('navbar-hidden');
-        nav.classList.remove('navbar-hidden');
+        wrap.classList.remove('navbar-hidden');
     }
     lastScrollY = currentScrollY;
 }, { passive: true });
