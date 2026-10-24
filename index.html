@@ -56,7 +56,113 @@ th{color:var(--muted);font-size:11px}
 .row-item .locked-val{font-size:12px;color:var(--muted);width:35%;text-align:right; display:flex; justify-content:flex-end; align-items:center; gap:6px;}
 @media(max-width:600px){header h1{font-size:15px}}
 
-/* ═══ NUEVO: Contenedores de gráficos responsivos ═══ */
+/* ═══ Botón calculadora en header ═══ */
+.calc-toggle {
+    background: var(--border);
+    border: none;
+    color: var(--text);
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    transition: background 0.15s;
+}
+.calc-toggle:hover, .calc-toggle:active { background: var(--accent); }
+
+/* ═══ Panel calculadora flotante ═══ */
+#calculatorPanel {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 300px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+    z-index: 9997;
+    display: none;
+    flex-direction: column;
+    padding: 12px;
+    max-height: calc(100vh - 40px);
+}
+@media (max-width: 480px) {
+    #calculatorPanel {
+        left: 10px;
+        right: 10px;
+        bottom: 10px;
+        width: auto;
+    }
+}
+.calc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+}
+.calc-close {
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-size: 22px;
+    cursor: pointer;
+    padding: 0 4px;
+    width: auto;
+    line-height: 1;
+    margin: 0;
+}
+.calc-close:hover { color: var(--red); }
+.calc-display {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 12px;
+    margin-bottom: 10px;
+    text-align: right;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    overflow-x: auto;
+    white-space: nowrap;
+}
+.calc-display span {
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--text);
+    font-family: 'Courier New', monospace;
+}
+.calc-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+}
+.calc-grid button {
+    padding: 14px 0;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    background: var(--border);
+    transition: all 0.15s;
+    width: 100%;
+    margin: 0;
+    user-select: none;
+}
+.calc-grid button:hover { filter: brightness(1.2); }
+.calc-grid button:active { transform: scale(0.95); }
+.calc-grid button.calc-op { background: var(--purple); }
+.calc-grid button.calc-eq { background: var(--green); }
+.calc-grid button.calc-fn { background: #64748b; }
+
+/* ═══ Contenedores de gráficos responsivos ═══ */
 .chart-wrapper {
     position: relative;
     width: 100%;
@@ -131,9 +237,41 @@ input:checked + .slider:before { transform: translateX(20px); }
     </div>
 </div>
 
+<!-- ═══ NUEVO: Panel Calculadora Flotante ═══ -->
+<div id="calculatorPanel">
+    <div class="calc-header">
+        <span>🧮 Calculadora</span>
+        <button class="calc-close" onclick="toggleCalculator()" title="Cerrar">✕</button>
+    </div>
+    <div class="calc-display"><span id="calcDisplay">0</span></div>
+    <div class="calc-grid">
+        <button class="calc-fn" onclick="calcClear()">C</button>
+        <button class="calc-fn" onclick="calcDelete()">⌫</button>
+        <button class="calc-fn" onclick="calcAppend('/100')">%</button>
+        <button class="calc-op" onclick="calcAppend('/')">÷</button>
+        <button onclick="calcAppend('7')">7</button>
+        <button onclick="calcAppend('8')">8</button>
+        <button onclick="calcAppend('9')">9</button>
+        <button class="calc-op" onclick="calcAppend('*')">×</button>
+        <button onclick="calcAppend('4')">4</button>
+        <button onclick="calcAppend('5')">5</button>
+        <button onclick="calcAppend('6')">6</button>
+        <button class="calc-op" onclick="calcAppend('-')">−</button>
+        <button onclick="calcAppend('1')">1</button>
+        <button onclick="calcAppend('2')">2</button>
+        <button onclick="calcAppend('3')">3</button>
+        <button class="calc-op" onclick="calcAppend('+')">+</button>
+        <button class="calc-fn" onclick="calcToggleSign()">±</button>
+        <button onclick="calcAppend('0')">0</button>
+        <button onclick="calcAppend('.')">.</button>
+        <button class="calc-eq" onclick="calcEquals()">=</button>
+    </div>
+</div>
+
 <div id="app-screen" style="display:none;">
     <header>
       <h1>💰 Mis Finanzas Pro</h1>
+      <button class="calc-toggle" onclick="toggleCalculator()" title="Abrir calculadora">🧮</button>
       <div class="year-nav" id="yearNav"></div>
     </header>
     <nav id="mainNav">
@@ -1933,7 +2071,6 @@ function renderAnalisis() {
   `;
 }
 
-// --- CAMBIO: Regla de Oro con subtítulo dinámico ---
 function renderExpertAnalysis() {
     const box = document.getElementById('expertAnalysis');
     const monthLabel = document.getElementById('expertAnalysisMonth');
@@ -1951,16 +2088,12 @@ function renderExpertAnalysis() {
     const ahorroPots = state.pockets.reduce((s,p)=>s+getPocBal(p.id),0);
     if (inc === 0) { box.innerHTML = '<p style="color:var(--muted); font-size:13px;">Registra ingresos este mes para calcular.</p>'; return; }
     const pctFijo = (expFijo / inc) * 100; const pctPlacer = (expPlacer / inc) * 100; const pctAhorro = (ahorroPots / inc) * 100;
-    
-    // LÓGICA CORREGIDA: gastar menos en fijo/placer = MEJOR, ahorrar más = MEJOR
-    const metFijo = pctFijo <= 50;       // Gastar ≤50% es bueno
-    const metPlacer = pctPlacer <= 30;   // Gastar ≤30% es bueno
-    const metAhorro = pctAhorro >= 20;   // Ahorrar ≥20% es bueno
-    
+    const metFijo = pctFijo <= 50;
+    const metPlacer = pctPlacer <= 30;
+    const metAhorro = pctAhorro >= 20;
     const colorFijo = metFijo ? 'var(--green)' : (pctFijo <= 60 ? 'var(--yellow)' : 'var(--red)');
     const colorPlacer = metPlacer ? 'var(--green)' : (pctPlacer <= 40 ? 'var(--yellow)' : 'var(--red)');
     const colorAhorro = metAhorro ? 'var(--green)' : (pctAhorro >= 10 ? 'var(--yellow)' : 'var(--red)');
-    
     const createBar = (label, pct, target, isMax, color, met, extra) => {
         const diff = isMax ? (target - pct) : (pct - target);
         const diffText = extra || (met 
@@ -1980,20 +2113,17 @@ function renderExpertAnalysis() {
             </div>
         `;
     };
-    
     let resumen = '';
     const metCount = [metFijo, metPlacer, metAhorro].filter(Boolean).length;
     if (metCount === 3) resumen = `<div class="alert" style="background:rgba(34,197,94,.1); border-color:var(--green); color:var(--green); font-size:13px; margin-bottom:12px;">✅ <strong>¡Excelente!</strong> Cumples los 3 indicadores este mes.</div>`;
     else if (metCount === 2) resumen = `<div class="alert warn" style="font-size:13px; margin-bottom:12px;">⚠️ <strong>Casi:</strong> Cumples 2 de 3. Revisa el indicador con ❌.</div>`;
     else resumen = `<div class="alert danger" style="font-size:13px; margin-bottom:12px;">❌ <strong>Atención:</strong> Solo cumples ${metCount} de 3.</div>`;
-    
     box.innerHTML = resumen + 
         createBar('Gastos Fijos', pctFijo, 50, true, colorFijo, metFijo) + 
         createBar('Gastos Placer', pctPlacer, 30, true, colorPlacer, metPlacer) + 
         createBar('Ahorro', pctAhorro, 20, false, colorAhorro, metAhorro);
 }
 
-// --- CAMBIO: Resúmenes Mensuales con colapso total + 50/30/20 por mes ---
 function toggleSummariesSection() {
     state.summariesSectionCollapsed = !state.summariesSectionCollapsed;
     save();
@@ -2005,8 +2135,6 @@ function renderMonthlySummaries() {
     const content = document.getElementById('summariesContent');
     const sectionBtn = document.getElementById('toggleSectionBtn');
     const yr = state.years[state.active];
-    
-    // Aplicar estado de sección
     if (state.summariesSectionCollapsed) {
         if (content) content.style.display = 'none';
         if (sectionBtn) sectionBtn.textContent = '▶ Mostrar sección';
@@ -2014,16 +2142,11 @@ function renderMonthlySummaries() {
         if (content) content.style.display = 'block';
         if (sectionBtn) sectionBtn.textContent = '▼ Ocultar sección';
     }
-    
     if (!yr) { if (box) box.innerHTML = '<p style="color:var(--muted); font-size:13px;">Sin datos.</p>'; updateToggleAllBtn(); return; }
-    
-    // Si la sección está colapsada, no re-renderizar los meses individuales (evitar parpadeo)
     if (state.summariesSectionCollapsed) { updateToggleAllBtn(); return; }
-    
     if(!state.summariesOpen) state.summariesOpen = {};
     const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
     const summaries = [];
-    
     for (let i = 0; i < 12; i++) {
         let inc = 0, exp = 0, ahorro = 0, expFijo = 0, expPlacer = 0, count = 0;
         const details = {};
@@ -2047,7 +2170,6 @@ function renderMonthlySummaries() {
         const balance = inc - exp;
         const color = balance >= 0 ? 'var(--green)' : 'var(--red)';
         let topExpense = Object.keys(details).reduce((a, b) => details[a] > details[b] ? a : b, '');
-        
         let pctFijo = 0, pctPlacer = 0, pctAhorro = 0;
         let metFijo = false, metPlacer = false, metAhorro = false;
         if (inc > 0) {
@@ -2061,7 +2183,6 @@ function renderMonthlySummaries() {
         const colorFijo = !inc ? 'var(--muted)' : (metFijo ? 'var(--green)' : (pctFijo <= 60 ? 'var(--yellow)' : 'var(--red)'));
         const colorPlacer = !inc ? 'var(--muted)' : (metPlacer ? 'var(--green)' : (pctPlacer <= 40 ? 'var(--yellow)' : 'var(--red)'));
         const colorAhorro = !inc ? 'var(--muted)' : (metAhorro ? 'var(--green)' : (pctAhorro >= 10 ? 'var(--yellow)' : 'var(--red)'));
-        
         let cumpleRegla = '— Sin ingresos'; let cumpleColor = 'var(--muted)';
         if (inc > 0) {
             const metCount = [metFijo, metPlacer, metAhorro].filter(Boolean).length;
@@ -2073,16 +2194,13 @@ function renderMonthlySummaries() {
         if (exp > inc) advice = `Gastaste más de lo que ingresaste. Reduce en <strong>${topExpense || 'otros'}</strong>.`;
         else if (ahorro < (inc * 0.2)) advice = `Podrías ahorrar más. Mayor gasto: <strong>${topExpense || 'otros'}</strong>.`;
         else advice = `¡Excelente mes! Mayor gasto: <strong>${topExpense || 'otros'}</strong>.`;
-        
         summaries.push({ month: i, inc, exp, ahorro, balance, color, advice, count, pctFijo, pctPlacer, pctAhorro, metFijo, metPlacer, metAhorro, colorFijo, colorPlacer, colorAhorro, cumpleRegla, cumpleColor });
     }
-    
     if (summaries.length === 0) {
         box.innerHTML = '<p style="color:var(--muted); font-size:13px;">Los resúmenes aparecerán aquí al registrar movimientos.</p>';
         updateToggleAllBtn();
         return;
     }
-    
     const createBar5020 = (label, pct, target, isMax, color, met) => {
         return `
             <div>
@@ -2097,7 +2215,6 @@ function renderMonthlySummaries() {
             </div>
         `;
     };
-    
     box.innerHTML = summaries.map(s => {
         const isOpen = !!state.summariesOpen[s.month];
         return `
@@ -2186,6 +2303,107 @@ function downloadExcel() {
 }
 
 function toggleAdvisor() { state.config.advisorEnabled = document.getElementById('toggleAdvisor').checked; save(); renderAll(); toast(state.config.advisorEnabled ? 'Asesor Activado' : 'Desactivado'); }
+
+// ═══════════════════════════════════════════
+// 🧮 CALCULADORA FLOTANTE
+// ═══════════════════════════════════════════
+let calcExpr = '';
+
+function calcUpdateDisplay() {
+    const display = document.getElementById('calcDisplay');
+    if (display) display.textContent = calcExpr || '0';
+}
+
+function calcAppend(val) {
+    const ops = ['+', '-', '*', '/'];
+    if (ops.includes(val)) {
+        const last = calcExpr.slice(-1);
+        if (ops.includes(last)) calcExpr = calcExpr.slice(0, -1);
+    }
+    // Evitar múltiples puntos en el mismo número
+    if (val === '.') {
+        const parts = calcExpr.split(/[\+\-\*\/]/);
+        const lastNum = parts[parts.length - 1];
+        if (lastNum.includes('.')) return;
+        if (lastNum === '') val = '0.';
+    }
+    calcExpr += val;
+    calcUpdateDisplay();
+}
+
+function calcEquals() {
+    if (!calcExpr) return;
+    try {
+        let result = Function('"use strict";return (' + calcExpr + ')')();
+        if (!isFinite(result) || isNaN(result)) throw new Error();
+        if (Number.isInteger(result)) {
+            calcExpr = result.toString();
+        } else {
+            calcExpr = parseFloat(result.toFixed(8)).toString();
+        }
+        calcUpdateDisplay();
+    } catch (e) {
+        calcExpr = 'Error';
+        calcUpdateDisplay();
+        setTimeout(() => { calcExpr = ''; calcUpdateDisplay(); }, 1000);
+    }
+}
+
+function calcClear() {
+    calcExpr = '';
+    calcUpdateDisplay();
+}
+
+function calcDelete() {
+    calcExpr = calcExpr.slice(0, -1);
+    calcUpdateDisplay();
+}
+
+function calcToggleSign() {
+    if (!calcExpr) return;
+    // Buscar el último número en la expresión
+    const match = calcExpr.match(/(\d+\.?\d*)$/);
+    if (match) {
+        const num = match[1];
+        const start = calcExpr.length - num.length;
+        if (start > 0 && calcExpr[start - 1] === '-') {
+            calcExpr = calcExpr.slice(0, start - 1) + num;
+        } else {
+            calcExpr = calcExpr.slice(0, start) + '-' + num;
+        }
+    } else {
+        calcExpr = '-' + calcExpr;
+    }
+    calcUpdateDisplay();
+}
+
+function toggleCalculator() {
+    const panel = document.getElementById('calculatorPanel');
+    if (!panel) return;
+    if (panel.style.display === 'none' || !panel.style.display) {
+        panel.style.display = 'flex';
+    } else {
+        panel.style.display = 'none';
+    }
+}
+
+// Soporte teclado físico (solo cuando la calculadora está abierta)
+document.addEventListener('keydown', (e) => {
+    const panel = document.getElementById('calculatorPanel');
+    if (!panel || panel.style.display !== 'flex') return;
+    const tag = (e.target.tagName || '').toUpperCase();
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    if (e.key >= '0' && e.key <= '9') { calcAppend(e.key); e.preventDefault(); }
+    else if (e.key === '.') { calcAppend('.'); e.preventDefault(); }
+    else if (e.key === '+') { calcAppend('+'); e.preventDefault(); }
+    else if (e.key === '-') { calcAppend('-'); e.preventDefault(); }
+    else if (e.key === '*') { calcAppend('*'); e.preventDefault(); }
+    else if (e.key === '/') { calcAppend('/'); e.preventDefault(); }
+    else if (e.key === 'Enter' || e.key === '=') { calcEquals(); e.preventDefault(); }
+    else if (e.key === 'Backspace') { calcDelete(); e.preventDefault(); }
+    else if (e.key === 'Escape') { toggleCalculator(); e.preventDefault(); }
+    else if (e.key.toLowerCase() === 'c' && !e.ctrlKey && !e.metaKey) { calcClear(); e.preventDefault(); }
+});
 
 document.querySelectorAll('#mainNav button').forEach(b=>{
   b.onclick=()=>{ document.querySelectorAll('#mainNav button').forEach(x=>x.classList.remove('active')); document.querySelectorAll('.view').forEach(v=>v.classList.remove('active')); b.classList.add('active'); document.getElementById('view-'+b.dataset.view).classList.add('active'); 
