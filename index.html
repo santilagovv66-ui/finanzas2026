@@ -61,14 +61,19 @@ th{color:var(--muted);font-size:11px}
     background: var(--border);
     border: none;
     color: var(--text);
-    padding: 6px 10px;
+    padding: 6px;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 16px;
-    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     transition: background 0.15s;
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
 }
 .calc-toggle:hover, .calc-toggle:active { background: var(--accent); }
+.calc-toggle svg { display: block; width: 18px; height: 18px; }
 
 /* ═══ Panel calculadora flotante ═══ */
 #calculatorPanel {
@@ -105,6 +110,8 @@ th{color:var(--muted);font-size:11px}
     font-weight: bold;
     letter-spacing: 0.5px;
 }
+.calc-header-left { display: flex; align-items: center; gap: 6px; }
+.calc-header-left svg { width: 14px; height: 14px; display: block; }
 .calc-close {
     background: transparent;
     border: none;
@@ -237,10 +244,25 @@ input:checked + .slider:before { transform: translateX(20px); }
     </div>
 </div>
 
-<!-- ═══ NUEVO: Panel Calculadora Flotante ═══ -->
+<!-- ═══ Panel Calculadora Flotante ═══ -->
 <div id="calculatorPanel">
     <div class="calc-header">
-        <span>🧮 Calculadora</span>
+        <div class="calc-header-left">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="4" y="2" width="16" height="20" rx="2"/>
+                <line x1="8" y1="6" x2="16" y2="6"/>
+                <line x1="8" y1="10" x2="8" y2="10"/>
+                <line x1="12" y1="10" x2="12" y2="10"/>
+                <line x1="16" y1="10" x2="16" y2="10"/>
+                <line x1="8" y1="14" x2="8" y2="14"/>
+                <line x1="12" y1="14" x2="12" y2="14"/>
+                <line x1="16" y1="14" x2="16" y2="14"/>
+                <line x1="8" y1="18" x2="8" y2="18"/>
+                <line x1="12" y1="18" x2="12" y2="18"/>
+                <line x1="16" y1="18" x2="16" y2="18"/>
+            </svg>
+            <span>Calculadora</span>
+        </div>
         <button class="calc-close" onclick="toggleCalculator()" title="Cerrar">✕</button>
     </div>
     <div class="calc-display"><span id="calcDisplay">0</span></div>
@@ -271,7 +293,21 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="app-screen" style="display:none;">
     <header>
       <h1>💰 Mis Finanzas Pro</h1>
-      <button class="calc-toggle" onclick="toggleCalculator()" title="Abrir calculadora">🧮</button>
+      <button class="calc-toggle" onclick="toggleCalculator()" title="Abrir calculadora" aria-label="Calculadora">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="2" width="16" height="20" rx="2"/>
+            <line x1="8" y1="6" x2="16" y2="6"/>
+            <line x1="8" y1="10" x2="8" y2="10"/>
+            <line x1="12" y1="10" x2="12" y2="10"/>
+            <line x1="16" y1="10" x2="16" y2="10"/>
+            <line x1="8" y1="14" x2="8" y2="14"/>
+            <line x1="12" y1="14" x2="12" y2="14"/>
+            <line x1="16" y1="14" x2="16" y2="14"/>
+            <line x1="8" y1="18" x2="8" y2="18"/>
+            <line x1="12" y1="18" x2="12" y2="18"/>
+            <line x1="16" y1="18" x2="16" y2="18"/>
+        </svg>
+      </button>
       <div class="year-nav" id="yearNav"></div>
     </header>
     <nav id="mainNav">
@@ -2305,7 +2341,7 @@ function downloadExcel() {
 function toggleAdvisor() { state.config.advisorEnabled = document.getElementById('toggleAdvisor').checked; save(); renderAll(); toast(state.config.advisorEnabled ? 'Asesor Activado' : 'Desactivado'); }
 
 // ═══════════════════════════════════════════
-// 🧮 CALCULADORA FLOTANTE
+// CALCULADORA FLOTANTE
 // ═══════════════════════════════════════════
 let calcExpr = '';
 
@@ -2320,7 +2356,6 @@ function calcAppend(val) {
         const last = calcExpr.slice(-1);
         if (ops.includes(last)) calcExpr = calcExpr.slice(0, -1);
     }
-    // Evitar múltiples puntos en el mismo número
     if (val === '.') {
         const parts = calcExpr.split(/[\+\-\*\/]/);
         const lastNum = parts[parts.length - 1];
@@ -2361,7 +2396,6 @@ function calcDelete() {
 
 function calcToggleSign() {
     if (!calcExpr) return;
-    // Buscar el último número en la expresión
     const match = calcExpr.match(/(\d+\.?\d*)$/);
     if (match) {
         const num = match[1];
@@ -2387,7 +2421,6 @@ function toggleCalculator() {
     }
 }
 
-// Soporte teclado físico (solo cuando la calculadora está abierta)
 document.addEventListener('keydown', (e) => {
     const panel = document.getElementById('calculatorPanel');
     if (!panel || panel.style.display !== 'flex') return;
