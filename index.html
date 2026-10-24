@@ -112,7 +112,6 @@ th{color:var(--muted);font-size:11px}
 .config-toggle{color:var(--muted);font-size:14px;transition:transform 0.15s}
 .config-section-content{padding-left:15px;padding-top:8px}
 
-/* Sección plegable estilo config pero dentro de una card (para suscripciones) */
 .collapsible-card-header{display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none;padding:4px 0;border-radius:6px;transition:background 0.15s}
 .collapsible-card-header:hover{background:rgba(255,255,255,0.03)}
 .collapsible-card-header h2{font-size:13px;color:var(--muted);text-transform:uppercase;margin:0;}
@@ -365,7 +364,6 @@ input:checked + .slider:before{transform:translateX(20px)}
           <div id="expertAnalysis"></div>
         </div>
 
-        <!-- NUEVO: Suscripciones colapsables -->
         <div class="card" id="subscriptionsCard" style="display:none; border-left-color: var(--purple);">
           <div class="collapsible-card-header" onclick="toggleSubsSection()">
             <h2>🔍 Análisis de suscripciones y gastos repetidos</h2>
@@ -618,7 +616,7 @@ input:checked + .slider:before{transform:translateX(20px)}
             <span class="config-toggle" id="toggle-cats">▶</span>
           </div>
           <div class="config-section-content" id="content-cats" style="display:none;">
-            <p style="font-size:11px;color:var(--muted);margin-bottom:10px;">Nota: El límite de "Placer" se controla con el % en el Dashboard (Panel → Cuentas → Límite de Placer), no con el campo de aquí. El campo $ de Placer está deshabilitado.</p>
+            <p style="font-size:11px;color:var(--muted);margin-bottom:10px;">Nota: "Placer" no tiene campo de límite $ porque usa el % configurado en el Dashboard (Panel → Cuentas → Límite de Placer). El resto de categorías sí usan el límite mensual $ de aquí.</p>
             <div id="configCatsList"></div>
             <div style="margin-top:10px;">
               <input type="text" id="newCatName" placeholder="Nombre Categoría (ej. Educación)">
@@ -727,7 +725,6 @@ const CONFIG_SECTIONS=['theme','navbar','auto','ai','data','goals','cats','admin
 function toggleConfigSection(id){if(!state.config.sectionsOpen)state.config.sectionsOpen={};state.config.sectionsOpen[id]=!state.config.sectionsOpen[id];save();renderConfigSections();}
 function renderConfigSections(){CONFIG_SECTIONS.forEach(id=>{const content=document.getElementById('content-'+id);const toggle=document.getElementById('toggle-'+id);if(!content)return;const open=!!(state.config.sectionsOpen&&state.config.sectionsOpen[id]);content.style.display=open?'block':'none';if(toggle)toggle.textContent=open?'▼':'▶';});}
 
-// Sección colapsable específica para suscripciones en Análisis
 function toggleSubsSection(){
     if(!state.config.sectionsOpen)state.config.sectionsOpen={};
     state.config.sectionsOpen.subs=!state.config.sectionsOpen.subs;
@@ -791,6 +788,8 @@ function migrateState(){
     if(!state.config)state.config={};
     if(!state.config.cats||state.config.cats.length===0)state.config.cats=[{id:'fijo',name:'Fijo (mensual)',desc:'Arriendo, mercado, servicios',color:'#3b82f6'},{id:'necesario',name:'Necesario',desc:'Imprevistos, reparaciones, salud',color:'#eab308'},{id:'placer',name:'Placer',desc:'Ocio, salidas, gustos',color:'#a855f7'}];
     state.config.cats.forEach(c=>{if(c.limit===undefined)c.limit=0;});
+    // Limpiar límite de placer (usa solo el % del dashboard)
+    state.config.cats.forEach(c=>{if(c.id==='placer')c.limit=0;});
     if(state.config.placer===undefined)state.config.placer=30;
     if(!state.config.chartType)state.config.chartType='bar';
     if(!state.config.pieType)state.config.pieType='doughnut';
@@ -1462,6 +1461,7 @@ function createNewChat(){const nc={id:genId(),title:`Chat ${state.chats.length+1
 function switchChat(id){state.activeChatId=id;save();renderChat();}
 function deleteCurrentChat(){if(!confirm('¿Borrar este chat?'))return;state.chats=state.chats.filter(c=>c.id!==state.activeChatId);if(state.chats.length===0)state.chats.push({id:genId(),title:'Chat 1',messages:[]});state.activeChatId=state.chats[0].id;save();renderChat();}
 
+// CHAT IA: con timeout de 60s y mejor diagnóstico de errores
 async function sendChatMessage(){
     const input=document.getElementById('chat-input');
     const text=input.value.trim();
@@ -1473,25 +1473,54 @@ async function sendChatMessage(){
     activeChat.messages.push({role:'user',text});
     input.value='';renderChat();
     activeChat.messages.push({role:'ai',text:'Analizando tus finanzas...'});renderChat();
+
+    const controller=new AbortController();
+    const timeoutId=setTimeout(()=>controller.abort(),60000);
+    const startTime=Date.now();
+
     try{
         const context=buildFinancialContext();
         const historyContents=activeChat.messages.filter(m=>!m.text.startsWith('Analizando')).map(m=>({role:m.role==='user'?'user':'model',parts:[{text:m.text}]}));
         historyContents.unshift({role:'user',parts:[{text:context}]});
-        const response=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${state.config.geminiKey}`,{
-            method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:historyContents})
+
+        const url=`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${state.config.geminiKey}`;
+        const response=await fetch(url,{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({contents:historyContents}),
+            signal:controller.signal
         });
+        clearTimeout(timeoutId);
+
+        if(!response.ok){
+            let errDetail='';
+            try{const errBody=await response.text();errDetail=errBody.substring(0,400);}catch(e){}
+            throw new Error(`HTTP ${response.status} ${response.statusText}. ${errDetail}`);
+        }
+
         const data=await response.json();
         if(data.error)throw new Error(data.error.message);
+        if(!data.candidates||!data.candidates[0]||!data.candidates[0].content||!data.candidates[0].content.parts||!data.candidates[0].content.parts[0]){
+            throw new Error('Respuesta de la IA vacía o con formato inesperado.');
+        }
+
         activeChat.messages[activeChat.messages.length-1].text=data.candidates[0].content.parts[0].text;
         save();renderChat();
     }catch(error){
+        clearTimeout(timeoutId);
         console.error(error);
-        activeChat.messages[activeChat.messages.length-1].text=`❌ Error: ${error.message}`;
+        let errMsg=error.message||'Error desconocido';
+        if(error.name==='AbortError'){
+            errMsg='Tiempo de espera agotado (60 segundos). La API de Gemini no respondió. Verifica tu conexión a internet e intenta de nuevo.';
+        }
+        const elapsed=((Date.now()-startTime)/1000).toFixed(1);
+        activeChat.messages[activeChat.messages.length-1].text=`❌ Error (${elapsed}s): ${errMsg}`;
         save();renderChat();
     }
 }
 
 let currentDebtAdviceText='';
+// ASESOR DE DEUDAS IA: mismo tratamiento de timeout y errores
 async function analyzeDebtsWithAI(){
     if(!state.config.geminiKey)return alert('⚠️ Pega tu API Key de Gemini en Configuración.');
     const btn=document.getElementById('btnAnalyzeDebts');
@@ -1502,6 +1531,11 @@ async function analyzeDebtsWithAI(){
     wrap.style.display='block';box.style.display='block';
     box.innerText='La IA está pensando...';
     actions.style.display='none';
+
+    const controller=new AbortController();
+    const timeoutId=setTimeout(()=>controller.abort(),60000);
+    const startTime=Date.now();
+
     try{
         const totalDebt=state.debts.reduce((s,d)=>s+getDebtBal(d.id),0);
         let totalMoney=0;
@@ -1509,16 +1543,40 @@ async function analyzeDebtsWithAI(){
         state.pockets.forEach(p=>totalMoney+=getPocBal(p.id));
         const debtListStr=state.debts.filter(d=>getDebtBal(d.id)>0).map(d=>`- ${d.name}: Debes ${fmt(getDebtBal(d.id))}, interés ${d.rate||0}%, tipo ${d.type}`).join('\n');
         const prompt=`Eres un asesor financiero personal experto.\nDinero disponible: ${fmt(totalMoney)}.\nDeuda total: ${fmt(totalDebt)}.\nDeudas:\n${debtListStr||'No hay deudas.'}\n\nDame un consejo conciso (máximo 150 palabras) sobre cuál priorizar y cómo distribuir mi dinero. Responde en español.`;
-        const response=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${state.config.geminiKey}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})});
+        const url=`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${state.config.geminiKey}`;
+        const response=await fetch(url,{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({contents:[{parts:[{text:prompt}]}]}),
+            signal:controller.signal
+        });
+        clearTimeout(timeoutId);
+
+        if(!response.ok){
+            let errDetail='';
+            try{const errBody=await response.text();errDetail=errBody.substring(0,400);}catch(e){}
+            throw new Error(`HTTP ${response.status} ${response.statusText}. ${errDetail}`);
+        }
+
         const data=await response.json();
         if(data.error)throw new Error(data.error.message);
+        if(!data.candidates||!data.candidates[0]||!data.candidates[0].content||!data.candidates[0].content.parts||!data.candidates[0].content.parts[0]){
+            throw new Error('Respuesta de la IA vacía o con formato inesperado.');
+        }
+
         const aiResponse=data.candidates[0].content.parts[0].text;
         box.innerText=aiResponse;
         currentDebtAdviceText=aiResponse;
         actions.style.display='flex';
     }catch(error){
+        clearTimeout(timeoutId);
         console.error(error);
-        box.innerText=`❌ Error: ${error.message}`;
+        let errMsg=error.message||'Error desconocido';
+        if(error.name==='AbortError'){
+            errMsg='Tiempo de espera agotado (60s). La API de Gemini no respondió.';
+        }
+        const elapsed=((Date.now()-startTime)/1000).toFixed(1);
+        box.innerText=`❌ Error (${elapsed}s): ${errMsg}`;
         currentDebtAdviceText='';actions.style.display='none';
     }finally{
         btn.innerText='Analizar Deudas con IA';btn.disabled=false;
@@ -1785,9 +1843,8 @@ function renderDashboard(){
     const monthSpentByCat={};
     state.config.cats.forEach(c=>monthSpentByCat[c.id]=0);
     yr.txs.forEach(t=>{const d=new Date(t.date);if(d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()&&(t.type==='Gasto'||t.type==='PagoDeuda')&&t.cat){if(monthSpentByCat[t.cat]!==undefined)monthSpentByCat[t.cat]+=t.amount;}});
-    // Placer se controla SOLO con el % (no con el límite fijo de la categoría)
     state.config.cats.forEach(c=>{
-        if(c.id==='placer')return; // ignorar placer aquí, ya tiene su sistema
+        if(c.id==='placer')return;
         if(c.limit&&c.limit>0){
             const spent=monthSpentByCat[c.id]||0;
             if(spent>c.limit)al+=`<div class="alert danger">🚨 Superaste límite de <strong>${c.name}</strong>: ${fmt(spent)} de ${fmt(c.limit)}.</div>`;
@@ -1927,15 +1984,15 @@ function renderConfig(){
             <span style="width:15%;font-size:10px;color:${pct>=100?'var(--green)':'var(--muted)'};text-align:right;">${p.meta>0?pct+'%':''}</span>
         </div>`;
     }).join('');
-    // Categorías: campo de límite deshabilitado para "placer"
+    // Categorías: Placer SIN campo de límite (usa solo el % del dashboard). El resto sí tiene input.
     document.getElementById('configCatsList').innerHTML=state.config.cats.map(c=>{
         const isPlacer=c.id==='placer';
         return `<div class="row-item" style="flex-wrap:wrap;gap:5px;">
             <input value="${c.name}" onchange="renameCat('${c.id}','name',this.value)" style="border:none;width:25%;font-weight:bold;">
             <input value="${c.desc||''}" onchange="renameCat('${c.id}','desc',this.value)" style="border:none;width:30%;font-size:11px;color:var(--muted);" placeholder="Guía...">
             ${isPlacer 
-                ? `<input type="number" value="${c.limit||0}" disabled placeholder="—" title="Placer usa el % en el Dashboard" style="width:25%;font-size:11px;opacity:0.4;cursor:not-allowed;">`
-                : `<input type="number" value="${c.limit||0}" onchange="setCatLimit('${c.id}',this.value)" placeholder="Límite" style="width:25%;font-size:11px;">`
+                ? `<span style="width:25%;font-size:10px;color:var(--muted);text-align:center;padding:6px 0;">usa % (Dashboard)</span>`
+                : `<input type="number" value="${c.limit||0}" onchange="setCatLimit('${c.id}',this.value)" placeholder="Límite mensual" style="width:25%;font-size:11px;">`
             }
             <span style="background:${c.color};width:15px;height:15px;border-radius:50%;"></span>
             <button class="danger" onclick="delCat('${c.id}')">X</button>
