@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
-<meta name="theme-color" content="#0f172a">
 <title>Mis Finanzas Pro</title>
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,43 +12,20 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-<script>
-// ═══════════════════════════════════════════════════════
-// TEMAS — definidos temprano para aplicar sin flash
-// ═══════════════════════════════════════════════════════
-window.THEMES = {
-    dark_blue: { name: 'Azul Oscuro', icon: '🌙', vars: { '--bg':'#0f172a','--card':'#1e293b','--border':'#334155','--text':'#e2e8f0','--muted':'#94a3b8','--accent':'#3b82f6','--green':'#22c55e','--red':'#ef4444','--yellow':'#eab308','--purple':'#a855f7' } },
-    dark_purple: { name: 'Púrpura Oscuro', icon: '🌙', vars: { '--bg':'#1a0f2e','--card':'#2a1a4a','--border':'#4a3570','--text':'#e8e2f0','--muted':'#a89bc4','--accent':'#a855f7','--green':'#22c55e','--red':'#ef4444','--yellow':'#eab308','--purple':'#c084fc' } },
-    dark_green: { name: 'Verde Oscuro', icon: '🌙', vars: { '--bg':'#0a1f1a','--card':'#0f2e26','--border':'#1e4a3e','--text':'#e0f2e9','--muted':'#7fb8a3','--accent':'#10b981','--green':'#22c55e','--red':'#ef4444','--yellow':'#eab308','--purple':'#a855f7' } },
-    dark_black: { name: 'Negro Puro', icon: '🌑', vars: { '--bg':'#000000','--card':'#0a0a0a','--border':'#262626','--text':'#e5e5e5','--muted':'#a3a3a3','--accent':'#3b82f6','--green':'#22c55e','--red':'#ef4444','--yellow':'#eab308','--purple':'#a855f7' } },
-    light_blue: { name: 'Azul Claro', icon: '☀️', vars: { '--bg':'#f1f5f9','--card':'#ffffff','--border':'#cbd5e1','--text':'#0f172a','--muted':'#64748b','--accent':'#2563eb','--green':'#16a34a','--red':'#dc2626','--yellow':'#ca8a04','--purple':'#9333ea' } },
-    light_purple: { name: 'Púrpura Claro', icon: '☀️', vars: { '--bg':'#f5f3ff','--card':'#ffffff','--border':'#ddd6fe','--text':'#1e1b4b','--muted':'#6b7280','--accent':'#7c3aed','--green':'#16a34a','--red':'#dc2626','--yellow':'#ca8a04','--purple':'#9333ea' } },
-    light_green: { name: 'Verde Claro', icon: '☀️', vars: { '--bg':'#f0fdf4','--card':'#ffffff','--border':'#bbf7d0','--text':'#052e16','--muted':'#6b7280','--accent':'#16a34a','--green':'#16a34a','--red':'#dc2626','--yellow':'#ca8a04','--purple':'#9333ea' } },
-    light_sepia: { name: 'Sepia', icon: '📜', vars: { '--bg':'#f4ecd8','--card':'#fbf6ea','--border':'#d4c5a0','--text':'#3d2f1c','--muted':'#8b7355','--accent':'#b45309','--green':'#15803d','--red':'#b91c1c','--yellow':'#a16207','--purple':'#7c3aed' } },
-};
-(function() {
-    try {
-        const s = JSON.parse(localStorage.getItem('fin_v13_0') || '{}');
-        const t = (s.config && s.config.theme) || 'dark_blue';
-        if (window.THEMES[t]) {
-            Object.entries(window.THEMES[t].vars).forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
-        }
-    } catch(e) {}
-})();
-</script>
 <style>
 :root{--bg:#0f172a;--card:#1e293b;--border:#334155;--text:#e2e8f0;--muted:#94a3b8;--accent:#3b82f6;--green:#22c55e;--red:#ef4444;--yellow:#eab308;--purple:#a855f7}
 *{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,sans-serif}
-body{background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:80px;transition:background 0.2s,color 0.2s}
-header{background:var(--card);border-bottom:1px solid var(--border);padding:12px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;position:sticky;top:0;z-index:100}
+body{background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:80px;transition:background 0.3s, color 0.3s}
+header{background:var(--card);border-bottom:1px solid var(--border);padding:12px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;position:sticky;top:0;z-index:100;transition:transform 0.3s ease}
+header.navbar-hidden{transform:translateY(-100%)}
 header h1{font-size:17px;margin-right:auto}
 .year-nav{display:flex;gap:6px;flex-wrap:wrap}
 .year-nav button{background:var(--border);border:none;color:var(--text);padding:6px 12px;border-radius:6px;cursor:pointer}
-.year-nav button.active{background:var(--accent);color:#fff}
-nav{background:var(--card);padding:8px;display:flex;gap:6px;overflow-x:auto;border-bottom:1px solid var(--border)}
-nav.nav-sticky{position:sticky;top:var(--header-height,60px);z-index:99}
+.year-nav button.active{background:var(--accent)}
+nav{background:var(--card);padding:8px;display:flex;gap:6px;overflow-x:auto;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:99;transition:transform 0.3s ease}
+nav.navbar-hidden{transform:translateY(-100%)}
 nav button{background:transparent;border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px;cursor:pointer;white-space:nowrap;font-size:13px}
-nav button.active{background:var(--accent);border-color:var(--accent);color:#fff}
+nav button.active{background:var(--accent);border-color:var(--accent)}
 main{padding:14px;max-width:1400px;margin:0 auto}
 .card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px}
 .card-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;}
@@ -82,7 +58,7 @@ th{color:var(--muted);font-size:11px}
 .row-item .locked-val{font-size:12px;color:var(--muted);width:35%;text-align:right; display:flex; justify-content:flex-end; align-items:center; gap:6px;}
 @media(max-width:600px){header h1{font-size:15px}}
 
-/* ═══ Botón calculadora en header ═══ */
+/* ═══ Botón calculadora ═══ */
 .calc-toggle {
     background: var(--border);
     border: none;
@@ -98,136 +74,56 @@ th{color:var(--muted);font-size:11px}
     height: 34px;
     flex-shrink: 0;
 }
-.calc-toggle:hover, .calc-toggle:active { background: var(--accent); color: #fff; }
+.calc-toggle:hover, .calc-toggle:active { background: var(--accent); }
 .calc-toggle svg { display: block; width: 18px; height: 18px; }
 
-/* ═══ Panel calculadora flotante ═══ */
-#calculatorPanel {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 300px;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    box-shadow: 0 12px 40px rgba(0,0,0,0.6);
-    z-index: 9997;
-    display: none;
-    flex-direction: column;
-    padding: 12px;
-    max-height: calc(100vh - 40px);
-}
-@media (max-width: 480px) {
-    #calculatorPanel {
-        left: 10px;
-        right: 10px;
-        bottom: 10px;
-        width: auto;
-    }
-}
-.calc-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-    font-size: 12px;
-    color: var(--muted);
-    text-transform: uppercase;
-    font-weight: bold;
-    letter-spacing: 0.5px;
-}
+/* ═══ Calculadora flotante ═══ */
+#calculatorPanel { position: fixed; bottom: 20px; right: 20px; width: 300px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 12px 40px rgba(0,0,0,0.6); z-index: 9997; display: none; flex-direction: column; padding: 12px; max-height: calc(100vh - 40px); }
+@media (max-width: 480px) { #calculatorPanel { left: 10px; right: 10px; bottom: 10px; width: auto; } }
+.calc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 12px; color: var(--muted); text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px; }
 .calc-header-left { display: flex; align-items: center; gap: 6px; }
 .calc-header-left svg { width: 14px; height: 14px; display: block; }
-.calc-close {
-    background: transparent;
-    border: none;
-    color: var(--text);
-    font-size: 22px;
-    cursor: pointer;
-    padding: 0 4px;
-    width: auto;
-    line-height: 1;
-    margin: 0;
-}
+.calc-close { background: transparent; border: none; color: var(--text); font-size: 22px; cursor: pointer; padding: 0 4px; width: auto; line-height: 1; margin: 0; }
 .calc-close:hover { color: var(--red); }
-.calc-display {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 14px 12px;
-    margin-bottom: 10px;
-    text-align: right;
-    min-height: 60px;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    overflow-x: auto;
-    white-space: nowrap;
-}
-.calc-display span {
-    font-size: 26px;
-    font-weight: 600;
-    color: var(--text);
-    font-family: 'Courier New', monospace;
-}
-.calc-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 6px;
-}
-.calc-grid button {
-    padding: 14px 0;
-    border-radius: 6px;
-    border: none;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--text);
-    background: var(--border);
-    transition: all 0.15s;
-    width: 100%;
-    margin: 0;
-    user-select: none;
-}
+.calc-display { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px 12px; margin-bottom: 10px; text-align: right; min-height: 60px; display: flex; align-items: center; justify-content: flex-end; overflow-x: auto; white-space: nowrap; }
+.calc-display span { font-size: 26px; font-weight: 600; color: var(--text); font-family: 'Courier New', monospace; }
+.calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.calc-grid button { padding: 14px 0; border-radius: 6px; border: none; cursor: pointer; font-size: 16px; font-weight: 600; color: var(--text); background: var(--border); transition: all 0.15s; width: 100%; margin: 0; user-select: none; }
 .calc-grid button:hover { filter: brightness(1.2); }
 .calc-grid button:active { transform: scale(0.95); }
-.calc-grid button.calc-op { background: var(--purple); color: #fff; }
-.calc-grid button.calc-eq { background: var(--green); color: #fff; }
-.calc-grid button.calc-fn { background: #64748b; color: #fff; }
+.calc-grid button.calc-op { background: var(--purple); }
+.calc-grid button.calc-eq { background: var(--green); }
+.calc-grid button.calc-fn { background: #64748b; }
 
-/* ═══ Contenedores de gráficos responsivos ═══ */
-.chart-wrapper {
-    position: relative;
-    width: 100%;
-    height: 320px;
-}
-@media(max-width: 600px) {
-    .chart-wrapper { height: 280px; }
-}
+/* ═══ Gráficos responsivos ═══ */
+.chart-wrapper { position: relative; width: 100%; height: 320px; }
+@media(max-width: 600px) { .chart-wrapper { height: 280px; } }
 .chart-wrapper canvas { display: block; width: 100% !important; height: 100% !important; }
 
-/* ═══ Theme picker ═══ */
-.theme-picker {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-    gap: 8px;
-}
-.theme-swatch {
-    border-radius: 8px;
-    padding: 10px 8px;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    transition: all 0.15s;
-    font-family: inherit;
-    width: 100%;
-    margin: 0;
-}
-.theme-swatch:hover { transform: translateY(-2px); }
-.theme-swatch .swatch-dots { display: flex; gap: 3px; }
-.theme-swatch .dot { width: 16px; height: 16px; border-radius: 3px; }
+/* ═══ NUEVO: Acordeón de secciones de configuración ═══ */
+.config-section { border-left: 4px solid var(--accent); padding-left: 0; margin-bottom: 14px; }
+.config-section-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; padding: 10px 0 10px 15px; user-select: none; border-radius: 6px; transition: background 0.15s; }
+.config-section-header:hover { background: rgba(255,255,255,0.03); }
+.config-section-header h3 { font-size: 15px; color: var(--text); margin: 0; display: flex; align-items: center; gap: 8px; }
+.config-toggle { color: var(--muted); font-size: 14px; transition: transform 0.15s; }
+.config-section-content { padding-left: 15px; padding-top: 8px; }
+
+/* ═══ NUEVO: Opciones de tema ═══ */
+.themes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.theme-option { padding: 10px; border-radius: 8px; border: 2px solid var(--border); cursor: pointer; transition: all 0.15s; display: flex; flex-direction: column; gap: 8px; background: var(--bg); }
+.theme-option:hover { border-color: var(--muted); }
+.theme-option.selected { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(59,130,246,0.2); }
+.theme-option .theme-name { font-size: 12px; font-weight: bold; }
+.theme-option .theme-preview { display: flex; gap: 3px; }
+.theme-option .theme-preview span { width: 20px; height: 20px; border-radius: 4px; }
+
+/* ═══ NUEVO: Opciones de barra superior ═══ */
+.navmode-grid { display: flex; flex-direction: column; gap: 8px; }
+.navmode-option { padding: 12px; border-radius: 8px; border: 2px solid var(--border); cursor: pointer; transition: all 0.15s; background: var(--bg); display: flex; align-items: center; gap: 10px; }
+.navmode-option:hover { border-color: var(--muted); }
+.navmode-option.selected { border-color: var(--accent); background: rgba(59,130,246,0.08); }
+.navmode-option strong { font-size: 13px; }
+.navmode-option small { color: var(--muted); font-size: 11px; display: block; margin-top: 2px; }
 
 #auth-screen, #lock-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
 .auth-card { background: var(--card); padding: 30px; border-radius: 10px; border: 1px solid var(--border); width: 100%; max-width: 400px; }
@@ -237,8 +133,6 @@ th{color:var(--muted);font-size:11px}
 #auth-error { color: var(--red); text-align: center; margin-top: 10px; font-size: 13px; }
 #lock-screen { display: none; background: var(--bg); position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; }
 
-.config-section { border-left: 4px solid var(--accent); padding-left: 15px; margin-bottom: 25px; }
-.config-section h3 { font-size: 15px; color: var(--text); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
 .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
 .switch input { opacity: 0; width: 0; height: 0; }
 .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--border); transition: .4s; border-radius: 24px; }
@@ -299,15 +193,9 @@ input:checked + .slider:before { transform: translateX(20px); }
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="4" y="2" width="16" height="20" rx="2"/>
                 <line x1="8" y1="6" x2="16" y2="6"/>
-                <line x1="8" y1="10" x2="8" y2="10"/>
-                <line x1="12" y1="10" x2="12" y2="10"/>
-                <line x1="16" y1="10" x2="16" y2="10"/>
-                <line x1="8" y1="14" x2="8" y2="14"/>
-                <line x1="12" y1="14" x2="12" y2="14"/>
-                <line x1="16" y1="14" x2="16" y2="14"/>
-                <line x1="8" y1="18" x2="8" y2="18"/>
-                <line x1="12" y1="18" x2="12" y2="18"/>
-                <line x1="16" y1="18" x2="16" y2="18"/>
+                <line x1="8" y1="10" x2="8" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/><line x1="16" y1="10" x2="16" y2="10"/>
+                <line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/>
+                <line x1="8" y1="18" x2="8" y2="18"/><line x1="12" y1="18" x2="12" y2="18"/><line x1="16" y1="18" x2="16" y2="18"/>
             </svg>
             <span>Calculadora</span>
         </div>
@@ -339,21 +227,15 @@ input:checked + .slider:before { transform: translateX(20px); }
 </div>
 
 <div id="app-screen" style="display:none;">
-    <header>
+    <header id="mainHeader">
       <h1>💰 Mis Finanzas Pro</h1>
       <button class="calc-toggle" onclick="toggleCalculator()" title="Abrir calculadora" aria-label="Calculadora">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="4" y="2" width="16" height="20" rx="2"/>
             <line x1="8" y1="6" x2="16" y2="6"/>
-            <line x1="8" y1="10" x2="8" y2="10"/>
-            <line x1="12" y1="10" x2="12" y2="10"/>
-            <line x1="16" y1="10" x2="16" y2="10"/>
-            <line x1="8" y1="14" x2="8" y2="14"/>
-            <line x1="12" y1="14" x2="12" y2="14"/>
-            <line x1="16" y1="14" x2="16" y2="14"/>
-            <line x1="8" y1="18" x2="8" y2="18"/>
-            <line x1="12" y1="18" x2="12" y2="18"/>
-            <line x1="16" y1="18" x2="16" y2="18"/>
+            <line x1="8" y1="10" x2="8" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/><line x1="16" y1="10" x2="16" y2="10"/>
+            <line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/>
+            <line x1="8" y1="18" x2="8" y2="18"/><line x1="12" y1="18" x2="12" y2="18"/><line x1="16" y1="18" x2="16" y2="18"/>
         </svg>
       </button>
       <div class="year-nav" id="yearNav"></div>
@@ -377,27 +259,20 @@ input:checked + .slider:before { transform: translateX(20px); }
         <div class="card"><h2>📈 Flujo del Año (Ingresos - Gastos)</h2><div class="grid" id="flowStats"></div></div>
         <div class="card"><h2>💼 Mi Patrimonio Total (Lo que tengo hoy)</h2><div class="grid" id="patrimonyStats"></div></div>
         <div class="card"><h2>Presupuestos y Metas</h2><div class="grid" id="budgetGrid"></div></div>
-        
         <div class="card">
           <div class="card-header">
             <h2>Flujo por mes</h2>
             <select class="chart-selector" id="flowChartType" onchange="changeFlowChart()">
-              <option value="bar">Barras</option>
-              <option value="line">Líneas</option>
-              <option value="radar">Radar</option>
+              <option value="bar">Barras</option><option value="line">Líneas</option><option value="radar">Radar</option>
             </select>
           </div>
           <div class="chart-wrapper"><canvas id="flowChart"></canvas></div>
         </div>
-
         <div class="card">
           <div class="card-header">
             <h2>Distribución de gastos</h2>
             <select class="chart-selector" id="pieChartType" onchange="changePieChart()">
-              <option value="doughnut">Dona</option>
-              <option value="pie">Torta</option>
-              <option value="bar">Barras</option>
-              <option value="polarArea">Polar</option>
+              <option value="doughnut">Dona</option><option value="pie">Torta</option><option value="bar">Barras</option><option value="polarArea">Polar</option>
             </select>
           </div>
           <div class="chart-wrapper"><canvas id="pieChart"></canvas></div>
@@ -430,8 +305,7 @@ input:checked + .slider:before { transform: translateX(20px); }
           <div style="overflow-x:auto">
             <table id="txTable">
               <thead><tr><th>Fecha</th><th>Detalle</th><th>Acción</th><th style="text-align:right">Monto</th><th></th></tr></thead>
-              <tbody></tbody>
-              <tfoot id="txTableFooter"></tfoot>
+              <tbody></tbody><tfoot id="txTableFooter"></tfoot>
             </table>
           </div>
         </div>
@@ -443,7 +317,6 @@ input:checked + .slider:before { transform: translateX(20px); }
           <p style="font-size: 11px; color: var(--muted); margin-bottom: 15px;">Los expertos sugieren: máximo 50% en Gastos Fijos, máximo 30% en Placer, mínimo 20% en Ahorro. Gastar menos en Fijo/Placer y ahorrar más es mejor.</p>
           <div id="expertAnalysis"></div>
         </div>
-
         <div class="card" id="summariesCard">
           <div class="card-header">
             <h2>📝 Resúmenes Mensuales (Historial del Año)</h2>
@@ -451,30 +324,25 @@ input:checked + .slider:before { transform: translateX(20px); }
           </div>
           <div id="summariesContent">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
-              <p style="font-size: 11px; color: var(--muted); margin:0;">Toca cada mes para desplegar u ocultar su resumen. Se calculan automáticamente.</p>
+              <p style="font-size: 11px; color: var(--muted); margin:0;">Toca cada mes para desplegar u ocultar su resumen.</p>
               <button onclick="toggleAllMonths()" id="toggleAllMonthsBtn" style="background:var(--border); color:var(--text); border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:11px; width:auto;">▼ Desplegar todos los meses</button>
             </div>
             <div id="monthlySummariesList" style="display:flex; flex-direction:column; gap:10px;"></div>
           </div>
         </div>
-
         <div class="card">
           <h2>Promedios Mensuales y Cobertura</h2>
           <div class="grid" id="analisisPromedios"></div>
         </div>
-
         <div class="card">
           <div class="card-header">
             <h2>📊 Proyección de Patrimonio a Fin de Año</h2>
             <select class="chart-selector" id="projChartType" onchange="changeProjChart()">
-              <option value="line">Líneas</option>
-              <option value="bar">Barras</option>
-              <option value="radar">Radar</option>
+              <option value="line">Líneas</option><option value="bar">Barras</option><option value="radar">Radar</option>
             </select>
           </div>
           <div class="chart-wrapper"><canvas id="projChart"></canvas></div>
         </div>
-
         <div class="card">
           <h2>Balance por Mes</h2>
           <div style="overflow-x:auto">
@@ -491,7 +359,6 @@ input:checked + .slider:before { transform: translateX(20px); }
           <h2>🎯 Límite de Gastos Placer del Mes</h2>
           <div id="placerCardContent"></div>
         </div>
-
         <div class="card">
           <h2>Mis Cuentas (Dinero real)</h2>
           <div id="initAlert"></div>
@@ -512,17 +379,14 @@ input:checked + .slider:before { transform: translateX(20px); }
       </section>
 
       <section class="view" id="view-deudas">
-        
         <div class="card" style="border-left-color: var(--red);">
           <h2>Total de Deudas Pendientes</h2>
           <div id="totalDebtDisplay" style="font-size: 24px; font-weight: bold; color: var(--red); margin-top: 10px;">$0</div>
         </div>
-
         <div class="card" style="border-left-color: var(--purple);">
           <h2>🤖 Asesor de Deudas (IA)</h2>
           <p style="font-size: 12px; color: var(--muted); margin-bottom: 10px;">Analiza tus deudas y tu dinero actual para sugerirte cómo pagarlas.</p>
           <button class="primary" onclick="analyzeDebtsWithAI()" id="btnAnalyzeDebts" style="background: var(--purple);">Analizar Deudas con IA</button>
-          
           <div id="debtAIResultWrap" style="display:none; margin-top: 15px;">
             <div id="debtAIAnalysis" style="font-size: 13px; background: var(--bg); padding: 10px; border-radius: 6px; border: 1px solid var(--border); white-space: pre-wrap;"></div>
             <div id="debtAIActions" style="display:none; margin-top: 10px; gap: 10px;">
@@ -530,7 +394,6 @@ input:checked + .slider:before { transform: translateX(20px); }
                 <button class="danger" onclick="clearDebtAdvice()" style="flex:1; padding:10px;">🗑️ Borrar Consejo</button>
             </div>
           </div>
-
           <div style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 15px;">
             <h3 style="font-size: 13px; color: var(--muted); text-transform: uppercase; margin-bottom: 10px;">📚 Consejos Guardados</h3>
             <div id="debtSavedSelectorWrap" style="display:none; gap:10px;">
@@ -541,11 +404,9 @@ input:checked + .slider:before { transform: translateX(20px); }
             <div id="debtSavedViewer" style="display:none; margin-top: 10px; font-size: 13px; background: var(--bg); padding: 10px; border-radius: 6px; border: 1px solid var(--border); white-space: pre-wrap;"></div>
           </div>
         </div>
-
         <div class="card">
           <h2>Mis Deudas Activas</h2>
           <div id="debtsList"></div>
-          
           <div style="margin-top:20px; border-top: 1px solid var(--border); padding-top: 15px;">
             <h3 style="font-size: 14px; margin-bottom: 10px; color: var(--accent);">Registrar Nueva Deuda</h3>
             <input type="text" id="newDebtName" placeholder="Nombre (ej. Crédito Vehículo)">
@@ -567,16 +428,13 @@ input:checked + .slider:before { transform: translateX(20px); }
       <section class="view" id="view-chat">
         <div class="card">
           <h2>🤖 Asesor Financiero IA (Gemini)</h2>
-          <p style="font-size: 12px; color: var(--muted); margin-bottom: 10px;">Pregúntame sobre tus finanzas. Leo tus datos actuales para darte consejos personalizados. (Requiere API Key en Configuración).</p>
-          
+          <p style="font-size: 12px; color: var(--muted); margin-bottom: 10px;">Pregúntame sobre tus finanzas. (Requiere API Key en Configuración).</p>
           <div style="display:flex; gap:10px; margin-bottom:10px;">
               <button class="primary" onclick="createNewChat()" style="width:auto; padding: 5px 10px;">+ Nuevo Chat</button>
               <select id="chat-history-select" onchange="switchChat(this.value)" style="flex:1; margin:0;"></select>
               <button class="danger" onclick="deleteCurrentChat()" style="width:auto;">🗑️</button>
           </div>
-
-          <div id="chat-messages">
-          </div>
+          <div id="chat-messages"></div>
           <div style="display:flex; gap:10px;">
               <input type="text" id="chat-input" placeholder="Pregúntame algo..." onkeypress="if(event.key === 'Enter') sendChatMessage()">
               <button class="primary" onclick="sendChatMessage()" style="width:auto;">Enviar</button>
@@ -585,140 +443,188 @@ input:checked + .slider:before { transform: translateX(20px); }
       </section>
 
       <section class="view" id="view-config">
-        <!-- ═══ NUEVA: Apariencia ═══ -->
-        <div class="card config-section" style="border-left-color: #ec4899;">
-          <h3>🎨 Apariencia</h3>
-          <p style="font-size: 12px; color: var(--muted); margin-bottom: 12px;">Elige el tema de colores de la app.</p>
-          <div id="themePicker" class="theme-picker"></div>
-          
-          <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border);">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <div>
-                <div style="font-size: 13px; font-weight: bold;">Barra de navegación fija</div>
-                <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">Si se activa, los botones (Panel, Movimientos…) se quedan pegados arriba al hacer scroll. Si se desactiva, se ocultan al bajar (comportamiento actual).</div>
+
+        <!-- ═══ NUEVO: Apariencia ═══ -->
+        <div class="config-section" style="border-left-color: var(--accent);">
+          <div class="config-section-header" onclick="toggleConfigSection('theme')">
+            <h3>🎨 Apariencia (Temas de color)</h3>
+            <span class="config-toggle" id="toggle-theme">▶</span>
+          </div>
+          <div class="config-section-content" id="content-theme" style="display:none;">
+            <p style="font-size:11px; color:var(--muted); margin-bottom:10px;">Elige cómo se ve la app. Se guarda automáticamente.</p>
+            <div class="themes-grid" id="themesGrid"></div>
+          </div>
+        </div>
+
+        <!-- ═══ NUEVO: Barra superior ═══ -->
+        <div class="config-section" style="border-left-color: var(--accent);">
+          <div class="config-section-header" onclick="toggleConfigSection('navbar')">
+            <h3>📌 Barra superior</h3>
+            <span class="config-toggle" id="toggle-navbar">▶</span>
+          </div>
+          <div class="config-section-content" id="content-navbar" style="display:none;">
+            <p style="font-size:11px; color:var(--muted); margin-bottom:10px;">¿Quieres que el header y los botones de navegación se queden siempre arriba o se oculten al bajar?</p>
+            <div class="navmode-grid" id="navmodeGrid"></div>
+          </div>
+        </div>
+
+        <div class="config-section" style="border-left-color: var(--accent);">
+          <div class="config-section-header" onclick="toggleConfigSection('auto')">
+            <h3>⚙️ Automatizaciones</h3>
+            <span class="config-toggle" id="toggle-auto">▶</span>
+          </div>
+          <div class="config-section-content" id="content-auto" style="display:none;">
+            <div style="background: var(--bg); padding: 10px; border-radius: 6px; margin-bottom: 15px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+                <span style="font-size:13px; font-weight:bold;">Ahorro Automático</span>
+                <label class="switch">
+                  <input type="checkbox" id="toggleAutoSave" onchange="toggleAutoSave()">
+                  <span class="slider"></span>
+                </label>
               </div>
-              <label class="switch" style="flex-shrink: 0; margin-left: 12px;">
-                <input type="checkbox" id="toggleNavSticky" onchange="toggleNavSticky()">
-                <span class="slider"></span>
-              </label>
+              <div id="autoSaveConfig" style="display:none;">
+                <label style="font-size:11px; color:var(--muted);">Modo de ahorro</label>
+                <select id="autoSaveMode" onchange="changeAutoSaveMode()" style="margin-bottom:8px;">
+                  <option value="single">Un solo bolsillo</option>
+                  <option value="multiple">Varios bolsillos (repartir %)</option>
+                </select>
+                <div id="autoSaveSingle">
+                  <label style="font-size:11px; color:var(--muted);">Porcentaje del ingreso a ahorrar (%)</label>
+                  <input type="number" id="autoSavePct" value="10" min="1" max="100" onchange="saveAutoSaveConfig()">
+                  <label style="font-size:11px; color:var(--muted);">Bolsillo destino</label>
+                  <select id="autoSavePocket" onchange="saveAutoSaveConfig()"></select>
+                </div>
+                <div id="autoSaveMultiple" style="display:none;">
+                  <p style="font-size:11px; color:var(--muted); margin-bottom:8px;">Elige los bolsillos y el % de cada uno.</p>
+                  <div id="autoSaveMultiList"></div>
+                  <button class="primary" onclick="addAutoSaveDistribution()" style="font-size:11px; padding:6px; margin-top:8px;">+ Añadir bolsillo</button>
+                </div>
+              </div>
+            </div>
+            <div style="background: var(--bg); padding: 10px; border-radius: 6px;">
+              <h4 style="font-size:13px; margin-bottom: 10px;">Gastos Recurrentes (Fijos)</h4>
+              <div id="recurringList" style="margin-bottom:10px;"></div>
+              <div style="border-top: 1px dashed var(--border); padding-top: 10px;">
+                <input type="text" id="recDetail" placeholder="Detalle (ej. Arriendo)">
+                <input type="number" id="recAmount" placeholder="Monto ($)">
+                <label style="font-size:11px; color:var(--muted);">De dónde sale el dinero</label>
+                <select id="recAcc"></select>
+                <input type="number" id="recDay" placeholder="Día del mes que se cobra (1-31)" min="1" max="31">
+                <button class="primary" onclick="addRecurring()" style="font-size: 12px;">+ Añadir Recurrente</button>
+              </div>
             </div>
           </div>
         </div>
 
-        <div class="card config-section" style="border-left-color: var(--accent);">
-          <h3>⚙️ Automatizaciones</h3>
-          <div style="background: var(--bg); padding: 10px; border-radius: 6px; margin-bottom: 15px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
-              <span style="font-size:13px; font-weight:bold;">Ahorro Automático</span>
+        <div class="config-section" style="border-left-color: var(--purple);">
+          <div class="config-section-header" onclick="toggleConfigSection('ai')">
+            <h3>🤖 Asesor Financiero IA</h3>
+            <span class="config-toggle" id="toggle-ai">▶</span>
+          </div>
+          <div class="config-section-content" id="content-ai" style="display:none;">
+            <p style="font-size: 12px; color: var(--muted); margin-bottom: 10px;">Muestra consejos automáticos en tu Panel Principal basados en tus gastos.</p>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
+              <span style="font-size:13px; font-weight:bold;">Activar Consejos Básicos</span>
               <label class="switch">
-                <input type="checkbox" id="toggleAutoSave" onchange="toggleAutoSave()">
+                <input type="checkbox" id="toggleAdvisor" onchange="toggleAdvisor()">
                 <span class="slider"></span>
               </label>
             </div>
-            <div id="autoSaveConfig" style="display:none;">
-              <label style="font-size:11px; color:var(--muted);">Modo de ahorro</label>
-              <select id="autoSaveMode" onchange="changeAutoSaveMode()" style="margin-bottom:8px;">
-                <option value="single">Un solo bolsillo</option>
-                <option value="multiple">Varios bolsillos (repartir %)</option>
-              </select>
-              
-              <div id="autoSaveSingle">
-                <label style="font-size:11px; color:var(--muted);">Porcentaje del ingreso a ahorrar (%)</label>
-                <input type="number" id="autoSavePct" value="10" min="1" max="100" onchange="saveAutoSaveConfig()">
-                <label style="font-size:11px; color:var(--muted);">Bolsillo destino</label>
-                <select id="autoSavePocket" onchange="saveAutoSaveConfig()"></select>
-              </div>
-              
-              <div id="autoSaveMultiple" style="display:none;">
-                <p style="font-size:11px; color:var(--muted); margin-bottom:8px;">Elige los bolsillos y el % de cada uno (porcentaje del ingreso total).</p>
-                <div id="autoSaveMultiList"></div>
-                <button class="primary" onclick="addAutoSaveDistribution()" style="font-size:11px; padding:6px; margin-top:8px;">+ Añadir bolsillo</button>
-              </div>
-            </div>
-          </div>
-          <div style="background: var(--bg); padding: 10px; border-radius: 6px;">
-            <h4 style="font-size:13px; margin-bottom: 10px;">Gastos Recurrentes (Fijos)</h4>
-            <div id="recurringList" style="margin-bottom:10px;"></div>
-            <div style="border-top: 1px dashed var(--border); padding-top: 10px;">
-              <input type="text" id="recDetail" placeholder="Detalle (ej. Arriendo)">
-              <input type="number" id="recAmount" placeholder="Monto ($)">
-              <label style="font-size:11px; color:var(--muted);">De dónde sale el dinero</label>
-              <select id="recAcc"></select>
-              <input type="number" id="recDay" placeholder="Día del mes que se cobra (1-31)" min="1" max="31">
-              <button class="primary" onclick="addRecurring()" style="font-size: 12px;">+ Añadir Recurrente</button>
+            <p style="font-size: 12px; color: var(--muted); margin-bottom: 10px;">API Key de Gemini: <br><small>Consíguela gratis en <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--accent);">Google AI Studio</a></small></p>
+            <div id="apiKeyContainer">
+                <input type="password" id="geminiKey" placeholder="Pega tu API Key aquí..." onchange="saveGeminiKey()">
+                <button id="lockApiBtn" class="warning" onclick="toggleApiLock()" style="margin-top:5px;">🔒 Bloquear API Key</button>
             </div>
           </div>
         </div>
-        <div class="card config-section" style="border-left-color: var(--purple);">
-          <h3>🤖 Asesor Financiero IA</h3>
-          <p style="font-size: 12px; color: var(--muted); margin-bottom: 10px;">Muestra consejos automáticos en tu Panel Principal basados en tus gastos.</p>
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
-            <span style="font-size:13px; font-weight:bold;">Activar Consejos Básicos</span>
-            <label class="switch">
-              <input type="checkbox" id="toggleAdvisor" onchange="toggleAdvisor()">
-              <span class="slider"></span>
-            </label>
+
+        <div class="config-section" style="border-left-color: var(--green);">
+          <div class="config-section-header" onclick="toggleConfigSection('data')">
+            <h3>📥 Exportar / Importar Información</h3>
+            <span class="config-toggle" id="toggle-data">▶</span>
           </div>
-          <p style="font-size: 12px; color: var(--muted); margin-bottom: 10px;">API Key de Gemini (para el Chat IA): <br><small>Consíguela gratis en <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--accent);">Google AI Studio</a></small></p>
-          <div id="apiKeyContainer">
-              <input type="password" id="geminiKey" placeholder="Pega tu API Key aquí..." onchange="saveGeminiKey()">
-              <button id="lockApiBtn" class="warning" onclick="toggleApiLock()" style="margin-top:5px;">🔒 Bloquear API Key</button>
-          </div>
-        </div>
-        <div class="card config-section" style="border-left-color: var(--green);">
-          <h3>📥 Exportar / Importar Información</h3>
-          <p style="font-size: 12px; color: var(--muted); margin-bottom: 10px;">Descarga un archivo Excel con todos los movimientos de este año.</p>
-          <button class="primary" onclick="downloadExcel()" style="background: var(--green);">📊 Descargar Historial en Excel</button>
-          
-          <p style="font-size: 12px; color: var(--muted); margin-top: 15px; margin-bottom: 10px;">Importa movimientos desde un archivo Excel (.xlsx). El importador detecta automáticamente la fila de encabezados y las columnas <strong>Tipo (Ingreso/Gasto)</strong>, <strong>A donde ingresa o donde sale dinero</strong> y <strong>Tipo de gasto</strong>. Si una cuenta, bolsillo o categoría no existe, se creará automáticamente.</p>
-          <label style="font-size: 11px; color: var(--muted);">🗓️ Omitir movimientos desde (opcional):</label>
-          <input type="date" id="importOmitFrom" style="margin-bottom: 8px;">
-          <input type="file" id="importExcelFile" accept=".xlsx,.xls" style="margin-bottom: 8px;">
-          <button class="primary" onclick="importExcel()" style="background: var(--accent);">📤 Importar desde Excel</button>
-          <div id="importResult" style="margin-top: 10px; font-size: 12px; white-space: pre-wrap;"></div>
-        </div>
-        <div class="card config-section" style="border-left-color: var(--yellow);">
-          <h3>🎯 Metas de Bolsillos</h3>
-          <div id="goalsConfigList"></div>
-          <button class="warning" onclick="lockGoals()" style="margin-top:10px;" id="lockGoalsBtn">🔒 Bloquear Metas</button>
-        </div>
-        <div class="card config-section" style="border-left-color: var(--yellow);">
-          <h3>🏷️ Categorías de Gasto</h3>
-          <div id="configCatsList"></div>
-          <div style="margin-top: 10px;">
-            <input type="text" id="newCatName" placeholder="Nombre Categoría (ej. Educación)">
-            <input type="text" id="newCatDesc" placeholder="Guía (ej. Cursos, libros)">
-            <input type="number" id="newCatLimit" placeholder="Límite mensual $ (opcional)">
-            <button class="primary" onclick="addCat()">+ Añadir Categoría</button>
+          <div class="config-section-content" id="content-data" style="display:none;">
+            <p style="font-size: 12px; color: var(--muted); margin-bottom: 10px;">Descarga un archivo Excel con todos los movimientos de este año.</p>
+            <button class="primary" onclick="downloadExcel()" style="background: var(--green);">📊 Descargar Historial en Excel</button>
+            <p style="font-size: 12px; color: var(--muted); margin-top: 15px; margin-bottom: 10px;">Importa movimientos desde un archivo Excel (.xlsx). Se detecta la fila de encabezados automáticamente. Si una cuenta, bolsillo o categoría no existe, se crea.</p>
+            <label style="font-size: 11px; color: var(--muted);">🗓️ Omitir movimientos desde (opcional):</label>
+            <input type="date" id="importOmitFrom" style="margin-bottom: 8px;">
+            <input type="file" id="importExcelFile" accept=".xlsx,.xls" style="margin-bottom: 8px;">
+            <button class="primary" onclick="importExcel()" style="background: var(--accent);">📤 Importar desde Excel</button>
+            <div id="importResult" style="margin-top: 10px; font-size: 12px; white-space: pre-wrap;"></div>
           </div>
         </div>
-        <div class="card config-section" style="border-left-color: var(--red);">
-          <h3>🔧 Zona de Administrador</h3>
-          <p style="font-size:11px; color:var(--accent); margin-top:10px; margin-bottom:5px;">Desbloqueo de Saldos y Placer</p>
-          <button class="warning" onclick="unlockOpeningBalances()">🔓 Desbloquear Saldos Iniciales</button>
-          <button class="warning" onclick="unlockPlacerLimit()">🔓 Desbloquear Límite de Placer</button>
-          
-          <p style="font-size:11px; color:var(--accent); margin-top:15px; margin-bottom:5px;">Desbloqueo de Metas y API Key</p>
-          <button class="warning" onclick="unlockGoals()">🔓 Desbloquear Metas de Bolsillos</button>
-          <button class="warning" onclick="unlockApiKey()">🔓 Desbloquear API Key</button>
-          
-          <p style="font-size:11px; color:var(--accent); margin-top:15px; margin-bottom:5px;">Desbloqueo de Deudas Pagadas</p>
-          <button class="warning" onclick="unlockDebts()">🔓 Desbloquear Deudas Pagadas</button>
+
+        <div class="config-section" style="border-left-color: var(--yellow);">
+          <div class="config-section-header" onclick="toggleConfigSection('goals')">
+            <h3>🎯 Metas de Bolsillos</h3>
+            <span class="config-toggle" id="toggle-goals">▶</span>
+          </div>
+          <div class="config-section-content" id="content-goals" style="display:none;">
+            <div id="goalsConfigList"></div>
+            <button class="warning" onclick="lockGoals()" style="margin-top:10px;" id="lockGoalsBtn">🔒 Bloquear Metas</button>
+          </div>
         </div>
-        <div class="card config-section">
-          <h3>🔒 Cuenta y Seguridad</h3>
-          <label style="font-size:11px; color:var(--muted);">Cambiar Contraseña</label>
-          <input type="password" id="new-password" placeholder="Nueva contraseña (mín. 6 caracteres)" style="margin-bottom: 5px;">
-          <button class="warning" onclick="changePassword()" style="width: 100%; margin-bottom: 15px;">Actualizar Contraseña</button>
-          <label style="font-size:11px; color:var(--muted);">Seguridad Biométrica (Huella/PIN)</label>
-          <div id="bio-status-text" style="font-size: 12px; margin-bottom: 5px; color: var(--muted);">Cargando estado...</div>
-          <button class="primary" id="btn-bio-toggle" onclick="toggleBiometric()" style="background: var(--purple);">Configurar Huella/PIN</button>
+
+        <div class="config-section" style="border-left-color: var(--yellow);">
+          <div class="config-section-header" onclick="toggleConfigSection('cats')">
+            <h3>🏷️ Categorías de Gasto</h3>
+            <span class="config-toggle" id="toggle-cats">▶</span>
+          </div>
+          <div class="config-section-content" id="content-cats" style="display:none;">
+            <div id="configCatsList"></div>
+            <div style="margin-top: 10px;">
+              <input type="text" id="newCatName" placeholder="Nombre Categoría (ej. Educación)">
+              <input type="text" id="newCatDesc" placeholder="Guía (ej. Cursos, libros)">
+              <input type="number" id="newCatLimit" placeholder="Límite mensual $ (opcional)">
+              <button class="primary" onclick="addCat()">+ Añadir Categoría</button>
+            </div>
+          </div>
         </div>
-        <div class="card config-section">
-          <h3>📅 Gestión de Años</h3>
-          <button class="primary" onclick="createNextYear()">+ Crear año siguiente (Arrastra todo)</button>
-          <button class="primary" onclick="toggleLock()" id="lockBtn">🔒 Cerrar año actual</button>
+
+        <div class="config-section" style="border-left-color: var(--red);">
+          <div class="config-section-header" onclick="toggleConfigSection('admin')">
+            <h3>🔧 Zona de Administrador</h3>
+            <span class="config-toggle" id="toggle-admin">▶</span>
+          </div>
+          <div class="config-section-content" id="content-admin" style="display:none;">
+            <p style="font-size:11px; color:var(--accent); margin-top:10px; margin-bottom:5px;">Desbloqueo de Saldos y Placer</p>
+            <button class="warning" onclick="unlockOpeningBalances()">🔓 Desbloquear Saldos Iniciales</button>
+            <button class="warning" onclick="unlockPlacerLimit()">🔓 Desbloquear Límite de Placer</button>
+            <p style="font-size:11px; color:var(--accent); margin-top:15px; margin-bottom:5px;">Desbloqueo de Metas y API Key</p>
+            <button class="warning" onclick="unlockGoals()">🔓 Desbloquear Metas de Bolsillos</button>
+            <button class="warning" onclick="unlockApiKey()">🔓 Desbloquear API Key</button>
+            <p style="font-size:11px; color:var(--accent); margin-top:15px; margin-bottom:5px;">Desbloqueo de Deudas Pagadas</p>
+            <button class="warning" onclick="unlockDebts()">🔓 Desbloquear Deudas Pagadas</button>
+          </div>
         </div>
+
+        <div class="config-section" style="border-left-color: var(--muted);">
+          <div class="config-section-header" onclick="toggleConfigSection('security')">
+            <h3>🔒 Cuenta y Seguridad</h3>
+            <span class="config-toggle" id="toggle-security">▶</span>
+          </div>
+          <div class="config-section-content" id="content-security" style="display:none;">
+            <label style="font-size:11px; color:var(--muted);">Cambiar Contraseña</label>
+            <input type="password" id="new-password" placeholder="Nueva contraseña (mín. 6 caracteres)" style="margin-bottom: 5px;">
+            <button class="warning" onclick="changePassword()" style="width: 100%; margin-bottom: 15px;">Actualizar Contraseña</button>
+            <label style="font-size:11px; color:var(--muted);">Seguridad Biométrica (Huella/PIN)</label>
+            <div id="bio-status-text" style="font-size: 12px; margin-bottom: 5px; color: var(--muted);">Cargando estado...</div>
+            <button class="primary" id="btn-bio-toggle" onclick="toggleBiometric()" style="background: var(--purple);">Configurar Huella/PIN</button>
+          </div>
+        </div>
+
+        <div class="config-section" style="border-left-color: var(--muted);">
+          <div class="config-section-header" onclick="toggleConfigSection('years')">
+            <h3>📅 Gestión de Años</h3>
+            <span class="config-toggle" id="toggle-years">▶</span>
+          </div>
+          <div class="config-section-content" id="content-years" style="display:none;">
+            <button class="primary" onclick="createNextYear()">+ Crear año siguiente (Arrastra todo)</button>
+            <button class="primary" onclick="toggleLock()" id="lockBtn" style="margin-top:8px;">🔒 Cerrar año actual</button>
+          </div>
+        </div>
+
         <div style="margin-top: 30px; margin-bottom: 50px;">
           <button class="danger" onclick="logout()" style="padding: 15px; font-size: 16px; width: 100%;">Cerrar Sesión</button>
         </div>
@@ -764,6 +670,167 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 let bioCredentialId = localStorage.getItem('bioCredentialId');
+
+// ═══════════════════════════════════════════
+// SISTEMA DE TEMAS
+// ═══════════════════════════════════════════
+const THEMES = {
+    dark: {
+        name: 'Oscuro (Default)',
+        vars: { '--bg': '#0f172a', '--card': '#1e293b', '--border': '#334155', '--text': '#e2e8f0', '--muted': '#94a3b8', '--accent': '#3b82f6', '--green': '#22c55e', '--red': '#ef4444', '--yellow': '#eab308', '--purple': '#a855f7' }
+    },
+    light: {
+        name: 'Claro',
+        vars: { '--bg': '#f1f5f9', '--card': '#ffffff', '--border': '#e2e8f0', '--text': '#0f172a', '--muted': '#64748b', '--accent': '#2563eb', '--green': '#16a34a', '--red': '#dc2626', '--yellow': '#ca8a04', '--purple': '#9333ea' }
+    },
+    blue: {
+        name: 'Azul Profundo',
+        vars: { '--bg': '#0c1e3d', '--card': '#1a2d4d', '--border': '#2d4870', '--text': '#e2e8f0', '--muted': '#94a3b8', '--accent': '#60a5fa', '--green': '#22c55e', '--red': '#ef4444', '--yellow': '#eab308', '--purple': '#a855f7' }
+    },
+    emerald: {
+        name: 'Verde Esmeralda',
+        vars: { '--bg': '#0a1f1c', '--card': '#122c28', '--border': '#1e4038', '--text': '#e0f2f1', '--muted': '#80cbc4', '--accent': '#34d399', '--green': '#34d399', '--red': '#f87171', '--yellow': '#fbbf24', '--purple': '#c084fc' }
+    },
+    purple: {
+        name: 'Púrpura Real',
+        vars: { '--bg': '#1a0b2e', '--card': '#2a1750', '--border': '#3d256b', '--text': '#f0e7ff', '--muted': '#b39ddb', '--accent': '#a855f7', '--green': '#22c55e', '--red': '#ef4444', '--yellow': '#eab308', '--purple': '#c084fc' }
+    },
+    auto: {
+        name: 'Automático (claro día / oscuro noche)',
+        vars: null
+    }
+};
+
+function applyTheme() {
+    const themeKey = (state.config && state.config.theme) || 'dark';
+    let actualKey = themeKey;
+    if (themeKey === 'auto') {
+        const h = new Date().getHours();
+        actualKey = (h >= 19 || h < 7) ? 'dark' : 'light';
+    }
+    const theme = THEMES[actualKey] || THEMES.dark;
+    if (theme.vars) {
+        Object.entries(theme.vars).forEach(([key, val]) => {
+            document.documentElement.style.setProperty(key, val);
+        });
+    }
+}
+
+function setTheme(key) {
+    if (!THEMES[key]) return;
+    state.config.theme = key;
+    save();
+    applyTheme();
+    renderThemesGrid();
+    toast('🎨 Tema: ' + THEMES[key].name);
+}
+
+function renderThemesGrid() {
+    const grid = document.getElementById('themesGrid');
+    if (!grid) return;
+    const current = (state.config && state.config.theme) || 'dark';
+    grid.innerHTML = Object.entries(THEMES).map(([key, t]) => {
+        let previewColors = [];
+        if (key === 'auto') {
+            previewColors = ['#0f172a', '#f1f5f9', '#3b82f6'];
+        } else {
+            previewColors = [t.vars['--bg'], t.vars['--card'], t.vars['--accent']];
+        }
+        return `
+            <div class="theme-option ${key === current ? 'selected' : ''}" onclick="setTheme('${key}')">
+                <div class="theme-name">${t.name}</div>
+                <div class="theme-preview">
+                    ${previewColors.map(c => `<span style="background:${c}"></span>`).join('')}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// ═══════════════════════════════════════════
+// CONTROL DE BARRA SUPERIOR
+// ═══════════════════════════════════════════
+const NAV_MODES = {
+    sticky: { name: 'Fija siempre', desc: 'Header y botones siempre visibles arriba' },
+    autohide: { name: 'Auto-ocultar al bajar', desc: 'Se esconde al hacer scroll down, aparece al subir' }
+};
+
+function setNavMode(mode) {
+    if (!NAV_MODES[mode]) return;
+    state.config.navMode = mode;
+    save();
+    renderNavmodeGrid();
+    applyNavMode();
+    toast('📌 Barra: ' + NAV_MODES[mode].name);
+}
+
+function applyNavMode() {
+    const mode = (state.config && state.config.navMode) || 'sticky';
+    const header = document.getElementById('mainHeader');
+    const nav = document.getElementById('mainNav');
+    if (!header || !nav) return;
+    if (mode !== 'autohide') {
+        header.classList.remove('navbar-hidden');
+        nav.classList.remove('navbar-hidden');
+    }
+}
+
+function renderNavmodeGrid() {
+    const grid = document.getElementById('navmodeGrid');
+    if (!grid) return;
+    const current = (state.config && state.config.navMode) || 'sticky';
+    grid.innerHTML = Object.entries(NAV_MODES).map(([key, m]) => `
+        <div class="navmode-option ${key === current ? 'selected' : ''}" onclick="setNavMode('${key}')">
+            <div>
+                <strong>${m.name}</strong>
+                <small>${m.desc}</small>
+            </div>
+        </div>
+    `).join('');
+}
+
+let lastScrollY = 0;
+window.addEventListener('scroll', () => {
+    const mode = (state.config && state.config.navMode) || 'sticky';
+    if (mode !== 'autohide') return;
+    const header = document.getElementById('mainHeader');
+    const nav = document.getElementById('mainNav');
+    if (!header || !nav) return;
+    const currentScrollY = window.scrollY;
+    if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        header.classList.add('navbar-hidden');
+        nav.classList.add('navbar-hidden');
+    } else if (currentScrollY < lastScrollY) {
+        header.classList.remove('navbar-hidden');
+        nav.classList.remove('navbar-hidden');
+    }
+    lastScrollY = currentScrollY;
+}, { passive: true });
+
+// ═══════════════════════════════════════════
+// ACORDEÓN DE CONFIGURACIÓN
+// ═══════════════════════════════════════════
+const CONFIG_SECTIONS = ['theme', 'navbar', 'auto', 'ai', 'data', 'goals', 'cats', 'admin', 'security', 'years'];
+
+function toggleConfigSection(id) {
+    if (!state.config.sectionsOpen) state.config.sectionsOpen = {};
+    state.config.sectionsOpen[id] = !state.config.sectionsOpen[id];
+    save();
+    renderConfigSections();
+}
+
+function renderConfigSections() {
+    CONFIG_SECTIONS.forEach(id => {
+        const content = document.getElementById('content-' + id);
+        const toggle = document.getElementById('toggle-' + id);
+        if (!content) return;
+        const isOpen = !!(state.config.sectionsOpen && state.config.sectionsOpen[id]);
+        content.style.display = isOpen ? 'block' : 'none';
+        if (toggle) toggle.textContent = isOpen ? '▼' : '▶';
+    });
+}
+
+// ═══════════════════════════════════════════
 
 auth.onAuthStateChanged(user => {
     if (user) {
@@ -918,9 +985,9 @@ function migrateState() {
     if(!state.config.autoSave.multiple) state.config.autoSave.multiple = [];
     if(state.config.geminiKey === undefined) state.config.geminiKey = '';
     if(state.config.apiKeyLocked === undefined) state.config.apiKeyLocked = false;
-    // NUEVOS: tema y nav sticky
-    if(state.config.theme === undefined) state.config.theme = 'dark_blue';
-    if(state.config.navSticky === undefined) state.config.navSticky = false;
+    if(state.config.theme === undefined) state.config.theme = 'dark';
+    if(state.config.navMode === undefined) state.config.navMode = 'sticky';
+    if(!state.config.sectionsOpen) state.config.sectionsOpen = {};
     
     if(!state.recurring) state.recurring = [];
     if(!state.summaries) state.summaries = {};
@@ -967,6 +1034,7 @@ function migrateState() {
 
 try { state = JSON.parse(localStorage.getItem(KEY) || 'null') || {}; } catch(e) { state = {}; }
 migrateState();
+applyTheme();
 
 function save(){ 
     try {
@@ -978,108 +1046,6 @@ function save(){
 function fmt(n){ return new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0}).format(n||0); }
 function genId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 function toast(m){ const d=document.createElement('div'); d.className='toast'; d.textContent=m; document.body.appendChild(d); setTimeout(()=>d.remove(),3000); }
-
-// ═══════════════════════════════════════════
-// 🎨 TEMA Y NAV STICKY
-// ═══════════════════════════════════════════
-function getCSSVar(name, fallback) {
-    try {
-        const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-        return v || (fallback || '');
-    } catch(e) { return fallback || ''; }
-}
-
-function applyTheme(key) {
-    const theme = (window.THEMES && window.THEMES[key]) || window.THEMES.dark_blue;
-    const root = document.documentElement;
-    Object.entries(theme.vars).forEach(([k, v]) => root.style.setProperty(k, v));
-    const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.content = theme.vars['--bg'];
-}
-
-function renderThemePicker() {
-    const box = document.getElementById('themePicker');
-    if (!box || !window.THEMES) return;
-    const current = state.config.theme || 'dark_blue';
-    box.innerHTML = Object.entries(window.THEMES).map(([key, theme]) => {
-        const isActive = key === current;
-        return `<button onclick="setTheme('${key}')" class="theme-swatch" style="background: ${theme.vars['--card']}; border: 2px solid ${isActive ? theme.vars['--accent'] : theme.vars['--border']};">
-            <div class="swatch-dots">
-                <div class="dot" style="background: ${theme.vars['--bg']}; border: 1px solid ${theme.vars['--border']};"></div>
-                <div class="dot" style="background: ${theme.vars['--card']}; border: 1px solid ${theme.vars['--border']};"></div>
-                <div class="dot" style="background: ${theme.vars['--accent']};"></div>
-            </div>
-            <div style="color: ${theme.vars['--text']}; font-size: 10px; font-weight: ${isActive ? 'bold' : 'normal'};">${theme.icon} ${theme.name}</div>
-            ${isActive ? `<div style="font-size: 9px; color: ${theme.vars['--accent']}; font-weight: bold;">✓ Activo</div>` : '<div style="height: 10px;"></div>'}
-        </button>`;
-    }).join('');
-    const toggle = document.getElementById('toggleNavSticky');
-    if (toggle) toggle.checked = !!state.config.navSticky;
-}
-
-function setTheme(key) {
-    if (!window.THEMES[key]) return;
-    state.config.theme = key;
-    save();
-    applyTheme(key);
-    renderThemePicker();
-    redrawChartsIfVisible();
-    toast(`Tema: ${window.THEMES[key].name}`);
-}
-
-function redrawChartsIfVisible() {
-    try {
-        const yr = state.years[state.active];
-        if (!yr) return;
-        const incM = Array(12).fill(0), gasM = Array(12).fill(0);
-        yr.txs.forEach(t => {
-            const d = new Date(t.date);
-            if (d.getFullYear() !== state.active) return;
-            const m = d.getMonth();
-            if (t.type === 'Ingreso') incM[m] += t.amount;
-            if (t.type === 'Gasto' || t.type === 'PagoDeuda') gasM[m] += t.amount;
-        });
-        if (document.getElementById('view-dashboard').classList.contains('active')) {
-            drawFlowChart(incM, gasM);
-            drawPieChart(getFlow(state.active));
-        }
-        if (document.getElementById('view-analisis').classList.contains('active')) {
-            renderProjection();
-        }
-    } catch(e) { console.warn('redrawCharts:', e); }
-}
-
-let headerHeightRAF = null;
-function updateHeaderHeight() {
-    const header = document.querySelector('header');
-    if (!header) return;
-    const h = header.offsetHeight;
-    if (h > 0) document.documentElement.style.setProperty('--header-height', h + 'px');
-}
-function scheduleHeaderHeight() {
-    if (headerHeightRAF) cancelAnimationFrame(headerHeightRAF);
-    headerHeightRAF = requestAnimationFrame(updateHeaderHeight);
-}
-
-function applyNavSticky() {
-    const nav = document.getElementById('mainNav');
-    if (!nav) return;
-    if (state.config.navSticky) nav.classList.add('nav-sticky');
-    else nav.classList.remove('nav-sticky');
-    scheduleHeaderHeight();
-}
-
-function toggleNavSticky() {
-    const checkbox = document.getElementById('toggleNavSticky');
-    if (!checkbox) return;
-    state.config.navSticky = checkbox.checked;
-    save();
-    applyNavSticky();
-    toast(state.config.navSticky ? '📌 Barra fija activada' : '📌 Barra fija desactivada');
-}
-
-window.addEventListener('resize', scheduleHeaderHeight);
-window.addEventListener('orientationchange', scheduleHeaderHeight);
 
 let unsubscribeSnapshot = null;
 function syncData() {
@@ -1094,6 +1060,8 @@ function syncData() {
                 if (!state.accounts || state.accounts.length === 0) state.accounts = localState.accounts;
                 if (!state.pockets || state.pockets.length === 0) state.pockets = localState.pockets;
                 migrateState(); 
+                applyTheme();
+                applyNavMode();
                 localStorage.setItem(KEY, JSON.stringify(state)); 
                 processRecurring(); 
                 renderAll(); 
@@ -1759,7 +1727,7 @@ async function importExcel() {
         const colCuenta = findCol(['a donde ingresa o donde sale', 'donde ingresa', 'cuenta']);
         const colCat = findCol(['tipo de gasto', 'categoria', 'categoría']);
         if (colFecha === -1 || colDetalle === -1 || colMonto === -1) {
-            resultBox.innerHTML = `❌ Faltan columnas mínimas. Detectadas: Fecha=${colFecha}, Detalle=${colDetalle}, Monto=${colMonto}`;
+            resultBox.innerHTML = `❌ Faltan columnas mínimas.`;
             return;
         }
         let imported = 0, skipped = 0, omitted = 0;
@@ -1853,15 +1821,15 @@ async function importExcel() {
                     tx = { id: genId(), date: fecha, detail: detalle, amount: monto, type: 'Gasto', from: fromId, cat: findOrCreateCat(catRaw) };
                 } else {
                     skipped++;
-                    if(errors.length < 5) errors.push(`Fila ${i+1}: tipo "${tipoRaw}" / cuenta "${cuentaRaw}" no reconocido`);
+                    if(errors.length < 5) errors.push(`Fila ${i+1}: tipo "${tipoRaw}" no reconocido`);
                     continue;
                 }
                 if(tx) { state.years[state.active].txs.push(tx); imported++; }
             } catch(e) { skipped++; if(errors.length < 5) errors.push(`Fila ${i+1}: ${e.message}`); }
         }
         save(); renderAll();
-        let msg = `✅ Importación completa: <strong>${imported}</strong> registros, <strong>${skipped}</strong> omitidos.`;
-        if(omitted > 0) msg += `<br>🗓️ <strong>${omitted}</strong> filas omitidas por filtro (desde ${omitFrom}).`;
+        let msg = `✅ Importación: <strong>${imported}</strong> registros, <strong>${skipped}</strong> omitidos.`;
+        if(omitted > 0) msg += `<br>🗓️ <strong>${omitted}</strong> omitidos por filtro.`;
         if(newAccounts.size) msg += `<br>➕ Cuentas: ${[...newAccounts].join(', ')}`;
         if(newPockets.size) msg += `<br>➕ Bolsillos: ${[...newPockets].join(', ')}`;
         if(newCats.size) msg += `<br>➕ Categorías: ${[...newCats].join(', ')}`;
@@ -1914,8 +1882,8 @@ function parseMonto(v) {
 }
 
 function renderAll() {
-    try { applyTheme(state.config.theme); } catch(e) { console.warn('applyTheme:', e); }
-    try { applyNavSticky(); } catch(e) { console.warn('applyNavSticky:', e); }
+    try { applyTheme(); } catch(e) {}
+    try { applyNavMode(); } catch(e) {}
     try { renderDashboard(); } catch(e) { console.error("Dashboard:", e); }
     try { renderCuentas(); } catch(e) { console.error("Cuentas:", e); }
     try { renderDeudas(); } catch(e) { console.error("Deudas:", e); }
@@ -1940,7 +1908,6 @@ function renderAll() {
             drawPieChart(getFlow(state.active));
         }
     } catch(e) { console.error("Gráficos:", e); }
-    setTimeout(scheduleHeaderHeight, 50);
 }
 
 function renderDashboard() {
@@ -2065,7 +2032,6 @@ function renderConfig() {
   document.getElementById('toggleAutoSave').checked = state.config.autoSave.enabled;
   document.getElementById('autoSaveConfig').style.display = state.config.autoSave.enabled ? 'block' : 'none';
   updateAutoSaveUI();
-  renderThemePicker();
   const lockGoalsBtn = document.getElementById('lockGoalsBtn');
   if(state.lockedGoals) { lockGoalsBtn.innerText = '🔒 Metas Bloqueadas'; lockGoalsBtn.disabled = true; lockGoalsBtn.style.opacity = '0.5'; }
   else { lockGoalsBtn.innerText = '🔒 Bloquear Metas'; lockGoalsBtn.disabled = false; lockGoalsBtn.style.opacity = '1'; }
@@ -2100,6 +2066,9 @@ function renderConfig() {
   document.getElementById('pieChartType').value = state.config.pieType; 
   document.getElementById('projChartType').value = state.config.projChartType;
   document.getElementById('fType').dispatchEvent(new Event('change'));
+  renderThemesGrid();
+  renderNavmodeGrid();
+  renderConfigSections();
 }
 
 function renderTable() {
@@ -2133,8 +2102,8 @@ function drawFlowChart(incM, gasM) {
   if(!canvas) return;
   if(flowChartInstance) flowChartInstance.destroy();
   const type = state.config.chartType || 'bar';
-  const textColor = getCSSVar('--text', '#e2e8f0');
-  const mutedColor = getCSSVar('--muted', '#94a3b8');
+  const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#e2e8f0';
+  const mutedColor = getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#94a3b8';
   flowChartInstance = new Chart(canvas, {
     type: type, 
     data:{labels:['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'], datasets:[
@@ -2144,8 +2113,8 @@ function drawFlowChart(incM, gasM) {
     options:{
       responsive: true,
       maintainAspectRatio: false,
-      plugins:{legend:{labels:{color: textColor}}}, 
-      scales:{x:{ticks:{color: mutedColor}},y:{beginAtZero: true, ticks:{color: mutedColor}}}
+      plugins:{legend:{labels:{color:textColor}}}, 
+      scales:{x:{ticks:{color:mutedColor}},y:{beginAtZero: true, ticks:{color:mutedColor}}}
     }
   });
 }
@@ -2158,11 +2127,11 @@ function drawPieChart(flow) {
   state.config.cats.forEach(c => cats[c.name] = flow.catTotals[c.id] || 0);
   const catColors = state.config.cats.map(c => c.color || '#3b82f6');
   const type = state.config.pieType || 'doughnut';
-  const textColor = getCSSVar('--text', '#e2e8f0');
+  const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#e2e8f0';
   pieChartInstance = new Chart(canvas, {
     type:type, 
     data:{labels:Object.keys(cats), datasets:[{data:Object.values(cats), backgroundColor:catColors}]}, 
-    options:{ responsive: true, maintainAspectRatio: false, plugins:{legend:{labels:{color: textColor}}} }
+    options:{ responsive: true, maintainAspectRatio: false, plugins:{legend:{labels:{color:textColor}}} }
   });
 }
 
@@ -2223,7 +2192,8 @@ function renderProjection() {
     if(!canvas) return;
     if(projChartInstance) projChartInstance.destroy();
     const type = state.config.projChartType || 'line';
-    const mutedColor = getCSSVar('--muted', '#94a3b8');
+    const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#e2e8f0';
+    const mutedColor = getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#94a3b8';
     projChartInstance = new Chart(canvas, {
         type: type,
         data: { labels: months, datasets: [{ label: 'Proyección', data: projectionData, backgroundColor: 'rgba(59, 130, 246, 0.2)', borderColor: '#3b82f6', borderWidth: 3, fill: true, tension: 0.3, pointBackgroundColor: '#3b82f6', pointRadius: 4 }] },
@@ -2311,11 +2281,11 @@ function renderExpertAnalysis() {
     const colorFijo = metFijo ? 'var(--green)' : (pctFijo <= 60 ? 'var(--yellow)' : 'var(--red)');
     const colorPlacer = metPlacer ? 'var(--green)' : (pctPlacer <= 40 ? 'var(--yellow)' : 'var(--red)');
     const colorAhorro = metAhorro ? 'var(--green)' : (pctAhorro >= 10 ? 'var(--yellow)' : 'var(--red)');
-    const createBar = (label, pct, target, isMax, color, met, extra) => {
+    const createBar = (label, pct, target, isMax, color, met) => {
         const diff = isMax ? (target - pct) : (pct - target);
-        const diffText = extra || (met 
+        const diffText = met 
             ? (isMax ? `✅ ${diff.toFixed(1)}% por debajo del límite` : `✅ ${diff.toFixed(1)}% sobre la meta`)
-            : (isMax ? `❌ ${Math.abs(diff).toFixed(1)}% sobre el límite` : `❌ ${Math.abs(diff).toFixed(1)}% bajo la meta`));
+            : (isMax ? `❌ ${Math.abs(diff).toFixed(1)}% sobre el límite` : `❌ ${Math.abs(diff).toFixed(1)}% bajo la meta`);
         return `
             <div style="margin-bottom:14px;">
                 <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px; flex-wrap:wrap; gap:4px;">
@@ -2324,7 +2294,7 @@ function renderExpertAnalysis() {
                 </div>
                 <div class="bar" style="height:10px; position:relative; background:rgba(255,255,255,0.05);">
                     <div class="bar-fill" style="width:${Math.max(0, Math.min(pct,100))}%; background:${color};"></div>
-                    <div style="position:absolute; left:${target}%; top:0; bottom:0; width:2px; background:var(--text); opacity:0.8;"></div>
+                    <div style="position:absolute; left:${target}%; top:0; bottom:0; width:2px; background:white; opacity:0.8;"></div>
                 </div>
                 <div style="font-size:10px; color:${color}; margin-top:3px;">${diffText}</div>
             </div>
@@ -2333,7 +2303,7 @@ function renderExpertAnalysis() {
     let resumen = '';
     const metCount = [metFijo, metPlacer, metAhorro].filter(Boolean).length;
     if (metCount === 3) resumen = `<div class="alert" style="background:rgba(34,197,94,.1); border-color:var(--green); color:var(--green); font-size:13px; margin-bottom:12px;">✅ <strong>¡Excelente!</strong> Cumples los 3 indicadores este mes.</div>`;
-    else if (metCount === 2) resumen = `<div class="alert warn" style="font-size:13px; margin-bottom:12px;">⚠️ <strong>Casi:</strong> Cumples 2 de 3. Revisa el indicador con ❌.</div>`;
+    else if (metCount === 2) resumen = `<div class="alert warn" style="font-size:13px; margin-bottom:12px;">⚠️ <strong>Casi:</strong> Cumples 2 de 3.</div>`;
     else resumen = `<div class="alert danger" style="font-size:13px; margin-bottom:12px;">❌ <strong>Atención:</strong> Solo cumples ${metCount} de 3.</div>`;
     box.innerHTML = resumen + 
         createBar('Gastos Fijos', pctFijo, 50, true, colorFijo, metFijo) + 
@@ -2427,7 +2397,7 @@ function renderMonthlySummaries() {
                 </div>
                 <div class="bar" style="height:8px; position:relative;">
                     <div class="bar-fill" style="width:${Math.max(0, Math.min(pct,100))}%; background:${color};"></div>
-                    <div style="position:absolute; left:${target}%; top:0; bottom:0; width:2px; background:var(--text); opacity:0.7;"></div>
+                    <div style="position:absolute; left:${target}%; top:0; bottom:0; width:2px; background:white; opacity:0.7;"></div>
                 </div>
             </div>
         `;
@@ -2552,11 +2522,8 @@ function calcEquals() {
     try {
         let result = Function('"use strict";return (' + calcExpr + ')')();
         if (!isFinite(result) || isNaN(result)) throw new Error();
-        if (Number.isInteger(result)) {
-            calcExpr = result.toString();
-        } else {
-            calcExpr = parseFloat(result.toFixed(8)).toString();
-        }
+        if (Number.isInteger(result)) calcExpr = result.toString();
+        else calcExpr = parseFloat(result.toFixed(8)).toString();
         calcUpdateDisplay();
     } catch (e) {
         calcExpr = 'Error';
@@ -2567,26 +2534,21 @@ function calcEquals() {
 
 function calcClear() { calcExpr = ''; calcUpdateDisplay(); }
 function calcDelete() { calcExpr = calcExpr.slice(0, -1); calcUpdateDisplay(); }
-
 function calcToggleSign() {
     if (!calcExpr) return;
     const match = calcExpr.match(/(\d+\.?\d*)$/);
     if (match) {
-        const num = match[1];
-        const start = calcExpr.length - num.length;
+        const num = match[1]; const start = calcExpr.length - num.length;
         if (start > 0 && calcExpr[start - 1] === '-') calcExpr = calcExpr.slice(0, start - 1) + num;
         else calcExpr = calcExpr.slice(0, start) + '-' + num;
-    } else {
-        calcExpr = '-' + calcExpr;
-    }
+    } else calcExpr = '-' + calcExpr;
     calcUpdateDisplay();
 }
 
 function toggleCalculator() {
     const panel = document.getElementById('calculatorPanel');
     if (!panel) return;
-    if (panel.style.display === 'none' || !panel.style.display) panel.style.display = 'flex';
-    else panel.style.display = 'none';
+    panel.style.display = (panel.style.display === 'none' || !panel.style.display) ? 'flex' : 'none';
 }
 
 document.addEventListener('keydown', (e) => {
@@ -2607,7 +2569,11 @@ document.addEventListener('keydown', (e) => {
 });
 
 document.querySelectorAll('#mainNav button').forEach(b=>{
-  b.onclick=()=>{ document.querySelectorAll('#mainNav button').forEach(x=>x.classList.remove('active')); document.querySelectorAll('.view').forEach(v=>v.classList.remove('active')); b.classList.add('active'); document.getElementById('view-'+b.dataset.view).classList.add('active'); 
+  b.onclick=()=>{ 
+    document.querySelectorAll('#mainNav button').forEach(x=>x.classList.remove('active')); 
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active')); 
+    b.classList.add('active'); 
+    document.getElementById('view-'+b.dataset.view).classList.add('active'); 
     if(b.dataset.view === 'dashboard') { 
         const yr=state.years[state.active]; const incM=Array(12).fill(0), gasM=Array(12).fill(0); 
         yr.txs.forEach(t => {
@@ -2622,18 +2588,12 @@ document.querySelectorAll('#mainNav button').forEach(b=>{
     }
     if(b.dataset.view === 'analisis') { try { renderProjection(); } catch(e) { console.error(e); } }
     if(b.dataset.view === 'chat') { renderChat(); }
-    scheduleHeaderHeight();
+    if(b.dataset.view === 'config') { renderConfig(); }
   };
 });
 
 document.getElementById('fDate').value=new Date().toISOString().slice(0,10);
 if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(err => console.log('Error SW', err)); }); }
-
-// Aplicar tema/nav tras cargar el DOM
-document.addEventListener('DOMContentLoaded', () => {
-    applyTheme(state.config.theme);
-    setTimeout(() => { updateHeaderHeight(); }, 100);
-});
 </script>
 </body>
 </html>
