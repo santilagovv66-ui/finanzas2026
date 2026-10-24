@@ -66,6 +66,8 @@ th{color:var(--muted);font-size:11px}
 .fab:active{transform:scale(0.95)}
 .fab svg{width:24px;height:24px}
 .fab.visible{display:flex}
+/* FAB más abajo en la vista Chat para no tapar Enviar */
+.view.active#view-chat ~ #fabNewTx{display:none !important}
 
 .quick-dates{display:flex;gap:5px;margin-top:4px;flex-wrap:wrap}
 .quick-dates button{padding:4px 10px;font-size:11px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;cursor:pointer;width:auto;margin:0}
@@ -152,6 +154,7 @@ input:checked + .slider:before{transform:translateX(20px)}
 .message{max-width:80%;padding:8px 12px;border-radius:8px;font-size:13px;line-height:1.4}
 .message.user{align-self:flex-end;background:var(--accent);color:#fff;border-bottom-right-radius:0}
 .message.ai{align-self:flex-start;background:var(--card);border:1px solid var(--border);border-bottom-left-radius:0;white-space:pre-wrap}
+.chat-cancel-btn{background:var(--red);color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;margin-top:6px;width:auto}
 </style>
 </head>
 <body>
@@ -788,7 +791,6 @@ function migrateState(){
     if(!state.config)state.config={};
     if(!state.config.cats||state.config.cats.length===0)state.config.cats=[{id:'fijo',name:'Fijo (mensual)',desc:'Arriendo, mercado, servicios',color:'#3b82f6'},{id:'necesario',name:'Necesario',desc:'Imprevistos, reparaciones, salud',color:'#eab308'},{id:'placer',name:'Placer',desc:'Ocio, salidas, gustos',color:'#a855f7'}];
     state.config.cats.forEach(c=>{if(c.limit===undefined)c.limit=0;});
-    // Limpiar límite de placer (usa solo el % del dashboard)
     state.config.cats.forEach(c=>{if(c.id==='placer')c.limit=0;});
     if(state.config.placer===undefined)state.config.placer=30;
     if(!state.config.chartType)state.config.chartType='bar';
@@ -1454,14 +1456,44 @@ function renderChat(){
     selector.innerHTML=state.chats.map(c=>`<option value="${c.id}" ${c.id===state.activeChatId?'selected':''}>${c.title}</option>`).join('');
     const activeChat=state.chats.find(c=>c.id===state.activeChatId)||state.chats[0];
     if(!activeChat)return;
+    // Check if last message is "Analizando..." to add cancel button
+    const lastMsg=activeChat.messages[activeChat.messages.length-1];
+    const isAnalyzing=lastMsg&&lastMsg.role==='ai'&&lastMsg.text==='Analizando tus finanzas...';
+    
     box.innerHTML=activeChat.messages.map(m=>`<div class="message ${m.role}">${m.text.replace(/\n/g,'<br>')}</div>`).join('');
+    
+    if(isAnalyzing){
+        const btn=document.createElement('button');
+        btn.className='chat-cancel-btn';
+        btn.textContent='✕ Cancelar análisis';
+        btn.onclick=cancelChatRequest;
+        box.appendChild(btn);
+    }
+    
     box.scrollTop=box.scrollHeight;
 }
+
+let currentChatController=null;
+
+function cancelChatRequest(){
+    if(currentChatController){
+        currentChatController.abort();
+        currentChatController=null;
+    }
+    const activeChat=state.chats.find(c=>c.id===state.activeChatId);
+    if(!activeChat)return;
+    const lastMsg=activeChat.messages[activeChat.messages.length-1];
+    if(lastMsg&&lastMsg.role==='ai'&&lastMsg.text==='Analizando tus finanzas...'){
+        lastMsg.text='❌ Análisis cancelado por el usuario.';
+        save();renderChat();
+    }
+}
+
 function createNewChat(){const nc={id:genId(),title:`Chat ${state.chats.length+1}`,messages:[]};state.chats.push(nc);state.activeChatId=nc.id;save();renderChat();}
 function switchChat(id){state.activeChatId=id;save();renderChat();}
 function deleteCurrentChat(){if(!confirm('¿Borrar este chat?'))return;state.chats=state.chats.filter(c=>c.id!==state.activeChatId);if(state.chats.length===0)state.chats.push({id:genId(),title:'Chat 1',messages:[]});state.activeChatId=state.chats[0].id;save();renderChat();}
 
-// CHAT IA: con timeout de 60s y mejor diagnóstico de errores
+// CHAT IA: modelo corregido + timeout robusto
 async function sendChatMessage(){
     const input=document.getElementById('chat-input');
     const text=input.value.trim();
@@ -1474,8 +1506,10 @@ async function sendChatMessage(){
     input.value='';renderChat();
     activeChat.messages.push({role:'ai',text:'Analizando tus finanzas...'});renderChat();
 
-    const controller=new AbortController();
-    const timeoutId=setTimeout(()=>controller.abort(),60000);
+    currentChatController=new AbortController();
+    const timeoutId=setTimeout(()=>{
+        if(currentChatController)currentChatController.abort();
+    },60000);
     const startTime=Date.now();
 
     try{
@@ -1483,12 +1517,13 @@ async function sendChatMessage(){
         const historyContents=activeChat.messages.filter(m=>!m.text.startsWith('Analizando')).map(m=>({role:m.role==='user'?'user':'model',parts:[{text:m.text}]}));
         historyContents.unshift({role:'user',parts:[{text:context}]});
 
-        const url=`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${state.config.geminiKey}`;
+        // MODELO CORREGIDO: gemini-1.5-flash
+        const url=`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${state.config.geminiKey}`;
         const response=await fetch(url,{
             method:'POST',
             headers:{'Content-Type':'application/json'},
             body:JSON.stringify({contents:historyContents}),
-            signal:controller.signal
+            signal:currentChatController.signal
         });
         clearTimeout(timeoutId);
 
@@ -1511,16 +1546,18 @@ async function sendChatMessage(){
         console.error(error);
         let errMsg=error.message||'Error desconocido';
         if(error.name==='AbortError'){
-            errMsg='Tiempo de espera agotado (60 segundos). La API de Gemini no respondió. Verifica tu conexión a internet e intenta de nuevo.';
+            errMsg='Tiempo de espera agotado (60s). La API de Gemini no respondió.';
         }
         const elapsed=((Date.now()-startTime)/1000).toFixed(1);
         activeChat.messages[activeChat.messages.length-1].text=`❌ Error (${elapsed}s): ${errMsg}`;
         save();renderChat();
+    }finally{
+        currentChatController=null;
     }
 }
 
 let currentDebtAdviceText='';
-// ASESOR DE DEUDAS IA: mismo tratamiento de timeout y errores
+// ASESOR DE DEUDAS IA: modelo corregido
 async function analyzeDebtsWithAI(){
     if(!state.config.geminiKey)return alert('⚠️ Pega tu API Key de Gemini en Configuración.');
     const btn=document.getElementById('btnAnalyzeDebts');
@@ -1543,7 +1580,9 @@ async function analyzeDebtsWithAI(){
         state.pockets.forEach(p=>totalMoney+=getPocBal(p.id));
         const debtListStr=state.debts.filter(d=>getDebtBal(d.id)>0).map(d=>`- ${d.name}: Debes ${fmt(getDebtBal(d.id))}, interés ${d.rate||0}%, tipo ${d.type}`).join('\n');
         const prompt=`Eres un asesor financiero personal experto.\nDinero disponible: ${fmt(totalMoney)}.\nDeuda total: ${fmt(totalDebt)}.\nDeudas:\n${debtListStr||'No hay deudas.'}\n\nDame un consejo conciso (máximo 150 palabras) sobre cuál priorizar y cómo distribuir mi dinero. Responde en español.`;
-        const url=`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${state.config.geminiKey}`;
+        
+        // MODELO CORREGIDO: gemini-1.5-flash
+        const url=`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${state.config.geminiKey}`;
         const response=await fetch(url,{
             method:'POST',
             headers:{'Content-Type':'application/json'},
@@ -1984,7 +2023,6 @@ function renderConfig(){
             <span style="width:15%;font-size:10px;color:${pct>=100?'var(--green)':'var(--muted)'};text-align:right;">${p.meta>0?pct+'%':''}</span>
         </div>`;
     }).join('');
-    // Categorías: Placer SIN campo de límite (usa solo el % del dashboard). El resto sí tiene input.
     document.getElementById('configCatsList').innerHTML=state.config.cats.map(c=>{
         const isPlacer=c.id==='placer';
         return `<div class="row-item" style="flex-wrap:wrap;gap:5px;">
