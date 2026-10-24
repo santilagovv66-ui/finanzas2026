@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<meta name="theme-color" content="#0f172a">
 <title>Mis Finanzas Pro</title>
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -12,18 +13,43 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════
+// TEMAS — definidos temprano para aplicar sin flash
+// ═══════════════════════════════════════════════════════
+window.THEMES = {
+    dark_blue: { name: 'Azul Oscuro', icon: '🌙', vars: { '--bg':'#0f172a','--card':'#1e293b','--border':'#334155','--text':'#e2e8f0','--muted':'#94a3b8','--accent':'#3b82f6','--green':'#22c55e','--red':'#ef4444','--yellow':'#eab308','--purple':'#a855f7' } },
+    dark_purple: { name: 'Púrpura Oscuro', icon: '🌙', vars: { '--bg':'#1a0f2e','--card':'#2a1a4a','--border':'#4a3570','--text':'#e8e2f0','--muted':'#a89bc4','--accent':'#a855f7','--green':'#22c55e','--red':'#ef4444','--yellow':'#eab308','--purple':'#c084fc' } },
+    dark_green: { name: 'Verde Oscuro', icon: '🌙', vars: { '--bg':'#0a1f1a','--card':'#0f2e26','--border':'#1e4a3e','--text':'#e0f2e9','--muted':'#7fb8a3','--accent':'#10b981','--green':'#22c55e','--red':'#ef4444','--yellow':'#eab308','--purple':'#a855f7' } },
+    dark_black: { name: 'Negro Puro', icon: '🌑', vars: { '--bg':'#000000','--card':'#0a0a0a','--border':'#262626','--text':'#e5e5e5','--muted':'#a3a3a3','--accent':'#3b82f6','--green':'#22c55e','--red':'#ef4444','--yellow':'#eab308','--purple':'#a855f7' } },
+    light_blue: { name: 'Azul Claro', icon: '☀️', vars: { '--bg':'#f1f5f9','--card':'#ffffff','--border':'#cbd5e1','--text':'#0f172a','--muted':'#64748b','--accent':'#2563eb','--green':'#16a34a','--red':'#dc2626','--yellow':'#ca8a04','--purple':'#9333ea' } },
+    light_purple: { name: 'Púrpura Claro', icon: '☀️', vars: { '--bg':'#f5f3ff','--card':'#ffffff','--border':'#ddd6fe','--text':'#1e1b4b','--muted':'#6b7280','--accent':'#7c3aed','--green':'#16a34a','--red':'#dc2626','--yellow':'#ca8a04','--purple':'#9333ea' } },
+    light_green: { name: 'Verde Claro', icon: '☀️', vars: { '--bg':'#f0fdf4','--card':'#ffffff','--border':'#bbf7d0','--text':'#052e16','--muted':'#6b7280','--accent':'#16a34a','--green':'#16a34a','--red':'#dc2626','--yellow':'#ca8a04','--purple':'#9333ea' } },
+    light_sepia: { name: 'Sepia', icon: '📜', vars: { '--bg':'#f4ecd8','--card':'#fbf6ea','--border':'#d4c5a0','--text':'#3d2f1c','--muted':'#8b7355','--accent':'#b45309','--green':'#15803d','--red':'#b91c1c','--yellow':'#a16207','--purple':'#7c3aed' } },
+};
+(function() {
+    try {
+        const s = JSON.parse(localStorage.getItem('fin_v13_0') || '{}');
+        const t = (s.config && s.config.theme) || 'dark_blue';
+        if (window.THEMES[t]) {
+            Object.entries(window.THEMES[t].vars).forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
+        }
+    } catch(e) {}
+})();
+</script>
 <style>
 :root{--bg:#0f172a;--card:#1e293b;--border:#334155;--text:#e2e8f0;--muted:#94a3b8;--accent:#3b82f6;--green:#22c55e;--red:#ef4444;--yellow:#eab308;--purple:#a855f7}
 *{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,sans-serif}
-body{background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:80px}
+body{background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:80px;transition:background 0.2s,color 0.2s}
 header{background:var(--card);border-bottom:1px solid var(--border);padding:12px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;position:sticky;top:0;z-index:100}
 header h1{font-size:17px;margin-right:auto}
 .year-nav{display:flex;gap:6px;flex-wrap:wrap}
 .year-nav button{background:var(--border);border:none;color:var(--text);padding:6px 12px;border-radius:6px;cursor:pointer}
-.year-nav button.active{background:var(--accent)}
+.year-nav button.active{background:var(--accent);color:#fff}
 nav{background:var(--card);padding:8px;display:flex;gap:6px;overflow-x:auto;border-bottom:1px solid var(--border)}
+nav.nav-sticky{position:sticky;top:var(--header-height,60px);z-index:99}
 nav button{background:transparent;border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px;cursor:pointer;white-space:nowrap;font-size:13px}
-nav button.active{background:var(--accent);border-color:var(--accent)}
+nav button.active{background:var(--accent);border-color:var(--accent);color:#fff}
 main{padding:14px;max-width:1400px;margin:0 auto}
 .card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px}
 .card-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;}
@@ -72,7 +98,7 @@ th{color:var(--muted);font-size:11px}
     height: 34px;
     flex-shrink: 0;
 }
-.calc-toggle:hover, .calc-toggle:active { background: var(--accent); }
+.calc-toggle:hover, .calc-toggle:active { background: var(--accent); color: #fff; }
 .calc-toggle svg { display: block; width: 18px; height: 18px; }
 
 /* ═══ Panel calculadora flotante ═══ */
@@ -165,9 +191,9 @@ th{color:var(--muted);font-size:11px}
 }
 .calc-grid button:hover { filter: brightness(1.2); }
 .calc-grid button:active { transform: scale(0.95); }
-.calc-grid button.calc-op { background: var(--purple); }
-.calc-grid button.calc-eq { background: var(--green); }
-.calc-grid button.calc-fn { background: #64748b; }
+.calc-grid button.calc-op { background: var(--purple); color: #fff; }
+.calc-grid button.calc-eq { background: var(--green); color: #fff; }
+.calc-grid button.calc-fn { background: #64748b; color: #fff; }
 
 /* ═══ Contenedores de gráficos responsivos ═══ */
 .chart-wrapper {
@@ -179,6 +205,29 @@ th{color:var(--muted);font-size:11px}
     .chart-wrapper { height: 280px; }
 }
 .chart-wrapper canvas { display: block; width: 100% !important; height: 100% !important; }
+
+/* ═══ Theme picker ═══ */
+.theme-picker {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 8px;
+}
+.theme-swatch {
+    border-radius: 8px;
+    padding: 10px 8px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s;
+    font-family: inherit;
+    width: 100%;
+    margin: 0;
+}
+.theme-swatch:hover { transform: translateY(-2px); }
+.theme-swatch .swatch-dots { display: flex; gap: 3px; }
+.theme-swatch .dot { width: 16px; height: 16px; border-radius: 3px; }
 
 #auth-screen, #lock-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
 .auth-card { background: var(--card); padding: 30px; border-radius: 10px; border: 1px solid var(--border); width: 100%; max-width: 400px; }
@@ -244,7 +293,6 @@ input:checked + .slider:before { transform: translateX(20px); }
     </div>
 </div>
 
-<!-- ═══ Panel Calculadora Flotante ═══ -->
 <div id="calculatorPanel">
     <div class="calc-header">
         <div class="calc-header-left">
@@ -537,6 +585,26 @@ input:checked + .slider:before { transform: translateX(20px); }
       </section>
 
       <section class="view" id="view-config">
+        <!-- ═══ NUEVA: Apariencia ═══ -->
+        <div class="card config-section" style="border-left-color: #ec4899;">
+          <h3>🎨 Apariencia</h3>
+          <p style="font-size: 12px; color: var(--muted); margin-bottom: 12px;">Elige el tema de colores de la app.</p>
+          <div id="themePicker" class="theme-picker"></div>
+          
+          <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-size: 13px; font-weight: bold;">Barra de navegación fija</div>
+                <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">Si se activa, los botones (Panel, Movimientos…) se quedan pegados arriba al hacer scroll. Si se desactiva, se ocultan al bajar (comportamiento actual).</div>
+              </div>
+              <label class="switch" style="flex-shrink: 0; margin-left: 12px;">
+                <input type="checkbox" id="toggleNavSticky" onchange="toggleNavSticky()">
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
         <div class="card config-section" style="border-left-color: var(--accent);">
           <h3>⚙️ Automatizaciones</h3>
           <div style="background: var(--bg); padding: 10px; border-radius: 6px; margin-bottom: 15px;">
@@ -850,6 +918,9 @@ function migrateState() {
     if(!state.config.autoSave.multiple) state.config.autoSave.multiple = [];
     if(state.config.geminiKey === undefined) state.config.geminiKey = '';
     if(state.config.apiKeyLocked === undefined) state.config.apiKeyLocked = false;
+    // NUEVOS: tema y nav sticky
+    if(state.config.theme === undefined) state.config.theme = 'dark_blue';
+    if(state.config.navSticky === undefined) state.config.navSticky = false;
     
     if(!state.recurring) state.recurring = [];
     if(!state.summaries) state.summaries = {};
@@ -907,6 +978,108 @@ function save(){
 function fmt(n){ return new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0}).format(n||0); }
 function genId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 function toast(m){ const d=document.createElement('div'); d.className='toast'; d.textContent=m; document.body.appendChild(d); setTimeout(()=>d.remove(),3000); }
+
+// ═══════════════════════════════════════════
+// 🎨 TEMA Y NAV STICKY
+// ═══════════════════════════════════════════
+function getCSSVar(name, fallback) {
+    try {
+        const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+        return v || (fallback || '');
+    } catch(e) { return fallback || ''; }
+}
+
+function applyTheme(key) {
+    const theme = (window.THEMES && window.THEMES[key]) || window.THEMES.dark_blue;
+    const root = document.documentElement;
+    Object.entries(theme.vars).forEach(([k, v]) => root.style.setProperty(k, v));
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.content = theme.vars['--bg'];
+}
+
+function renderThemePicker() {
+    const box = document.getElementById('themePicker');
+    if (!box || !window.THEMES) return;
+    const current = state.config.theme || 'dark_blue';
+    box.innerHTML = Object.entries(window.THEMES).map(([key, theme]) => {
+        const isActive = key === current;
+        return `<button onclick="setTheme('${key}')" class="theme-swatch" style="background: ${theme.vars['--card']}; border: 2px solid ${isActive ? theme.vars['--accent'] : theme.vars['--border']};">
+            <div class="swatch-dots">
+                <div class="dot" style="background: ${theme.vars['--bg']}; border: 1px solid ${theme.vars['--border']};"></div>
+                <div class="dot" style="background: ${theme.vars['--card']}; border: 1px solid ${theme.vars['--border']};"></div>
+                <div class="dot" style="background: ${theme.vars['--accent']};"></div>
+            </div>
+            <div style="color: ${theme.vars['--text']}; font-size: 10px; font-weight: ${isActive ? 'bold' : 'normal'};">${theme.icon} ${theme.name}</div>
+            ${isActive ? `<div style="font-size: 9px; color: ${theme.vars['--accent']}; font-weight: bold;">✓ Activo</div>` : '<div style="height: 10px;"></div>'}
+        </button>`;
+    }).join('');
+    const toggle = document.getElementById('toggleNavSticky');
+    if (toggle) toggle.checked = !!state.config.navSticky;
+}
+
+function setTheme(key) {
+    if (!window.THEMES[key]) return;
+    state.config.theme = key;
+    save();
+    applyTheme(key);
+    renderThemePicker();
+    redrawChartsIfVisible();
+    toast(`Tema: ${window.THEMES[key].name}`);
+}
+
+function redrawChartsIfVisible() {
+    try {
+        const yr = state.years[state.active];
+        if (!yr) return;
+        const incM = Array(12).fill(0), gasM = Array(12).fill(0);
+        yr.txs.forEach(t => {
+            const d = new Date(t.date);
+            if (d.getFullYear() !== state.active) return;
+            const m = d.getMonth();
+            if (t.type === 'Ingreso') incM[m] += t.amount;
+            if (t.type === 'Gasto' || t.type === 'PagoDeuda') gasM[m] += t.amount;
+        });
+        if (document.getElementById('view-dashboard').classList.contains('active')) {
+            drawFlowChart(incM, gasM);
+            drawPieChart(getFlow(state.active));
+        }
+        if (document.getElementById('view-analisis').classList.contains('active')) {
+            renderProjection();
+        }
+    } catch(e) { console.warn('redrawCharts:', e); }
+}
+
+let headerHeightRAF = null;
+function updateHeaderHeight() {
+    const header = document.querySelector('header');
+    if (!header) return;
+    const h = header.offsetHeight;
+    if (h > 0) document.documentElement.style.setProperty('--header-height', h + 'px');
+}
+function scheduleHeaderHeight() {
+    if (headerHeightRAF) cancelAnimationFrame(headerHeightRAF);
+    headerHeightRAF = requestAnimationFrame(updateHeaderHeight);
+}
+
+function applyNavSticky() {
+    const nav = document.getElementById('mainNav');
+    if (!nav) return;
+    if (state.config.navSticky) nav.classList.add('nav-sticky');
+    else nav.classList.remove('nav-sticky');
+    scheduleHeaderHeight();
+}
+
+function toggleNavSticky() {
+    const checkbox = document.getElementById('toggleNavSticky');
+    if (!checkbox) return;
+    state.config.navSticky = checkbox.checked;
+    save();
+    applyNavSticky();
+    toast(state.config.navSticky ? '📌 Barra fija activada' : '📌 Barra fija desactivada');
+}
+
+window.addEventListener('resize', scheduleHeaderHeight);
+window.addEventListener('orientationchange', scheduleHeaderHeight);
 
 let unsubscribeSnapshot = null;
 function syncData() {
@@ -1741,6 +1914,8 @@ function parseMonto(v) {
 }
 
 function renderAll() {
+    try { applyTheme(state.config.theme); } catch(e) { console.warn('applyTheme:', e); }
+    try { applyNavSticky(); } catch(e) { console.warn('applyNavSticky:', e); }
     try { renderDashboard(); } catch(e) { console.error("Dashboard:", e); }
     try { renderCuentas(); } catch(e) { console.error("Cuentas:", e); }
     try { renderDeudas(); } catch(e) { console.error("Deudas:", e); }
@@ -1765,6 +1940,7 @@ function renderAll() {
             drawPieChart(getFlow(state.active));
         }
     } catch(e) { console.error("Gráficos:", e); }
+    setTimeout(scheduleHeaderHeight, 50);
 }
 
 function renderDashboard() {
@@ -1889,6 +2065,7 @@ function renderConfig() {
   document.getElementById('toggleAutoSave').checked = state.config.autoSave.enabled;
   document.getElementById('autoSaveConfig').style.display = state.config.autoSave.enabled ? 'block' : 'none';
   updateAutoSaveUI();
+  renderThemePicker();
   const lockGoalsBtn = document.getElementById('lockGoalsBtn');
   if(state.lockedGoals) { lockGoalsBtn.innerText = '🔒 Metas Bloqueadas'; lockGoalsBtn.disabled = true; lockGoalsBtn.style.opacity = '0.5'; }
   else { lockGoalsBtn.innerText = '🔒 Bloquear Metas'; lockGoalsBtn.disabled = false; lockGoalsBtn.style.opacity = '1'; }
@@ -1956,6 +2133,8 @@ function drawFlowChart(incM, gasM) {
   if(!canvas) return;
   if(flowChartInstance) flowChartInstance.destroy();
   const type = state.config.chartType || 'bar';
+  const textColor = getCSSVar('--text', '#e2e8f0');
+  const mutedColor = getCSSVar('--muted', '#94a3b8');
   flowChartInstance = new Chart(canvas, {
     type: type, 
     data:{labels:['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'], datasets:[
@@ -1965,8 +2144,8 @@ function drawFlowChart(incM, gasM) {
     options:{
       responsive: true,
       maintainAspectRatio: false,
-      plugins:{legend:{labels:{color:'#e2e8f0'}}}, 
-      scales:{x:{ticks:{color:'#94a3b8'}},y:{beginAtZero: true, ticks:{color:'#94a3b8'}}}
+      plugins:{legend:{labels:{color: textColor}}}, 
+      scales:{x:{ticks:{color: mutedColor}},y:{beginAtZero: true, ticks:{color: mutedColor}}}
     }
   });
 }
@@ -1979,10 +2158,11 @@ function drawPieChart(flow) {
   state.config.cats.forEach(c => cats[c.name] = flow.catTotals[c.id] || 0);
   const catColors = state.config.cats.map(c => c.color || '#3b82f6');
   const type = state.config.pieType || 'doughnut';
+  const textColor = getCSSVar('--text', '#e2e8f0');
   pieChartInstance = new Chart(canvas, {
     type:type, 
     data:{labels:Object.keys(cats), datasets:[{data:Object.values(cats), backgroundColor:catColors}]}, 
-    options:{ responsive: true, maintainAspectRatio: false, plugins:{legend:{labels:{color:'#e2e8f0'}}} }
+    options:{ responsive: true, maintainAspectRatio: false, plugins:{legend:{labels:{color: textColor}}} }
   });
 }
 
@@ -2043,6 +2223,7 @@ function renderProjection() {
     if(!canvas) return;
     if(projChartInstance) projChartInstance.destroy();
     const type = state.config.projChartType || 'line';
+    const mutedColor = getCSSVar('--muted', '#94a3b8');
     projChartInstance = new Chart(canvas, {
         type: type,
         data: { labels: months, datasets: [{ label: 'Proyección', data: projectionData, backgroundColor: 'rgba(59, 130, 246, 0.2)', borderColor: '#3b82f6', borderWidth: 3, fill: true, tension: 0.3, pointBackgroundColor: '#3b82f6', pointRadius: 4 }] },
@@ -2050,7 +2231,7 @@ function renderProjection() {
             responsive: true,
             maintainAspectRatio: false,
             plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => ctx.parsed.y ? fmt(ctx.parsed.y) : 'Sin datos' } } },
-            scales: { x: { ticks: { color: '#94a3b8' } }, y: { ticks: { color: '#94a3b8', callback: v => fmt(v) } } }
+            scales: { x: { ticks: { color: mutedColor } }, y: { ticks: { color: mutedColor, callback: v => fmt(v) } } }
         }
     });
 }
@@ -2143,7 +2324,7 @@ function renderExpertAnalysis() {
                 </div>
                 <div class="bar" style="height:10px; position:relative; background:rgba(255,255,255,0.05);">
                     <div class="bar-fill" style="width:${Math.max(0, Math.min(pct,100))}%; background:${color};"></div>
-                    <div style="position:absolute; left:${target}%; top:0; bottom:0; width:2px; background:white; opacity:0.8;"></div>
+                    <div style="position:absolute; left:${target}%; top:0; bottom:0; width:2px; background:var(--text); opacity:0.8;"></div>
                 </div>
                 <div style="font-size:10px; color:${color}; margin-top:3px;">${diffText}</div>
             </div>
@@ -2246,7 +2427,7 @@ function renderMonthlySummaries() {
                 </div>
                 <div class="bar" style="height:8px; position:relative;">
                     <div class="bar-fill" style="width:${Math.max(0, Math.min(pct,100))}%; background:${color};"></div>
-                    <div style="position:absolute; left:${target}%; top:0; bottom:0; width:2px; background:white; opacity:0.7;"></div>
+                    <div style="position:absolute; left:${target}%; top:0; bottom:0; width:2px; background:var(--text); opacity:0.7;"></div>
                 </div>
             </div>
         `;
@@ -2384,15 +2565,8 @@ function calcEquals() {
     }
 }
 
-function calcClear() {
-    calcExpr = '';
-    calcUpdateDisplay();
-}
-
-function calcDelete() {
-    calcExpr = calcExpr.slice(0, -1);
-    calcUpdateDisplay();
-}
+function calcClear() { calcExpr = ''; calcUpdateDisplay(); }
+function calcDelete() { calcExpr = calcExpr.slice(0, -1); calcUpdateDisplay(); }
 
 function calcToggleSign() {
     if (!calcExpr) return;
@@ -2400,11 +2574,8 @@ function calcToggleSign() {
     if (match) {
         const num = match[1];
         const start = calcExpr.length - num.length;
-        if (start > 0 && calcExpr[start - 1] === '-') {
-            calcExpr = calcExpr.slice(0, start - 1) + num;
-        } else {
-            calcExpr = calcExpr.slice(0, start) + '-' + num;
-        }
+        if (start > 0 && calcExpr[start - 1] === '-') calcExpr = calcExpr.slice(0, start - 1) + num;
+        else calcExpr = calcExpr.slice(0, start) + '-' + num;
     } else {
         calcExpr = '-' + calcExpr;
     }
@@ -2414,11 +2585,8 @@ function calcToggleSign() {
 function toggleCalculator() {
     const panel = document.getElementById('calculatorPanel');
     if (!panel) return;
-    if (panel.style.display === 'none' || !panel.style.display) {
-        panel.style.display = 'flex';
-    } else {
-        panel.style.display = 'none';
-    }
+    if (panel.style.display === 'none' || !panel.style.display) panel.style.display = 'flex';
+    else panel.style.display = 'none';
 }
 
 document.addEventListener('keydown', (e) => {
@@ -2454,11 +2622,18 @@ document.querySelectorAll('#mainNav button').forEach(b=>{
     }
     if(b.dataset.view === 'analisis') { try { renderProjection(); } catch(e) { console.error(e); } }
     if(b.dataset.view === 'chat') { renderChat(); }
+    scheduleHeaderHeight();
   };
 });
 
 document.getElementById('fDate').value=new Date().toISOString().slice(0,10);
 if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(err => console.log('Error SW', err)); }); }
+
+// Aplicar tema/nav tras cargar el DOM
+document.addEventListener('DOMContentLoaded', () => {
+    applyTheme(state.config.theme);
+    setTimeout(() => { updateHeaderHeight(); }, 100);
+});
 </script>
 </body>
 </html>
