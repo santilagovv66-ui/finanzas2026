@@ -66,7 +66,8 @@ th{color:var(--muted);font-size:11px}
 .fab:active{transform:scale(0.95)}
 .fab svg{width:24px;height:24px}
 .fab.visible{display:flex}
-/* FAB más abajo en la vista Chat para no tapar Enviar */
+
+/* Ocultar FAB en la vista de Chat */
 .view.active#view-chat ~ #fabNewTx{display:none !important}
 
 .quick-dates{display:flex;gap:5px;margin-top:4px;flex-wrap:wrap}
@@ -154,7 +155,7 @@ input:checked + .slider:before{transform:translateX(20px)}
 .message{max-width:80%;padding:8px 12px;border-radius:8px;font-size:13px;line-height:1.4}
 .message.user{align-self:flex-end;background:var(--accent);color:#fff;border-bottom-right-radius:0}
 .message.ai{align-self:flex-start;background:var(--card);border:1px solid var(--border);border-bottom-left-radius:0;white-space:pre-wrap}
-.chat-cancel-btn{background:var(--red);color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;margin-top:6px;width:auto}
+.chat-cancel-btn{background:var(--red);color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;margin-top:6px;width:auto;align-self:flex-start}
 </style>
 </head>
 <body>
@@ -1456,7 +1457,6 @@ function renderChat(){
     selector.innerHTML=state.chats.map(c=>`<option value="${c.id}" ${c.id===state.activeChatId?'selected':''}>${c.title}</option>`).join('');
     const activeChat=state.chats.find(c=>c.id===state.activeChatId)||state.chats[0];
     if(!activeChat)return;
-    // Check if last message is "Analizando..." to add cancel button
     const lastMsg=activeChat.messages[activeChat.messages.length-1];
     const isAnalyzing=lastMsg&&lastMsg.role==='ai'&&lastMsg.text==='Analizando tus finanzas...';
     
@@ -1493,7 +1493,7 @@ function createNewChat(){const nc={id:genId(),title:`Chat ${state.chats.length+1
 function switchChat(id){state.activeChatId=id;save();renderChat();}
 function deleteCurrentChat(){if(!confirm('¿Borrar este chat?'))return;state.chats=state.chats.filter(c=>c.id!==state.activeChatId);if(state.chats.length===0)state.chats.push({id:genId(),title:'Chat 1',messages:[]});state.activeChatId=state.chats[0].id;save();renderChat();}
 
-// CHAT IA: modelo corregido + timeout robusto
+// CHAT IA: Restaurado al modelo gemini-3.8-flash con timeout y cancelación
 async function sendChatMessage(){
     const input=document.getElementById('chat-input');
     const text=input.value.trim();
@@ -1517,8 +1517,8 @@ async function sendChatMessage(){
         const historyContents=activeChat.messages.filter(m=>!m.text.startsWith('Analizando')).map(m=>({role:m.role==='user'?'user':'model',parts:[{text:m.text}]}));
         historyContents.unshift({role:'user',parts:[{text:context}]});
 
-        // MODELO CORREGIDO: gemini-1.5-flash
-        const url=`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${state.config.geminiKey}`;
+        // MODELO RESTAURADO
+        const url=`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${state.config.geminiKey}`;
         const response=await fetch(url,{
             method:'POST',
             headers:{'Content-Type':'application/json'},
@@ -1557,7 +1557,7 @@ async function sendChatMessage(){
 }
 
 let currentDebtAdviceText='';
-// ASESOR DE DEUDAS IA: modelo corregido
+// ASESOR DE DEUDAS IA: Restaurado al modelo gemini-3.8-flash
 async function analyzeDebtsWithAI(){
     if(!state.config.geminiKey)return alert('⚠️ Pega tu API Key de Gemini en Configuración.');
     const btn=document.getElementById('btnAnalyzeDebts');
@@ -1581,8 +1581,8 @@ async function analyzeDebtsWithAI(){
         const debtListStr=state.debts.filter(d=>getDebtBal(d.id)>0).map(d=>`- ${d.name}: Debes ${fmt(getDebtBal(d.id))}, interés ${d.rate||0}%, tipo ${d.type}`).join('\n');
         const prompt=`Eres un asesor financiero personal experto.\nDinero disponible: ${fmt(totalMoney)}.\nDeuda total: ${fmt(totalDebt)}.\nDeudas:\n${debtListStr||'No hay deudas.'}\n\nDame un consejo conciso (máximo 150 palabras) sobre cuál priorizar y cómo distribuir mi dinero. Responde en español.`;
         
-        // MODELO CORREGIDO: gemini-1.5-flash
-        const url=`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${state.config.geminiKey}`;
+        // MODELO RESTAURADO
+        const url=`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${state.config.geminiKey}`;
         const response=await fetch(url,{
             method:'POST',
             headers:{'Content-Type':'application/json'},
