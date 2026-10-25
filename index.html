@@ -1502,13 +1502,13 @@ function switchChat(id){state.activeChatId=id;save();renderChat();}
 function deleteCurrentChat(){if(!confirm('¿Borrar este chat?'))return;state.chats=state.chats.filter(c=>c.id!==state.activeChatId);if(state.chats.length===0)state.chats.push({id:genId(),title:'Chat 1',messages:[]});state.activeChatId=state.chats[0].id;save();renderChat();}
 
 // ✅ GEMINI CON FALLBACK: prueba varios modelos reales hasta que uno funcione
+// ✅ ACTUALIZADO: modelos vigentes según documentación oficial de Gemini API (Oct 2026)
 async function callGeminiAPI(payload, perModelTimeoutMs=25000) {
     const MODELS = [
-        'gemini-2.0-flash',
         'gemini-2.5-flash',
-        'gemini-1.5-flash-latest',
-        'gemini-1.5-flash-001',
-        'gemini-pro'
+        'gemini-2.5-flash-lite',
+        'gemini-2.5-pro',
+        'gemini-3.8-flash'
     ];
     const errors = [];
     for (const model of MODELS) {
