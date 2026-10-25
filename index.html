@@ -66,8 +66,6 @@ th{color:var(--muted);font-size:11px}
 .fab:active{transform:scale(0.95)}
 .fab svg{width:24px;height:24px}
 .fab.visible{display:flex}
-
-/* Ocultar FAB en la vista de Chat */
 .view.active#view-chat ~ #fabNewTx{display:none !important}
 
 .quick-dates{display:flex;gap:5px;margin-top:4px;flex-wrap:wrap}
@@ -156,6 +154,7 @@ input:checked + .slider:before{transform:translateX(20px)}
 .message.user{align-self:flex-end;background:var(--accent);color:#fff;border-bottom-right-radius:0}
 .message.ai{align-self:flex-start;background:var(--card);border:1px solid var(--border);border-bottom-left-radius:0;white-space:pre-wrap}
 .chat-cancel-btn{background:var(--red);color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;margin-top:6px;width:auto;align-self:flex-start}
+.chat-model-status{font-size:10px;color:var(--muted);margin-top:2px;text-align:center;}
 </style>
 </head>
 <body>
@@ -501,6 +500,7 @@ input:checked + .slider:before{transform:translateX(20px)}
               <input type="text" id="chat-input" placeholder="Pregúntame algo..." onkeypress="if(event.key === 'Enter') sendChatMessage()">
               <button class="primary" onclick="sendChatMessage()" style="width:auto;">Enviar</button>
           </div>
+          <div class="chat-model-status" id="chat-model-status"></div>
         </div>
       </section>
 
@@ -585,6 +585,8 @@ input:checked + .slider:before{transform:translateX(20px)}
                 <input type="password" id="geminiKey" placeholder="Pega tu API Key aquí..." onchange="saveGeminiKey()">
                 <button id="lockApiBtn" class="warning" onclick="toggleApiLock()" style="margin-top:5px;">🔒 Bloquear API Key</button>
             </div>
+            <button class="primary" onclick="diagnoseAPI()" style="margin-top:10px;background:var(--purple);font-size:12px;">🔍 Diagnosticar API Key y modelos disponibles</button>
+            <div id="diagnoseResult" style="margin-top:10px;font-size:11px;background:var(--bg);padding:10px;border-radius:6px;border:1px solid var(--border);white-space:pre-wrap;display:none;"></div>
           </div>
         </div>
         <div class="config-section" style="border-left-color:var(--green);">
@@ -787,6 +789,12 @@ function actualizarBadgeDeudas(){if(!navigator.setAppBadge)return;const today=ne
 const KEY='fin_v13_0';
 let state={};
 
+// ✅ HELPER: Devuelve fecha en formato YYYY-MM-DD según la zona horaria LOCAL del dispositivo
+function localDateStr(d){
+    d=d||new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
 function migrateState(){
     if(!state||typeof state!=='object')state={};
     if(!state.config)state.config={};
@@ -874,7 +882,7 @@ function processRecurring(){
         const createdBeforeDueDate=createdDate.getDate()<=r.day;
         if(today.getDate()>=r.day&&r.lastRun!==currentMonthStr){
             if(createdThisMonth&&!createdBeforeDueDate){r.lastRun=currentMonthStr;changed=true;}
-            else{const tx={id:genId(),date:new Date().toISOString().slice(0,10),detail:r.detail,amount:r.amount,type:'Gasto',from:r.from,cat:'fijo'};state.years[state.active].txs.push(tx);r.lastRun=currentMonthStr;changed=true;toast(`Gasto recurrente aplicado: ${r.detail}`);}
+            else{const tx={id:genId(),date:localDateStr(),detail:r.detail,amount:r.amount,type:'Gasto',from:r.from,cat:'fijo'};state.years[state.active].txs.push(tx);r.lastRun=currentMonthStr;changed=true;toast(`Gasto recurrente aplicado: ${r.detail}`);}
         }
     });
     if(changed)save();
@@ -957,7 +965,7 @@ function confirmPayInstallment(){
     if(state.accounts.some(a=>a.id===from))bal=getAccBal(from);
     else if(state.pockets.some(p=>p.id===from))bal=getPocBal(from);
     if(bal<c.amount)return toast(`❌ Saldo insuficiente.`);
-    const tx={id:genId(),date:new Date().toISOString().slice(0,10),detail:`Pago Cuota #${c.num} - ${d.name}`,amount:c.amount,type:'PagoDeuda',from,debtId:d.id,cat:d.type==='mala'?'necesario':'fijo'};
+    const tx={id:genId(),date:localDateStr(),detail:`Pago Cuota #${c.num} - ${d.name}`,amount:c.amount,type:'PagoDeuda',from,debtId:d.id,cat:d.type==='mala'?'necesario':'fijo'};
     state.years[state.active].txs.push(tx);
     c.paid=true;c.txId=tx.id;
     save();renderAll();
@@ -1281,7 +1289,7 @@ document.getElementById('fType').onchange=(e)=>{
 function setQuickDate(daysAgo){
     const d=new Date();
     d.setDate(d.getDate()-daysAgo);
-    document.getElementById('fDate').value=d.toISOString().slice(0,10);
+    document.getElementById('fDate').value=localDateStr(d);
 }
 
 function fabNewMovement(){
@@ -1493,7 +1501,63 @@ function createNewChat(){const nc={id:genId(),title:`Chat ${state.chats.length+1
 function switchChat(id){state.activeChatId=id;save();renderChat();}
 function deleteCurrentChat(){if(!confirm('¿Borrar este chat?'))return;state.chats=state.chats.filter(c=>c.id!==state.activeChatId);if(state.chats.length===0)state.chats.push({id:genId(),title:'Chat 1',messages:[]});state.activeChatId=state.chats[0].id;save();renderChat();}
 
-// CHAT IA: Restaurado al modelo gemini-3.8-flash con timeout y cancelación
+// ✅ GEMINI CON FALLBACK: prueba varios modelos reales hasta que uno funcione
+async function callGeminiAPI(payload, perModelTimeoutMs=25000) {
+    const MODELS = [
+        'gemini-2.0-flash',
+        'gemini-2.5-flash',
+        'gemini-1.5-flash-latest',
+        'gemini-1.5-flash-001',
+        'gemini-pro'
+    ];
+    const errors = [];
+    for (const model of MODELS) {
+        try {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${state.config.geminiKey}`;
+            const controller = new AbortController();
+            const tid = setTimeout(() => controller.abort(), perModelTimeoutMs);
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload),
+                signal: controller.signal
+            });
+            clearTimeout(tid);
+            if (!response.ok) {
+                let txt = ''; try { txt = await response.text(); } catch(e){}
+                errors.push(`${model}: HTTP ${response.status} ${txt.substring(0,150)}`);
+                continue;
+            }
+            const data = await response.json();
+            if (data.error) { errors.push(`${model}: ${data.error.message}`); continue; }
+            if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
+                return {text: data.candidates[0].content.parts[0].text, model};
+            }
+            errors.push(`${model}: respuesta vacía`);
+        } catch (e) {
+            errors.push(`${model}: ${e.name === 'AbortError' ? 'timeout '+perModelTimeoutMs+'ms' : e.message}`);
+        }
+    }
+    throw new Error('Ningún modelo respondió. Diagnóstico:\n' + errors.join('\n'));
+}
+
+async function diagnoseAPI(){
+    const box = document.getElementById('diagnoseResult');
+    box.style.display = 'block';
+    box.innerText = '⏳ Probando API Key con distintos modelos...\n';
+    if (!state.config.geminiKey) { box.innerText = '❌ No hay API Key guardada.'; return; }
+    const payload = {contents: [{parts: [{text: 'Di solo la palabra OK'}]}]};
+    try {
+        const result = await callGeminiAPI(payload, 15000);
+        box.innerText = '✅ API Key funciona.\nModelo que respondió: ' + result.model + '\nRespuesta: ' + result.text;
+        // Guardar el modelo exitoso para usarlo automáticamente
+        state.config.preferredModel = result.model;
+        save();
+    } catch (e) {
+        box.innerText = '❌ Ningún modelo respondió:\n\n' + e.message + '\n\nSugerencias:\n• Verifica que tu API Key sea correcta en https://aistudio.google.com/app/apikey\n• Asegúrate de que la "Generative Language API" esté habilitada en tu proyecto de Google Cloud.\n• Si usas restricciones, agrega "generativelanguage.googleapis.com" a los sitios permitidos.';
+    }
+}
+
 async function sendChatMessage(){
     const input=document.getElementById('chat-input');
     const text=input.value.trim();
@@ -1505,59 +1569,26 @@ async function sendChatMessage(){
     activeChat.messages.push({role:'user',text});
     input.value='';renderChat();
     activeChat.messages.push({role:'ai',text:'Analizando tus finanzas...'});renderChat();
-
-    currentChatController=new AbortController();
-    const timeoutId=setTimeout(()=>{
-        if(currentChatController)currentChatController.abort();
-    },60000);
-    const startTime=Date.now();
+    const statusEl = document.getElementById('chat-model-status');
+    if (statusEl) statusEl.textContent = '';
 
     try{
         const context=buildFinancialContext();
         const historyContents=activeChat.messages.filter(m=>!m.text.startsWith('Analizando')).map(m=>({role:m.role==='user'?'user':'model',parts:[{text:m.text}]}));
         historyContents.unshift({role:'user',parts:[{text:context}]});
 
-        // MODELO RESTAURADO
-        const url=`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${state.config.geminiKey}`;
-        const response=await fetch(url,{
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({contents:historyContents}),
-            signal:currentChatController.signal
-        });
-        clearTimeout(timeoutId);
-
-        if(!response.ok){
-            let errDetail='';
-            try{const errBody=await response.text();errDetail=errBody.substring(0,400);}catch(e){}
-            throw new Error(`HTTP ${response.status} ${response.statusText}. ${errDetail}`);
-        }
-
-        const data=await response.json();
-        if(data.error)throw new Error(data.error.message);
-        if(!data.candidates||!data.candidates[0]||!data.candidates[0].content||!data.candidates[0].content.parts||!data.candidates[0].content.parts[0]){
-            throw new Error('Respuesta de la IA vacía o con formato inesperado.');
-        }
-
-        activeChat.messages[activeChat.messages.length-1].text=data.candidates[0].content.parts[0].text;
+        const result = await callGeminiAPI({contents:historyContents}, 25000);
+        activeChat.messages[activeChat.messages.length-1].text = result.text;
         save();renderChat();
+        if (statusEl) statusEl.textContent = '✓ Respondió ' + result.model;
     }catch(error){
-        clearTimeout(timeoutId);
         console.error(error);
-        let errMsg=error.message||'Error desconocido';
-        if(error.name==='AbortError'){
-            errMsg='Tiempo de espera agotado (60s). La API de Gemini no respondió.';
-        }
-        const elapsed=((Date.now()-startTime)/1000).toFixed(1);
-        activeChat.messages[activeChat.messages.length-1].text=`❌ Error (${elapsed}s): ${errMsg}`;
+        activeChat.messages[activeChat.messages.length-1].text='❌ ' + error.message;
         save();renderChat();
-    }finally{
-        currentChatController=null;
     }
 }
 
 let currentDebtAdviceText='';
-// ASESOR DE DEUDAS IA: Restaurado al modelo gemini-3.8-flash
 async function analyzeDebtsWithAI(){
     if(!state.config.geminiKey)return alert('⚠️ Pega tu API Key de Gemini en Configuración.');
     const btn=document.getElementById('btnAnalyzeDebts');
@@ -1569,10 +1600,6 @@ async function analyzeDebtsWithAI(){
     box.innerText='La IA está pensando...';
     actions.style.display='none';
 
-    const controller=new AbortController();
-    const timeoutId=setTimeout(()=>controller.abort(),60000);
-    const startTime=Date.now();
-
     try{
         const totalDebt=state.debts.reduce((s,d)=>s+getDebtBal(d.id),0);
         let totalMoney=0;
@@ -1580,42 +1607,13 @@ async function analyzeDebtsWithAI(){
         state.pockets.forEach(p=>totalMoney+=getPocBal(p.id));
         const debtListStr=state.debts.filter(d=>getDebtBal(d.id)>0).map(d=>`- ${d.name}: Debes ${fmt(getDebtBal(d.id))}, interés ${d.rate||0}%, tipo ${d.type}`).join('\n');
         const prompt=`Eres un asesor financiero personal experto.\nDinero disponible: ${fmt(totalMoney)}.\nDeuda total: ${fmt(totalDebt)}.\nDeudas:\n${debtListStr||'No hay deudas.'}\n\nDame un consejo conciso (máximo 150 palabras) sobre cuál priorizar y cómo distribuir mi dinero. Responde en español.`;
-        
-        // MODELO RESTAURADO
-        const url=`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${state.config.geminiKey}`;
-        const response=await fetch(url,{
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({contents:[{parts:[{text:prompt}]}]}),
-            signal:controller.signal
-        });
-        clearTimeout(timeoutId);
-
-        if(!response.ok){
-            let errDetail='';
-            try{const errBody=await response.text();errDetail=errBody.substring(0,400);}catch(e){}
-            throw new Error(`HTTP ${response.status} ${response.statusText}. ${errDetail}`);
-        }
-
-        const data=await response.json();
-        if(data.error)throw new Error(data.error.message);
-        if(!data.candidates||!data.candidates[0]||!data.candidates[0].content||!data.candidates[0].content.parts||!data.candidates[0].content.parts[0]){
-            throw new Error('Respuesta de la IA vacía o con formato inesperado.');
-        }
-
-        const aiResponse=data.candidates[0].content.parts[0].text;
-        box.innerText=aiResponse;
-        currentDebtAdviceText=aiResponse;
+        const result = await callGeminiAPI({contents:[{parts:[{text:prompt}]}]}, 25000);
+        box.innerText=result.text;
+        currentDebtAdviceText=result.text;
         actions.style.display='flex';
     }catch(error){
-        clearTimeout(timeoutId);
         console.error(error);
-        let errMsg=error.message||'Error desconocido';
-        if(error.name==='AbortError'){
-            errMsg='Tiempo de espera agotado (60s). La API de Gemini no respondió.';
-        }
-        const elapsed=((Date.now()-startTime)/1000).toFixed(1);
-        box.innerText=`❌ Error (${elapsed}s): ${errMsg}`;
+        box.innerText='❌ ' + error.message;
         currentDebtAdviceText='';actions.style.display='none';
     }finally{
         btn.innerText='Analizar Deudas con IA';btn.disabled=false;
@@ -2361,7 +2359,8 @@ document.querySelectorAll('#mainNav button').forEach(b=>{
     };
 });
 
-document.getElementById('fDate').value=new Date().toISOString().slice(0,10);
+// ✅ Inicializar fecha con LOCAL date, no UTC
+document.getElementById('fDate').value=localDateStr();
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(err=>console.log('Error SW',err));});}
 </script>
 </body>
