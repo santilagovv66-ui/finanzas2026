@@ -789,7 +789,6 @@ function actualizarBadgeDeudas(){if(!navigator.setAppBadge)return;const today=ne
 const KEY='fin_v13_0';
 let state={};
 
-// ✅ HELPER: Devuelve fecha en formato YYYY-MM-DD según la zona horaria LOCAL del dispositivo
 function localDateStr(d){
     d=d||new Date();
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -1501,7 +1500,6 @@ function createNewChat(){const nc={id:genId(),title:`Chat ${state.chats.length+1
 function switchChat(id){state.activeChatId=id;save();renderChat();}
 function deleteCurrentChat(){if(!confirm('¿Borrar este chat?'))return;state.chats=state.chats.filter(c=>c.id!==state.activeChatId);if(state.chats.length===0)state.chats.push({id:genId(),title:'Chat 1',messages:[]});state.activeChatId=state.chats[0].id;save();renderChat();}
 
-// ✅ GEMINI CON FALLBACK: lista de modelos vigentes (Oct 2026)
 async function callGeminiAPI(payload, perModelTimeoutMs=25000) {
     const MODELS = [
         'gemini-3.8-flash',
@@ -1873,6 +1871,7 @@ function renderDashboard(){
     generateAdvice();
     const flow=getFlow(state.active);
     const balanceAnual=flow.inc-flow.exp;
+    const proj=getEndOfMonthProjection();
     let al=checkDebtAlerts();
     al+=checkRecurringAlerts();
     if(flow.exp>flow.inc&&flow.inc>0)al+=`<div class="alert danger">🚨 Gastas más de lo que ganas. Déficit: ${fmt(flow.exp-flow.inc)}.</div>`;
@@ -1892,6 +1891,7 @@ function renderDashboard(){
     document.getElementById('flowStats').innerHTML=`
         <div class="stat green"><span class="eye-btn" onclick="toggleHideIndividual('inc')">${state.hidden.global||state.hidden.stats['inc']?'👁️':'👁️‍🗨️'}</span><div class="label">Ingresos Totales</div><div class="value">${renderVal('inc',flow.inc)}</div></div>
         <div class="stat red"><span class="eye-btn" onclick="toggleHideIndividual('exp')">${state.hidden.global||state.hidden.stats['exp']?'👁️':'👁️‍🗨️'}</span><div class="label">Gastos Totales</div><div class="value">${renderVal('exp',flow.exp)}</div></div>
+        <div class="stat ${proj.projectedBalance>=0?'green':'red'}"><div class="label">Proyección fin de mes</div><div class="value">${fmt(proj.projectedBalance)}</div><div style="font-size:9px;color:var(--muted);margin-top:3px;">Al ritmo actual</div></div>
         <div class="stat ${balanceAnual>=0?'green':'red'}"><span class="eye-btn" onclick="toggleHideIndividual('bal')">${state.hidden.global||state.hidden.stats['bal']?'👁️':'👁️‍🗨️'}</span><div class="label">Balance del Año</div><div class="value">${renderVal('bal',balanceAnual)}</div></div>
     `;
     let totalEfectivo=0,totalAhorros=0;
@@ -1900,13 +1900,11 @@ function renderDashboard(){
     const totalDeudas=state.debts.reduce((s,d)=>s+getDebtBal(d.id),0);
     const cashBilletera=getAccBal('billetera');
     const patrimonioNeto=totalEfectivo+totalAhorros+cashBilletera-totalDeudas;
-    const proj=getEndOfMonthProjection();
     document.getElementById('patrimonyStats').innerHTML=`
         <div class="stat blue"><span class="eye-btn" onclick="toggleHideIndividual('efec')">${state.hidden.global||state.hidden.stats['efec']?'👁️':'👁️‍🗨️'}</span><div class="label">En Cuentas</div><div class="value">${renderVal('efec',totalEfectivo)}</div></div>
         <div class="stat yellow"><span class="eye-btn" onclick="toggleHideIndividual('ahor')">${state.hidden.global||state.hidden.stats['ahor']?'👁️':'👁️‍🗨️'}</span><div class="label">En Bolsillos</div><div class="value">${renderVal('ahor',totalAhorros)}</div></div>
         <div class="stat purple"><span class="eye-btn" onclick="toggleHideIndividual('bill')">${state.hidden.global||state.hidden.stats['bill']?'👁️':'👁️‍🗨️'}</span><div class="label">💵 Billetera</div><div class="value">${renderVal('bill',cashBilletera)}</div></div>
         <div class="stat ${patrimonioNeto>=0?'green':'red'}"><span class="eye-btn" onclick="toggleHideIndividual('patr')">${state.hidden.global||state.hidden.stats['patr']?'👁️':'👁️‍🗨️'}</span><div class="label">Patrimonio Total</div><div class="value">${renderVal('patr',patrimonioNeto)}</div></div>
-        <div class="stat ${proj.projectedBalance>=0?'green':'red'}"><div class="label">Proyección fin de mes</div><div class="value">${fmt(proj.projectedBalance)}</div><div style="font-size:9px;color:var(--muted);margin-top:3px;">Al ritmo actual</div></div>
     `;
     const placerInfo=getPlacerLimitInfo();
     const pctUsado=state.placerLimits[placerInfo.key+'_pct']||state.config.placer;
