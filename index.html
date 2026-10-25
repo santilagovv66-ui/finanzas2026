@@ -1501,14 +1501,15 @@ function createNewChat(){const nc={id:genId(),title:`Chat ${state.chats.length+1
 function switchChat(id){state.activeChatId=id;save();renderChat();}
 function deleteCurrentChat(){if(!confirm('¿Borrar este chat?'))return;state.chats=state.chats.filter(c=>c.id!==state.activeChatId);if(state.chats.length===0)state.chats.push({id:genId(),title:'Chat 1',messages:[]});state.activeChatId=state.chats[0].id;save();renderChat();}
 
-// ✅ GEMINI CON FALLBACK: prueba varios modelos reales hasta que uno funcione
-// ✅ ACTUALIZADO: modelos vigentes según documentación oficial de Gemini API (Oct 2026)
+// ✅ GEMINI CON FALLBACK: lista de modelos vigentes (Oct 2026)
 async function callGeminiAPI(payload, perModelTimeoutMs=25000) {
     const MODELS = [
-        'gemini-2.5-flash',
-        'gemini-2.5-flash-lite',
-        'gemini-2.5-pro',
-        'gemini-3.8-flash'
+        'gemini-3.8-flash',
+        'gemini-3.6-flash',
+        'gemini-3.5-flash-lite',
+        'gemini-3.1-pro-preview',
+        'gemini-flash-lite-latest',
+        'gemini-4-argon'
     ];
     const errors = [];
     for (const model of MODELS) {
@@ -1550,7 +1551,6 @@ async function diagnoseAPI(){
     try {
         const result = await callGeminiAPI(payload, 15000);
         box.innerText = '✅ API Key funciona.\nModelo que respondió: ' + result.model + '\nRespuesta: ' + result.text;
-        // Guardar el modelo exitoso para usarlo automáticamente
         state.config.preferredModel = result.model;
         save();
     } catch (e) {
@@ -2359,7 +2359,6 @@ document.querySelectorAll('#mainNav button').forEach(b=>{
     };
 });
 
-// ✅ Inicializar fecha con LOCAL date, no UTC
 document.getElementById('fDate').value=localDateStr();
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(err=>console.log('Error SW',err));});}
 </script>
