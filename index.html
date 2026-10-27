@@ -196,6 +196,27 @@ input:checked + .slider:before{transform:translateX(20px)}
     </div>
 </div>
 
+<div class="modal-overlay" id="editTxModal">
+    <div class="modal-content">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+            <h2 style="color:var(--accent);font-size:18px;margin:0;">✏️ Editar Movimiento</h2>
+            <button onclick="closeEditTx()" style="background:transparent;border:none;color:var(--text);font-size:22px;cursor:pointer;width:auto;padding:0;margin:0;">✕</button>
+        </div>
+        <input type="hidden" id="editTxId">
+        <label style="font-size:11px;color:var(--muted);">Fecha</label>
+        <input type="date" id="editTxDate">
+        <label style="font-size:11px;color:var(--muted);">Detalle</label>
+        <input type="text" id="editTxDetail">
+        <label style="font-size:11px;color:var(--muted);">Monto COP</label>
+        <input type="number" id="editTxAmount">
+        <div id="editTxCatWrap">
+            <label style="font-size:11px;color:var(--muted);">Categoría</label>
+            <select id="editTxCat"></select>
+        </div>
+        <button class="primary" onclick="saveEditTx()" style="margin-top:12px;">💾 Guardar Cambios</button>
+    </div>
+</div>
+
 <div class="modal-overlay" id="monthReviewModal">
     <div class="modal-content">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
@@ -311,7 +332,16 @@ input:checked + .slider:before{transform:translateX(20px)}
         </div>
         <div class="card">
           <div class="card-header">
-            <h2>Distribución de gastos</h2>
+            <h2>📊 Distribución de gastos mes a mes</h2>
+            <select class="chart-selector" id="monthlyCatChartType" onchange="changeMonthlyCatChart()">
+              <option value="bar">Barras</option><option value="line">Líneas</option>
+            </select>
+          </div>
+          <div class="chart-wrapper"><canvas id="monthlyCatChart"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <h2>Distribución de gastos (Totales del Año)</h2>
             <select class="chart-selector" id="pieChartType" onchange="changePieChart()">
               <option value="doughnut">Dona</option><option value="pie">Torta</option><option value="bar">Barras</option><option value="polarArea">Polar</option>
             </select>
@@ -646,6 +676,8 @@ input:checked + .slider:before{transform:translateX(20px)}
             <button class="warning" onclick="unlockApiKey()">🔓 Desbloquear API Key</button>
             <p style="font-size:11px;color:var(--accent);margin-top:15px;margin-bottom:5px;">Desbloqueo de Deudas Pagadas</p>
             <button class="warning" onclick="unlockDebts()">🔓 Desbloquear Deudas Pagadas</button>
+            <p style="font-size:11px;color:var(--accent);margin-top:15px;margin-bottom:5px;">Edición de Movimientos</p>
+            <button class="warning" onclick="toggleEditUnlock()" id="editUnlockBtn">🔓 Desbloquear Edición de Movimientos</button>
           </div>
         </div>
         <div class="config-section" style="border-left-color:var(--muted);">
@@ -717,6 +749,7 @@ function renderThemesGrid(){
 function refreshChartColors(){
     if(flowChartInstance){const t=getComputedStyle(document.documentElement).getPropertyValue('--text').trim();const m=getComputedStyle(document.documentElement).getPropertyValue('--muted').trim();flowChartInstance.options.plugins.legend.labels.color=t;flowChartInstance.options.scales.x.ticks.color=m;flowChartInstance.options.scales.y.ticks.color=m;flowChartInstance.update('none');}
     if(pieChartInstance){const t=getComputedStyle(document.documentElement).getPropertyValue('--text').trim();pieChartInstance.options.plugins.legend.labels.color=t;pieChartInstance.update('none');}
+    if(monthlyCatChartInstance){const t=getComputedStyle(document.documentElement).getPropertyValue('--text').trim();const m=getComputedStyle(document.documentElement).getPropertyValue('--muted').trim();monthlyCatChartInstance.options.plugins.legend.labels.color=t;monthlyCatChartInstance.options.scales.x.ticks.color=m;monthlyCatChartInstance.options.scales.y.ticks.color=m;monthlyCatChartInstance.update('none');}
     if(projChartInstance){const t=getComputedStyle(document.documentElement).getPropertyValue('--muted').trim();projChartInstance.options.scales.x.ticks.color=t;projChartInstance.options.scales.y.ticks.color=t;projChartInstance.update('none');}
 }
 
@@ -804,6 +837,7 @@ function migrateState(){
     if(!state.config.chartType)state.config.chartType='bar';
     if(!state.config.pieType)state.config.pieType='doughnut';
     if(!state.config.projChartType)state.config.projChartType='line';
+    if(!state.config.monthlyCatChartType)state.config.monthlyCatChartType='bar';
     if(state.config.advisorEnabled===undefined)state.config.advisorEnabled=true;
     if(!state.config.autoSave)state.config.autoSave={enabled:false,pct:10,pocketId:''};
     if(state.config.autoSave.mode===undefined)state.config.autoSave.mode='single';
@@ -814,6 +848,7 @@ function migrateState(){
     if(state.config.navMode===undefined)state.config.navMode='sticky';
     if(!state.config.sectionsOpen)state.config.sectionsOpen={};
     if(state.config.lastMonthReview===undefined)state.config.lastMonthReview='';
+    if(state.editUnlocked===undefined)state.editUnlocked=false;
     if(!state.recurring)state.recurring=[];
     if(!state.summaries)state.summaries={};
     if(!state.debtAdvices)state.debtAdvices=[];
@@ -1275,6 +1310,58 @@ function toggleApiLock(){if(!state.config.geminiKey)return toast('Primero ingres
 function unlockApiKey(){if(!state.config.apiKeyLocked)return toast('Ya desbloqueada.');if(!confirm('⚠️ ¿Desbloquear API Key?'))return;state.config.apiKeyLocked=false;save();renderAll();toast('API Key desbloqueada');}
 function setOpeningBal(id,val){if(!canEditInit())return;state.years[state.active].openingBalances[id]=parseFloat(val)||0;save();renderAll();}
 function setPocketDeadline(id,val){if(state.lockedGoals)return toast('Metas bloqueadas');const p=state.pockets.find(x=>x.id===id);if(p){p.deadline=val;save();renderAll();}}
+
+// ===== Edición de movimientos =====
+function toggleEditUnlock(){
+    state.editUnlocked = !state.editUnlocked;
+    save();
+    renderAll();
+    toast(state.editUnlocked ? '✏️ Edición de movimientos desbloqueada' : '🔒 Edición de movimientos bloqueada');
+}
+function openEditTx(id){
+    if(!state.editUnlocked) return toast('🔒 Desbloquea la edición en Admin');
+    const yr = state.years[state.active];
+    const tx = yr.txs.find(t=>t.id===id);
+    if(!tx) return toast('Movimiento no encontrado');
+    document.getElementById('editTxId').value = id;
+    document.getElementById('editTxDate').value = tx.date;
+    document.getElementById('editTxDetail').value = tx.detail;
+    document.getElementById('editTxAmount').value = tx.amount;
+    const catWrap = document.getElementById('editTxCatWrap');
+    const catSel = document.getElementById('editTxCat');
+    if(tx.type === 'Gasto' || tx.type === 'PagoDeuda'){
+        catWrap.style.display = 'block';
+        catSel.innerHTML = state.config.cats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+        if(tx.cat) catSel.value = tx.cat;
+    } else {
+        catWrap.style.display = 'none';
+    }
+    document.getElementById('editTxModal').classList.add('active');
+}
+function closeEditTx(){
+    document.getElementById('editTxModal').classList.remove('active');
+}
+function saveEditTx(){
+    if(!state.editUnlocked) return toast('🔒 Desbloquea la edición en Admin');
+    const id = document.getElementById('editTxId').value;
+    const yr = state.years[state.active];
+    const tx = yr.txs.find(t=>t.id===id);
+    if(!tx) return toast('Movimiento no encontrado');
+    const d = document.getElementById('editTxDate').value;
+    const det = document.getElementById('editTxDetail').value;
+    const a = parseFloat(document.getElementById('editTxAmount').value);
+    if(!d || !det || isNaN(a) || a <= 0) return toast('Completa bien los datos');
+    tx.date = d;
+    tx.detail = det;
+    tx.amount = a;
+    if(tx.type === 'Gasto' || tx.type === 'PagoDeuda'){
+        tx.cat = document.getElementById('editTxCat').value;
+    }
+    save();
+    renderAll();
+    closeEditTx();
+    toast('✅ Movimiento actualizado');
+}
 
 document.getElementById('fType').onchange=(e)=>{
     const v=e.target.value;
@@ -1849,6 +1936,7 @@ function renderAll(){
         if(document.getElementById('view-dashboard').classList.contains('active')){
             drawFlowChart(incM,gasM);
             drawPieChart(getFlow(state.active));
+            drawMonthlyCatChart();
         }
     }catch(e){console.error('Gráficos:',e);}
     document.getElementById('fabNewTx').classList.add('visible');
@@ -2009,6 +2097,11 @@ function renderConfig(){
     const lockApiBtn=document.getElementById('lockApiBtn');
     if(state.config.apiKeyLocked){apiInput.disabled=true;apiInput.value='••••••••••••••••••••••••••••';lockApiBtn.innerText='🔒 API Key Bloqueada';lockApiBtn.disabled=true;lockApiBtn.style.opacity='0.5';}
     else{apiInput.disabled=false;apiInput.value=state.config.geminiKey||'';lockApiBtn.innerText='🔒 Bloquear API Key';lockApiBtn.disabled=false;lockApiBtn.style.opacity='1';}
+    const editUnlockBtn=document.getElementById('editUnlockBtn');
+    if(editUnlockBtn){
+        if(state.editUnlocked){editUnlockBtn.innerText='🔒 Bloquear Edición de Movimientos';}
+        else{editUnlockBtn.innerText='🔓 Desbloquear Edición de Movimientos';}
+    }
     document.getElementById('goalsConfigList').innerHTML=state.pockets.map(p=>{
         const bal=getPocBal(p.id);
         const pct=p.meta>0?(bal/p.meta*100).toFixed(0):0;
@@ -2045,6 +2138,7 @@ function renderConfig(){
     document.getElementById('flowChartType').value=state.config.chartType;
     document.getElementById('pieChartType').value=state.config.pieType;
     document.getElementById('projChartType').value=state.config.projChartType;
+    document.getElementById('monthlyCatChartType').value=state.config.monthlyCatChartType;
     document.getElementById('fType').dispatchEvent(new Event('change'));
     renderThemesGrid();renderNavmodeGrid();renderConfigSections();
 }
@@ -2063,18 +2157,24 @@ function renderTable(){
         if(t.type==='Gasto')ruta=(getAccName(t.from)||getPocName(t.from))+' ➔ Gasto';
         if(t.type==='Transferencia')ruta=(getAccName(t.from)||getPocName(t.from))+' ➔ '+(getAccName(t.to)||getPocName(t.to));
         if(t.type==='PagoDeuda')ruta=(getAccName(t.from)||getPocName(t.from))+' ➔ Deuda: '+getDebtName(t.debtId);
-        const catStr=t.cat?`<br><small style="color:var(--accent)">${getCatName(t.cat)}</small>`:'';
         let colorMonto='var(--red)';
         if(t.type==='Ingreso')colorMonto='var(--green)';
         if(t.type==='Transferencia')colorMonto='var(--yellow)';
-        return `<tr><td>${t.date}</td><td>${t.detail}</td><td>${t.type}${catStr}<br><small style="color:var(--muted)">${ruta}</small></td><td style="text-align:right;color:${colorMonto};font-weight:bold;">${fmt(t.amount)}</td><td>${canEdit()?`<button class="danger" onclick="delTx('${t.id}')">X</button>`:''}</td></tr>`;
+        let catColor='var(--accent)';
+        if((t.type==='Gasto'||t.type==='PagoDeuda')&&t.cat){
+            const catObj=state.config.cats.find(c=>c.id===t.cat);
+            if(catObj&&catObj.color){colorMonto=catObj.color;catColor=catObj.color;}
+        }
+        const catStr=t.cat?`<br><small style="color:${catColor}">${getCatName(t.cat)}</small>`:'';
+        const editBtn=state.editUnlocked?`<button class="warning" style="padding:3px 6px;font-size:10px;margin-right:4px;" onclick="openEditTx('${t.id}')" title="Editar">✏️</button>`:'';
+        return `<tr><td>${t.date}</td><td>${t.detail}</td><td>${t.type}${catStr}<br><small style="color:var(--muted)">${ruta}</small></td><td style="text-align:right;color:${colorMonto};font-weight:bold;">${fmt(t.amount)}</td><td>${editBtn}${canEdit()?`<button class="danger" onclick="delTx('${t.id}')">X</button>`:''}</td></tr>`;
     }).join('')||'<tr><td colspan="5" style="text-align:center">Sin datos</td></tr>';
     if(list.length>0){
         tfoot.innerHTML=`<tr style="background:var(--bg);border-top:2px solid var(--border);"><td colspan="3" style="text-align:right;font-weight:bold;color:var(--muted);">Total:</td><td style="text-align:right;font-weight:bold;color:var(--accent);font-size:15px;">${fmt(totalSum)}</td><td></td></tr>`;
     }else{tfoot.innerHTML='';}
 }
 
-let flowChartInstance=null,pieChartInstance=null,projChartInstance=null;
+let flowChartInstance=null,pieChartInstance=null,projChartInstance=null,monthlyCatChartInstance=null;
 
 function drawFlowChart(incM,gasM){
     const canvas=document.getElementById('flowChart');if(!canvas)return;
@@ -2107,8 +2207,36 @@ function drawPieChart(flow){
     }
 }
 
+function drawMonthlyCatChart(){
+    const canvas=document.getElementById('monthlyCatChart');if(!canvas)return;
+    const yr=state.years[state.active];
+    const months=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const datasets=state.config.cats.map(cat=>{
+        const data=Array(12).fill(0);
+        yr.txs.forEach(t=>{
+            const d=new Date(t.date);
+            if(d.getFullYear()!==state.active)return;
+            if((t.type==='Gasto'||t.type==='PagoDeuda')&&t.cat===cat.id){data[d.getMonth()]+=t.amount;}
+        });
+        return {label:cat.name,data:data,backgroundColor:cat.color||'#3b82f6',borderColor:cat.color||'#3b82f6',borderWidth:1,fill:false};
+    });
+    const type=state.config.monthlyCatChartType||'bar';
+    const textColor=getComputedStyle(document.documentElement).getPropertyValue('--text').trim()||'#e2e8f0';
+    const mutedColor=getComputedStyle(document.documentElement).getPropertyValue('--muted').trim()||'#94a3b8';
+    const data={labels:months,datasets};
+    const isStacked=type==='bar';
+    const options={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:textColor}},tooltip:{callbacks:{label:(ctx)=>`${ctx.dataset.label}: ${fmt(ctx.parsed.y)}`}}},scales:{x:{stacked:isStacked,ticks:{color:mutedColor}},y:{stacked:isStacked,beginAtZero:true,ticks:{color:mutedColor,callback:v=>fmt(v)}}}};
+    if(monthlyCatChartInstance&&monthlyCatChartInstance.config.type===type){
+        monthlyCatChartInstance.data=data;monthlyCatChartInstance.options=options;monthlyCatChartInstance.update();
+    }else{
+        if(monthlyCatChartInstance)monthlyCatChartInstance.destroy();
+        monthlyCatChartInstance=new Chart(canvas,{type,data,options});
+    }
+}
+
 function changeFlowChart(){state.config.chartType=document.getElementById('flowChartType').value;save();const yr=state.years[state.active];const incM=Array(12).fill(0),gasM=Array(12).fill(0);yr.txs.forEach(t=>{const d=new Date(t.date);if(d.getFullYear()!==state.active)return;const m=d.getMonth();if(t.type==='Ingreso')incM[m]+=t.amount;if(t.type==='Gasto'||t.type==='PagoDeuda')gasM[m]+=t.amount;});drawFlowChart(incM,gasM);toast('Gráfico actualizado');}
 function changePieChart(){state.config.pieType=document.getElementById('pieChartType').value;save();drawPieChart(getFlow(state.active));toast('Gráfico actualizado');}
+function changeMonthlyCatChart(){state.config.monthlyCatChartType=document.getElementById('monthlyCatChartType').value;save();drawMonthlyCatChart();toast('Gráfico actualizado');}
 function changeProjChart(){state.config.projChartType=document.getElementById('projChartType').value;save();renderProjection();toast('Proyección actualizada');}
 
 function renderProjection(){
@@ -2311,8 +2439,23 @@ function downloadExcel(){
 
 function toggleAdvisor(){state.config.advisorEnabled=document.getElementById('toggleAdvisor').checked;save();renderAll();toast(state.config.advisorEnabled?'Asesor Activado':'Desactivado');}
 
+// ===== Calculadora con formato de miles/decimales =====
 let calcExpr='';
-function calcUpdateDisplay(){const d=document.getElementById('calcDisplay');if(d)d.textContent=calcExpr||'0';}
+
+function formatNumberCol(nStr){
+    if(!nStr)return '0';
+    const parts=nStr.split('.');
+    parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+    if(parts.length>1&&parts[1].length>0)return parts[0]+','+parts[1];
+    if(parts.length>1)return parts[0]+',';
+    return parts[0];
+}
+function formatCalcDisplay(expr){
+    if(!expr)return '0';
+    if(expr==='Error')return 'Error';
+    return expr.replace(/\d+(?:\.\d*)?/g,(match)=>formatNumberCol(match));
+}
+function calcUpdateDisplay(){const d=document.getElementById('calcDisplay');if(d)d.textContent=formatCalcDisplay(calcExpr);}
 function calcAppend(v){const ops=['+','-','*','/'];if(ops.includes(v)){const l=calcExpr.slice(-1);if(ops.includes(l))calcExpr=calcExpr.slice(0,-1);}if(v==='.'){const parts=calcExpr.split(/[\+\-\*\/]/);const lastNum=parts[parts.length-1];if(lastNum.includes('.'))return;if(lastNum==='')v='0.';}calcExpr+=v;calcUpdateDisplay();}
 function calcEquals(){if(!calcExpr)return;try{let r=Function('"use strict";return ('+calcExpr+')')();if(!isFinite(r)||isNaN(r))throw new Error();if(Number.isInteger(r))calcExpr=r.toString();else calcExpr=parseFloat(r.toFixed(8)).toString();calcUpdateDisplay();}catch(e){calcExpr='Error';calcUpdateDisplay();setTimeout(()=>{calcExpr='';calcUpdateDisplay();},1000);}}
 function calcClear(){calcExpr='';calcUpdateDisplay();}
@@ -2349,6 +2492,7 @@ document.querySelectorAll('#mainNav button').forEach(b=>{
             yr.txs.forEach(t=>{const d=new Date(t.date);if(d.getFullYear()!==state.active)return;const m=d.getMonth();if(t.type==='Ingreso')incM[m]+=t.amount;if(t.type==='Gasto'||t.type==='PagoDeuda')gasM[m]+=t.amount;});
             try{drawFlowChart(incM,gasM);}catch(e){}
             try{drawPieChart(getFlow(state.active));}catch(e){}
+            try{drawMonthlyCatChart();}catch(e){}
         }
         if(b.dataset.view==='analisis'){try{renderProjection();}catch(e){}}
         if(b.dataset.view==='chat'){renderChat();}
