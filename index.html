@@ -850,7 +850,6 @@ auth.onAuthStateChanged(user=>{
         if(bioCredentialId){
             document.getElementById('app-screen').style.display='none';
             document.getElementById('lock-screen').style.display='flex';
-            // AUTO-TRIGGER BIOMETRIC
             setTimeout(() => { desbloquearHuella(); }, 500);
         }else{
             document.getElementById('lock-screen').style.display='none';
@@ -1414,7 +1413,7 @@ function getFlow(y){
     return{inc,exp,catTotals};
 }
 function getAccBal(accId){let b=state.years[state.active].openingBalances[accId]||0;state.years[state.active].txs.forEach(t=>{if(t.type==='Ingreso'&&t.to===accId)b+=t.amount;if(t.type==='Gasto'&&t.from===accId)b-=t.amount;if(t.type==='PagoDeuda'&&t.from===accId)b-=t.amount;if(t.type==='Transferencia'&&t.from===accId)b-=t.amount;if(t.type==='Transferencia'&&t.to===accId)b+=t.amount;});return b;}
-function getPocBal(pocId){let b=state.years[state.active].openingBalances[pocId]||0;state.years[state.active].txs.forEach(t=>{if(t.type==='Transferencia'&&t.to===pocId)b+=t.amount;if(t.type==='Transferencia'&&t.from===pocId)b-=t.amount;if(t.type==='PagoDeuda'&&t.from===pocId)b-=t.amount;});return b;}
+function getPocBal(pocId){let b=state.years[state.active].openingBalances[pocId]||0;state.years[state.active].txs.forEach(t=>{if(t.type==='Ingreso'&&t.to===pocId)b+=t.amount;if(t.type==='Gasto'&&t.from===pocId)b-=t.amount;if(t.type==='PagoDeuda'&&t.from===pocId)b-=t.amount;if(t.type==='Transferencia'&&t.from===pocId)b-=t.amount;if(t.type==='Transferencia'&&t.to===pocId)b+=t.amount;});return b;}
 function canEdit(){return !state.years[state.active].locked;}
 function canEditInit(){return !state.years[state.active].lockedInit;}
 function tieneMovimientos(id){return state.years[state.active].txs.some(t=>t.from===id||t.to===id);}
@@ -1569,7 +1568,6 @@ function updateFormTypeFields(){
 }
 
 function updateSelectColors(){
-    // Type Select
     const typeEls = [document.getElementById('fType'), document.getElementById('editTxType')];
     typeEls.forEach(el => {
         if(!el) return;
@@ -1584,7 +1582,6 @@ function updateSelectColors(){
         el.style.fontWeight = 'bold';
     });
 
-    // Category Select
     const catEls = [document.getElementById('fCategory'), document.getElementById('editTxCat')];
     catEls.forEach(el => {
         if(!el) return;
@@ -2394,7 +2391,6 @@ function renderConfig(){
         </div>`;
     }).join('');
     
-    // Regla financiera
     const rf = document.getElementById('ruleFijo');
     const rp = document.getElementById('rulePlacer');
     const ra = document.getElementById('ruleAhorro');
