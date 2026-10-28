@@ -706,7 +706,7 @@ input:checked + .slider:before{transform:translateX(20px)}
               <h4 style="font-size:13px;margin-bottom:10px;color:var(--accent);">➕ Agregar Nueva Categoría</h4>
               <input type="text" id="newCatName" placeholder="Nombre Categoría (ej. Educación)">
               <input type="text" id="newCatDesc" placeholder="Guía (ej. Cursos, libros)">
-              <label style="font-size:11px;color:var(--muted);margin-top:5px;display:block;">Límite mensual en $ (opcional, para recibir alerta si te pasas)</label>
+              <label style="font-size:11px;color:var(--muted);margin-top:5px;display:block;">Límite mensual en $ (opcional, para alerta)</label>
               <input type="number" id="newCatLimit" placeholder="Ej: 1500000">
               <label style="font-size:11px;color:var(--muted);margin-top:5px;display:block;">Grupo en la regla financiera</label>
               <select id="newCatGroup" style="margin-bottom:5px;">
@@ -2416,20 +2416,34 @@ function renderConfig(){
 
     document.getElementById('configCatsList').innerHTML=state.config.cats.map(c=>{
         const isPlacer=c.group==='placer';
-        return `<div class="row-item" style="flex-wrap:wrap;gap:5px;">
-            <input value="${c.name}" onchange="renameCat('${c.id}','name',this.value)" style="border:none;width:22%;font-weight:bold;">
-            <input value="${c.desc||''}" onchange="renameCat('${c.id}','desc',this.value)" style="border:none;width:20%;font-size:11px;color:var(--muted);" placeholder="Guía...">
-            ${isPlacer 
-                ? `<span style="width:16%;font-size:10px;color:var(--muted);text-align:center;padding:6px 0;">usa %</span>`
-                : `<input type="number" value="${c.limit||0}" onchange="setCatLimit('${c.id}',this.value)" placeholder="Límite $" style="width:16%;font-size:11px;">`
-            }
-            <select onchange="setCatGroup('${c.id}',this.value)" style="width:20%;font-size:11px;margin:0;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:4px;border-radius:4px;">
-                <option value="fijo" ${c.group==='fijo'?'selected':''}>Fijo</option>
-                <option value="placer" ${c.group==='placer'?'selected':''}>Placer</option>
-                <option value="otros" ${c.group==='otros'?'selected':''}>Otros</option>
-            </select>
-            <input type="color" value="${c.color||'#3b82f6'}" onchange="setCatColor('${c.id}',this.value)" class="cat-color-input" title="Cambiar color">
-            <button class="danger" onclick="delCat('${c.id}')">X</button>
+        return `<div style="background:rgba(0,0,0,0.1); border:1px solid var(--border); border-radius:8px; padding:10px; margin-bottom:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                <input value="${c.name}" onchange="renameCat('${c.id}','name',this.value)" style="border:none;background:transparent;font-weight:bold;font-size:14px;width:80%;margin:0;padding:2px;">
+                <button class="danger" onclick="delCat('${c.id}')" style="padding:4px 8px;">X</button>
+            </div>
+            <input value="${c.desc||''}" onchange="renameCat('${c.id}','desc',this.value)" style="border:none;background:transparent;font-size:11px;color:var(--muted);width:100%;margin-bottom:8px;padding:2px;" placeholder="Descripción (opcional)">
+            
+            <div style="display:flex; gap:8px; align-items:flex-end;">
+                <div style="flex:1;">
+                    <label style="font-size:10px;color:var(--muted);display:block;margin-bottom:2px;">Límite en $ (Alerta)</label>
+                    ${isPlacer 
+                        ? `<span style="font-size:12px;color:var(--muted);display:block;padding:8px 0;">Usa % en Límite Placer</span>`
+                        : `<input type="number" value="${c.limit||0}" onchange="setCatLimit('${c.id}',this.value)" style="font-size:12px;margin:0;padding:6px;">`
+                    }
+                </div>
+                <div style="flex:1;">
+                    <label style="font-size:10px;color:var(--muted);display:block;margin-bottom:2px;">Grupo Regla</label>
+                    <select onchange="setCatGroup('${c.id}',this.value)" style="font-size:12px;margin:0;padding:6px;background:var(--bg);border:1px solid var(--border);color:var(--text);">
+                        <option value="fijo" ${c.group==='fijo'?'selected':''}>Fijo</option>
+                        <option value="placer" ${c.group==='placer'?'selected':''}>Placer</option>
+                        <option value="otros" ${c.group==='otros'?'selected':''}>Otros</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:10px;color:var(--muted);display:block;margin-bottom:2px;">Color</label>
+                    <input type="color" value="${c.color||'#3b82f6'}" onchange="setCatColor('${c.id}',this.value)" class="cat-color-input" style="width:40px;height:32px;padding:2px;margin:0;">
+                </div>
+            </div>
         </div>`;
     }).join('');
     document.getElementById('recurringList').innerHTML=state.recurring.map(r=>`<div class="row-item"><div style="width:60%;font-size:12px;"><strong>${r.detail}</strong> - ${fmt(r.amount)}<br><span style="color:var(--muted)">Día ${r.day} de ${getAccName(r.from)||getPocName(r.from)}</span></div><button class="danger" onclick="delRecurring('${r.id}')">X</button></div>`).join('')||'<p style="font-size:11px;color:var(--muted);">No hay recurrentes.</p>';
