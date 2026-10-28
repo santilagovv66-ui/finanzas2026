@@ -155,6 +155,7 @@ input:checked + .slider:before{transform:translateX(20px)}
 .message.ai{align-self:flex-start;background:var(--card);border:1px solid var(--border);border-bottom-left-radius:0;white-space:pre-wrap}
 .chat-cancel-btn{background:var(--red);color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;margin-top:6px;width:auto;align-self:flex-start}
 .chat-model-status{font-size:10px;color:var(--muted);margin-top:2px;text-align:center;}
+.cat-color-input{width:34px !important;height:34px !important;padding:2px !important;border:1px solid var(--border) !important;border-radius:6px !important;cursor:pointer;margin:0 !important;flex-shrink:0;background:transparent !important;}
 </style>
 </head>
 <body>
@@ -203,15 +204,34 @@ input:checked + .slider:before{transform:translateX(20px)}
             <button onclick="closeEditTx()" style="background:transparent;border:none;color:var(--text);font-size:22px;cursor:pointer;width:auto;padding:0;margin:0;">✕</button>
         </div>
         <input type="hidden" id="editTxId">
+        <label style="font-size:11px;color:var(--muted);">Tipo de Movimiento</label>
+        <select id="editTxType" onchange="updateEditTxFields()">
+            <option value="Ingreso">Ingreso (Suma a cuenta/bolsillo)</option>
+            <option value="Gasto">Gasto (Resta de cuenta/bolsillo)</option>
+            <option value="Transferencia">Movimiento Interno de mi dinero</option>
+            <option value="PagoDeuda">Pago de Deuda (Abono libre)</option>
+        </select>
         <label style="font-size:11px;color:var(--muted);">Fecha</label>
         <input type="date" id="editTxDate">
         <label style="font-size:11px;color:var(--muted);">Detalle</label>
         <input type="text" id="editTxDetail">
         <label style="font-size:11px;color:var(--muted);">Monto COP</label>
         <input type="number" id="editTxAmount">
+        <div id="editTxFromWrap">
+            <label style="font-size:11px;color:var(--muted);">De dónde sale (Origen)</label>
+            <select id="editTxFrom"></select>
+        </div>
+        <div id="editTxToWrap">
+            <label style="font-size:11px;color:var(--muted);">A dónde va (Destino)</label>
+            <select id="editTxTo"></select>
+        </div>
         <div id="editTxCatWrap">
             <label style="font-size:11px;color:var(--muted);">Categoría</label>
             <select id="editTxCat"></select>
+        </div>
+        <div id="editTxDebtWrap">
+            <label style="font-size:11px;color:var(--muted);">Deuda a Pagar</label>
+            <select id="editTxDebt"></select>
         </div>
         <button class="primary" onclick="saveEditTx()" style="margin-top:12px;">💾 Guardar Cambios</button>
     </div>
@@ -652,12 +672,16 @@ input:checked + .slider:before{transform:translateX(20px)}
             <span class="config-toggle" id="toggle-cats">▶</span>
           </div>
           <div class="config-section-content" id="content-cats" style="display:none;">
-            <p style="font-size:11px;color:var(--muted);margin-bottom:10px;">Nota: "Placer" no tiene campo de límite $ porque usa el % configurado en el Dashboard (Panel → Cuentas → Límite de Placer). El resto de categorías sí usan el límite mensual $ de aquí.</p>
+            <p style="font-size:11px;color:var(--muted);margin-bottom:10px;">Nota: "Placer" no tiene campo de límite $ porque usa el % configurado en el Dashboard (Panel → Cuentas → Límite de Placer). El resto de categorías sí usan el límite mensual $ de aquí. Toca el cuadro de color para cambiar el color de cada categoría; se actualiza automáticamente en todos los gráficos.</p>
             <div id="configCatsList"></div>
             <div style="margin-top:10px;">
               <input type="text" id="newCatName" placeholder="Nombre Categoría (ej. Educación)">
               <input type="text" id="newCatDesc" placeholder="Guía (ej. Cursos, libros)">
               <input type="number" id="newCatLimit" placeholder="Límite mensual $ (opcional)">
+              <div style="display:flex;gap:8px;align-items:center;margin-bottom:5px;">
+                <label style="font-size:11px;color:var(--muted);margin:0;">Color:</label>
+                <input type="color" id="newCatColor" value="#3b82f6" class="cat-color-input">
+              </div>
               <button class="primary" onclick="addCat()">+ Añadir Categoría</button>
             </div>
           </div>
@@ -833,7 +857,6 @@ function migrateState(){
     if(!state.config.cats||state.config.cats.length===0)state.config.cats=[{id:'fijo',name:'Fijo (mensual)',desc:'Arriendo, mercado, servicios',color:'#3b82f6'},{id:'necesario',name:'Necesario',desc:'Imprevistos, reparaciones, salud',color:'#f97316'},{id:'placer',name:'Placer',desc:'Ocio, salidas, gustos',color:'#a855f7'}];
     state.config.cats.forEach(c=>{if(c.limit===undefined)c.limit=0;});
     state.config.cats.forEach(c=>{if(c.id==='placer')c.limit=0;});
-    // Migración: color de "necesario" (antes amarillo, chocaba con transferencia). Cambia solo si sigue con el default viejo.
     if(!state.config.migratedNecesarioColor){
         state.config.cats.forEach(c=>{
             if(c.id==='necesario' && c.color==='#eab308'){c.color='#f97316';}
@@ -1318,6 +1341,22 @@ function unlockApiKey(){if(!state.config.apiKeyLocked)return toast('Ya desbloque
 function setOpeningBal(id,val){if(!canEditInit())return;state.years[state.active].openingBalances[id]=parseFloat(val)||0;save();renderAll();}
 function setPocketDeadline(id,val){if(state.lockedGoals)return toast('Metas bloqueadas');const p=state.pockets.find(x=>x.id===id);if(p){p.deadline=val;save();renderAll();}}
 
+function getUniqueColor(){
+    const used = state.config.cats.map(c=>String(c.color||'').toLowerCase());
+    const palette = ['#3b82f6','#ef4444','#10b981','#f59e0b','#8b5cf6','#ec4899','#06b6d4','#84cc16','#f97316','#6366f1','#14b8a6','#d946ef','#0ea5e9','#eab308','#a855f7','#f43f5e','#22c55e','#e11d48','#0891b2','#7c3aed'];
+    for(const c of palette){
+        if(!used.includes(c.toLowerCase())) return c;
+    }
+    let color;
+    do{color='#'+Math.floor(Math.random()*16777215).toString(16).padStart(6,'0');}while(used.includes(color));
+    return color;
+}
+
+function setCatColor(id, color){
+    const c=state.config.cats.find(x=>x.id===id);
+    if(c){c.color=color;save();renderAll();toast('🎨 Color de categoría actualizado');}
+}
+
 // ===== Edición de movimientos =====
 function toggleEditUnlock(){
     state.editUnlocked = !state.editUnlocked;
@@ -1325,24 +1364,35 @@ function toggleEditUnlock(){
     renderAll();
     toast(state.editUnlocked ? '✏️ Edición de movimientos desbloqueada' : '🔒 Edición de movimientos bloqueada');
 }
+function updateEditTxFields(){
+    const v = document.getElementById('editTxType').value;
+    ['editTxFromWrap','editTxToWrap','editTxCatWrap','editTxDebtWrap'].forEach(id=>document.getElementById(id).style.display='none');
+    if(v==='Ingreso') document.getElementById('editTxToWrap').style.display='block';
+    if(v==='Gasto'){document.getElementById('editTxFromWrap').style.display='block';document.getElementById('editTxCatWrap').style.display='block';}
+    if(v==='Transferencia'){document.getElementById('editTxFromWrap').style.display='block';document.getElementById('editTxToWrap').style.display='block';}
+    if(v==='PagoDeuda'){document.getElementById('editTxFromWrap').style.display='block';document.getElementById('editTxDebtWrap').style.display='block';document.getElementById('editTxCatWrap').style.display='block';}
+}
 function openEditTx(id){
     if(!state.editUnlocked) return toast('🔒 Desbloquea la edición en Admin');
     const yr = state.years[state.active];
     const tx = yr.txs.find(t=>t.id===id);
     if(!tx) return toast('Movimiento no encontrado');
+    const origins=[...state.accounts.map(a=>({id:a.id,name:a.name})),...state.pockets.map(p=>({id:p.id,name:p.name}))];
+    const opts=origins.map(o=>`<option value="${o.id}">${o.name}</option>`).join('');
+    document.getElementById('editTxFrom').innerHTML=opts;
+    document.getElementById('editTxTo').innerHTML=opts;
+    document.getElementById('editTxCat').innerHTML=state.config.cats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+    document.getElementById('editTxDebt').innerHTML=state.debts.filter(d=>getDebtBal(d.id)>0||d.id===tx.debtId).map(d=>`<option value="${d.id}">${d.name} (Debe: ${fmt(getDebtBal(d.id))})</option>`).join('');
     document.getElementById('editTxId').value = id;
+    document.getElementById('editTxType').value = tx.type;
     document.getElementById('editTxDate').value = tx.date;
     document.getElementById('editTxDetail').value = tx.detail;
     document.getElementById('editTxAmount').value = tx.amount;
-    const catWrap = document.getElementById('editTxCatWrap');
-    const catSel = document.getElementById('editTxCat');
-    if(tx.type === 'Gasto' || tx.type === 'PagoDeuda'){
-        catWrap.style.display = 'block';
-        catSel.innerHTML = state.config.cats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
-        if(tx.cat) catSel.value = tx.cat;
-    } else {
-        catWrap.style.display = 'none';
-    }
+    if(tx.from) document.getElementById('editTxFrom').value = tx.from;
+    if(tx.to) document.getElementById('editTxTo').value = tx.to;
+    if(tx.cat) document.getElementById('editTxCat').value = tx.cat;
+    if(tx.debtId) document.getElementById('editTxDebt').value = tx.debtId;
+    updateEditTxFields();
     document.getElementById('editTxModal').classList.add('active');
 }
 function closeEditTx(){
@@ -1354,14 +1404,38 @@ function saveEditTx(){
     const yr = state.years[state.active];
     const tx = yr.txs.find(t=>t.id===id);
     if(!tx) return toast('Movimiento no encontrado');
+    const newType = document.getElementById('editTxType').value;
     const d = document.getElementById('editTxDate').value;
     const det = document.getElementById('editTxDetail').value;
     const a = parseFloat(document.getElementById('editTxAmount').value);
     if(!d || !det || isNaN(a) || a <= 0) return toast('Completa bien los datos');
+    if(newType==='PagoDeuda'){
+        const newDebtId=document.getElementById('editTxDebt').value;
+        if(!newDebtId) return toast('No hay deudas disponibles para pagar');
+    }
+    if(tx.type==='PagoDeuda' && tx.debtId && newType!=='PagoDeuda'){
+        const debt = state.debts.find(x=>x.id===tx.debtId);
+        if(debt && debt.schedule){
+            const cuota = debt.schedule.find(c=>c.txId===tx.id);
+            if(cuota){cuota.paid=false;delete cuota.txId;}
+        }
+    }
+    delete tx.from; delete tx.to; delete tx.cat; delete tx.debtId;
+    tx.type = newType;
     tx.date = d;
     tx.detail = det;
     tx.amount = a;
-    if(tx.type === 'Gasto' || tx.type === 'PagoDeuda'){
+    if(newType==='Ingreso'){
+        tx.to = document.getElementById('editTxTo').value;
+    } else if(newType==='Gasto'){
+        tx.from = document.getElementById('editTxFrom').value;
+        tx.cat = document.getElementById('editTxCat').value;
+    } else if(newType==='Transferencia'){
+        tx.from = document.getElementById('editTxFrom').value;
+        tx.to = document.getElementById('editTxTo').value;
+    } else if(newType==='PagoDeuda'){
+        tx.from = document.getElementById('editTxFrom').value;
+        tx.debtId = document.getElementById('editTxDebt').value;
         tx.cat = document.getElementById('editTxCat').value;
     }
     save();
@@ -1451,7 +1525,21 @@ function renamePoc(id,n){if(!n)return;const p=state.pockets.find(x=>x.id===id);i
 function delPoc(id){if(!confirm('¿Borrar?'))return;if(tieneMovimientos(id))return toast('Tiene movimientos.');state.pockets=state.pockets.filter(x=>x.id!==id);save();renderAll();}
 function setMetaPoc(id,val){if(state.lockedGoals)return toast('Metas bloqueadas');const p=state.pockets.find(x=>x.id===id);if(p){p.meta=parseFloat(val)||0;save();renderAll();}}
 function setCatLimit(id,val){const c=state.config.cats.find(x=>x.id===id);if(c){c.limit=parseFloat(val)||0;save();renderAll();}}
-function addCat(){const name=document.getElementById('newCatName').value;const desc=document.getElementById('newCatDesc').value;const limitVal=parseFloat(document.getElementById('newCatLimit').value)||0;if(!name)return toast('Falta el nombre');state.config.cats.push({id:genId(),name,desc,color:'#'+Math.floor(Math.random()*16777215).toString(16),limit:limitVal});save();renderAll();document.getElementById('newCatName').value='';document.getElementById('newCatDesc').value='';document.getElementById('newCatLimit').value='';toast('Categoría añadida');}
+function addCat(){
+    const name=document.getElementById('newCatName').value;
+    const desc=document.getElementById('newCatDesc').value;
+    const limitVal=parseFloat(document.getElementById('newCatLimit').value)||0;
+    const chosenColor=document.getElementById('newCatColor').value;
+    if(!name)return toast('Falta el nombre');
+    const color = chosenColor || getUniqueColor();
+    state.config.cats.push({id:genId(),name,desc,color,limit:limitVal});
+    save();renderAll();
+    document.getElementById('newCatName').value='';
+    document.getElementById('newCatDesc').value='';
+    document.getElementById('newCatLimit').value='';
+    document.getElementById('newCatColor').value='#3b82f6';
+    toast('Categoría añadida');
+}
 function renameCat(id,field,val){const c=state.config.cats.find(x=>x.id===id);if(c){c[field]=val;save();}}
 function delCat(id){if(!confirm('¿Borrar categoría?'))return;state.config.cats=state.config.cats.filter(x=>x.id!==id);save();renderAll();}
 function renameDebt(id,n){if(!n)return;const d=state.debts.find(x=>x.id===id);if(d){d.name=n;save();}}
@@ -1823,7 +1911,7 @@ async function importExcel(){
             if(target.includes('fijo')){c=state.config.cats.find(x=>normText(x.name).includes('fijo'));if(c)return c.id;}
             if(target.includes('placer')){c=state.config.cats.find(x=>normText(x.name).includes('placer'));if(c)return c.id;}
             if(target.includes('necesari')){c=state.config.cats.find(x=>normText(x.name).includes('necesari'));if(c)return c.id;}
-            const id=genId();state.config.cats.push({id,name,desc:'Importada',color:'#'+Math.floor(Math.random()*16777215).toString(16),limit:0});newCats.add(name);return id;
+            const id=genId();state.config.cats.push({id,name,desc:'Importada',color:getUniqueColor(),limit:0});newCats.add(name);return id;
         };
         for(let i=headerRowIdx+1;i<raw.length;i++){
             try{
@@ -2123,12 +2211,12 @@ function renderConfig(){
         const isPlacer=c.id==='placer';
         return `<div class="row-item" style="flex-wrap:wrap;gap:5px;">
             <input value="${c.name}" onchange="renameCat('${c.id}','name',this.value)" style="border:none;width:25%;font-weight:bold;">
-            <input value="${c.desc||''}" onchange="renameCat('${c.id}','desc',this.value)" style="border:none;width:30%;font-size:11px;color:var(--muted);" placeholder="Guía...">
+            <input value="${c.desc||''}" onchange="renameCat('${c.id}','desc',this.value)" style="border:none;width:28%;font-size:11px;color:var(--muted);" placeholder="Guía...">
             ${isPlacer 
-                ? `<span style="width:25%;font-size:10px;color:var(--muted);text-align:center;padding:6px 0;">usa % (Dashboard)</span>`
-                : `<input type="number" value="${c.limit||0}" onchange="setCatLimit('${c.id}',this.value)" placeholder="Límite mensual" style="width:25%;font-size:11px;">`
+                ? `<span style="width:22%;font-size:10px;color:var(--muted);text-align:center;padding:6px 0;">usa % (Dashboard)</span>`
+                : `<input type="number" value="${c.limit||0}" onchange="setCatLimit('${c.id}',this.value)" placeholder="Límite mensual" style="width:22%;font-size:11px;">`
             }
-            <span style="background:${c.color};width:15px;height:15px;border-radius:50%;"></span>
+            <input type="color" value="${c.color||'#3b82f6'}" onchange="setCatColor('${c.id}',this.value)" class="cat-color-input" title="Cambiar color">
             <button class="danger" onclick="delCat('${c.id}')">X</button>
         </div>`;
     }).join('');
