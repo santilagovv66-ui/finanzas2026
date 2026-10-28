@@ -13,6 +13,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <style>
+/* ===== BASE THEME ===== */
 :root{--bg:#0f172a;--card:#1e293b;--border:#334155;--text:#e2e8f0;--muted:#94a3b8;--accent:#3b82f6;--green:#22c55e;--red:#ef4444;--yellow:#eab308;--purple:#a855f7}
 *{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,sans-serif}
 body{background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:80px;transition:background 0.3s, color 0.3s}
@@ -156,6 +157,35 @@ input:checked + .slider:before{transform:translateX(20px)}
 .chat-cancel-btn{background:var(--red);color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;margin-top:6px;width:auto;align-self:flex-start}
 .chat-model-status{font-size:10px;color:var(--muted);margin-top:2px;text-align:center;}
 .cat-color-input{width:34px !important;height:34px !important;padding:2px !important;border:1px solid var(--border) !important;border-radius:6px !important;cursor:pointer;margin:0 !important;flex-shrink:0;background:transparent !important;}
+
+/* ===== NUEVOS ESTILOS DE INTERFAZ (UI) ===== */
+
+/* Modo Lite */
+body.ui-lite .card { background: transparent; border: none; border-bottom: 2px solid var(--border); border-radius: 0; padding: 10px 0; margin-bottom: 10px; }
+body.ui-lite .stat { background: transparent; border: none; border-bottom: 1px solid var(--border); border-radius: 0; padding: 8px 0; }
+body.ui-lite input, body.ui-lite select, body.ui-lite button { border-radius: 2px; }
+body.ui-lite .modal-content { border-radius: 4px; border: 2px solid var(--border); }
+body.ui-lite .fab { border-radius: 4px; width: 48px; height: 48px; }
+body.ui-lite .config-section { border-left-width: 2px; }
+
+/* Cristal (Glassmorphism) */
+body.ui-glass { background: linear-gradient(135deg, #0f172a 0%, #0a0f1c 100%); background-attachment: fixed; }
+body.ui-glass .card, body.ui-glass .stat, body.ui-glass .modal-content, body.ui-glass nav, body.ui-glass header, body.ui-glass .auth-card, body.ui-glass #calculatorPanel { background: rgba(30, 41, 59, 0.45) !important; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08) !important; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); }
+body.ui-glass .card, body.ui-glass .modal-content, body.ui-glass #calculatorPanel { border-radius: 16px; }
+body.ui-glass input, body.ui-glass select { background: rgba(15, 23, 42, 0.6) !important; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; }
+body.ui-glass button.primary { border-radius: 10px; box-shadow: 0 4px 15px rgba(59,130,246,0.4); }
+body.ui-glass .theme-option.selected, body.ui-glass .navmode-option.selected { background: rgba(59, 130, 246, 0.2); }
+
+/* Neón Oscuro (Cyberpunk) */
+body.ui-neon { background: #050505; }
+body.ui-neon .card { border: 1px solid var(--accent); box-shadow: 0 0 15px rgba(59,130,246,0.15); border-radius: 4px; background: #0b1120; }
+body.ui-neon .stat { border: 1px solid var(--border); background: #0b1120; box-shadow: inset 0 0 10px rgba(59,130,246,0.1); }
+body.ui-neon input, body.ui-neon select { border-radius: 0; border: 1px solid var(--accent); background: #000; color: #fff; }
+body.ui-neon button.primary { border-radius: 0; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; box-shadow: 0 0 10px var(--accent); }
+body.ui-neon h2, body.ui-neon h3 { text-transform: uppercase; letter-spacing: 1px; text-shadow: 0 0 5px currentColor; }
+body.ui-neon header h1 { text-shadow: 0 0 10px var(--yellow); }
+body.ui-neon nav { border-bottom: 2px solid var(--accent); box-shadow: 0 5px 15px rgba(59,130,246,0.2); }
+body.ui-neon nav button.active { box-shadow: 0 0 15px var(--accent); }
 </style>
 </head>
 <body>
@@ -556,12 +586,22 @@ input:checked + .slider:before{transform:translateX(20px)}
 
       <section class="view" id="view-config">
         <div class="config-section" style="border-left-color:var(--accent);">
+          <div class="config-section-header" onclick="toggleConfigSection('ui')">
+            <h3>✨ Diseño de Interfaz (UI)</h3>
+            <span class="config-toggle" id="toggle-ui">▶</span>
+          </div>
+          <div class="config-section-content" id="content-ui" style="display:none;">
+            <p style="font-size:11px;color:var(--muted);margin-bottom:10px;">Elige el estilo visual de la app. No afecta la lógica ni tus datos.</p>
+            <div class="themes-grid" id="uiGrid"></div>
+          </div>
+        </div>
+        <div class="config-section" style="border-left-color:var(--accent);">
           <div class="config-section-header" onclick="toggleConfigSection('theme')">
-            <h3>🎨 Apariencia (Temas de color)</h3>
+            <h3>🎨 Colores (Temas)</h3>
             <span class="config-toggle" id="toggle-theme">▶</span>
           </div>
           <div class="config-section-content" id="content-theme" style="display:none;">
-            <p style="font-size:11px;color:var(--muted);margin-bottom:10px;">Elige cómo se ve la app. Se guarda automáticamente.</p>
+            <p style="font-size:11px;color:var(--muted);margin-bottom:10px;">Elige la paleta de colores. Se guarda automáticamente.</p>
             <div class="themes-grid" id="themesGrid"></div>
           </div>
         </div>
@@ -759,6 +799,14 @@ const THEMES={
     purple:{name:'Púrpura Real',vars:{'--bg':'#1a0b2e','--card':'#2a1750','--border':'#3d256b','--text':'#f0e7ff','--muted':'#b39ddb','--accent':'#a855f7','--green':'#22c55e','--red':'#ef4444','--yellow':'#eab308','--purple':'#c084fc'}},
     auto:{name:'Automático (claro día / oscuro noche)',vars:null}
 };
+
+const UI_STYLES = {
+    default: { name: 'Clásico (Default)', desc: 'El diseño original', class: '' },
+    lite: { name: 'Modo Lite (Minimalista)', desc: 'Plano, compacto y sin sombras', class: 'ui-lite' },
+    glass: { name: 'Cristal (Glassmorphism)', desc: 'Efecto vidrio con desenfoque', class: 'ui-glass' },
+    neon: { name: 'Neón Oscuro (Cyberpunk)', desc: 'Bordes brillantes y estilo futurista', class: 'ui-neon' }
+};
+
 function applyTheme(){
     const themeKey=(state.config&&state.config.theme)||'dark';
     let actualKey=themeKey;
@@ -768,6 +816,21 @@ function applyTheme(){
     if(typeof refreshChartColors==='function') setTimeout(refreshChartColors,50);
 }
 function setTheme(key){if(!THEMES[key])return;state.config.theme=key;save();applyTheme();renderThemesGrid();toast('🎨 Tema: '+THEMES[key].name);}
+
+function applyUIStyle(){
+    const uiKey = (state.config && state.config.uiStyle) || 'default';
+    const uiObj = UI_STYLES[uiKey] || UI_STYLES.default;
+    document.body.className = uiObj.class;
+}
+function setUIStyle(key){
+    if(!UI_STYLES[key]) return;
+    state.config.uiStyle = key;
+    save();
+    applyUIStyle();
+    renderUIGrid();
+    toast('✨ Diseño: ' + UI_STYLES[key].name);
+}
+
 function renderThemesGrid(){
     const grid=document.getElementById('themesGrid');if(!grid)return;
     const cur=(state.config&&state.config.theme)||'dark';
@@ -776,6 +839,19 @@ function renderThemesGrid(){
         return `<div class="theme-option ${key===cur?'selected':''}" onclick="setTheme('${key}')"><div class="theme-name">${t.name}</div><div class="theme-preview">${colors.map(c=>`<span style="background:${c}"></span>`).join('')}</div></div>`;
     }).join('');
 }
+function renderUIGrid(){
+    const grid=document.getElementById('uiGrid');if(!grid)return;
+    const cur=(state.config&&state.config.uiStyle)||'default';
+    grid.innerHTML=Object.entries(UI_STYLES).map(([key,t])=>{
+        let preview = '';
+        if(key==='default') preview = `<div style="width:100%;height:30px;background:var(--card);border-radius:6px;border:1px solid var(--border);box-shadow:0 2px 4px rgba(0,0,0,0.2);"></div>`;
+        else if(key==='lite') preview = `<div style="width:100%;height:30px;background:transparent;border-bottom:2px solid var(--border);border-radius:0;"></div>`;
+        else if(key==='glass') preview = `<div style="width:100%;height:30px;background:rgba(255,255,255,0.05);backdrop-filter:blur(4px);border-radius:12px;border:1px solid rgba(255,255,255,0.1);"></div>`;
+        else if(key==='neon') preview = `<div style="width:100%;height:30px;background:#0b1120;border-radius:2px;border:1px solid var(--accent);box-shadow:0 0 8px var(--accent);"></div>`;
+        return `<div class="theme-option ${key===cur?'selected':''}" onclick="setUIStyle('${key}')"><div class="theme-name">${t.name}</div><div style="font-size:10px;color:var(--muted);margin-bottom:5px;">${t.desc}</div><div class="theme-preview" style="flex-direction:column;">${preview}</div></div>`;
+    }).join('');
+}
+
 function refreshChartColors(){
     if(flowChartInstance){const t=getComputedStyle(document.documentElement).getPropertyValue('--text').trim();const m=getComputedStyle(document.documentElement).getPropertyValue('--muted').trim();flowChartInstance.options.plugins.legend.labels.color=t;flowChartInstance.options.scales.x.ticks.color=m;flowChartInstance.options.scales.y.ticks.color=m;flowChartInstance.update('none');}
     if(pieChartInstance){const t=getComputedStyle(document.documentElement).getPropertyValue('--text').trim();pieChartInstance.options.plugins.legend.labels.color=t;pieChartInstance.update('none');}
@@ -790,7 +866,7 @@ function renderNavmodeGrid(){const grid=document.getElementById('navmodeGrid');i
 let lastScrollY=0;
 window.addEventListener('scroll',()=>{const mode=(state.config&&state.config.navMode)||'sticky';if(mode!=='autohide')return;const wrap=document.getElementById('stickyTopWrap');if(!wrap)return;const y=window.scrollY;if(y>lastScrollY&&y>100)wrap.classList.add('navbar-hidden');else if(y<lastScrollY)wrap.classList.remove('navbar-hidden');lastScrollY=y;},{passive:true});
 
-const CONFIG_SECTIONS=['theme','navbar','auto','ai','data','goals','cats','admin','security','years'];
+const CONFIG_SECTIONS=['ui','theme','navbar','auto','ai','data','goals','cats','admin','security','years'];
 function toggleConfigSection(id){if(!state.config.sectionsOpen)state.config.sectionsOpen={};state.config.sectionsOpen[id]=!state.config.sectionsOpen[id];save();renderConfigSections();}
 function renderConfigSections(){CONFIG_SECTIONS.forEach(id=>{const content=document.getElementById('content-'+id);const toggle=document.getElementById('toggle-'+id);if(!content)return;const open=!!(state.config.sectionsOpen&&state.config.sectionsOpen[id]);content.style.display=open?'block':'none';if(toggle)toggle.textContent=open?'▼':'▶';});}
 
@@ -879,6 +955,7 @@ function migrateState(){
         });
         state.config.migratedCatGroups=true;
     }
+    if(state.config.uiStyle===undefined)state.config.uiStyle='default';
     if(state.config.placer===undefined)state.config.placer=30;
     if(!state.config.chartType)state.config.chartType='bar';
     if(!state.config.pieType)state.config.pieType='doughnut';
@@ -920,6 +997,7 @@ function migrateState(){
 try{state=JSON.parse(localStorage.getItem(KEY)||'null')||{};}catch(e){state={};}
 migrateState();
 applyTheme();
+applyUIStyle();
 
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state));const user=auth.currentUser;if(user)db.collection('finanzas').doc(user.uid).set({state}).catch(e=>console.error('Nube:',e));}catch(e){console.error(e);}}
 function fmt(n){return new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0}).format(n||0);}
@@ -939,7 +1017,7 @@ function syncData(){
                 if(!state.accounts||state.accounts.length===0)state.accounts=localState.accounts;
                 if(!state.pockets||state.pockets.length===0)state.pockets=localState.pockets;
                 migrateState();
-                applyTheme();applyNavMode();
+                applyTheme();applyUIStyle();applyNavMode();
                 localStorage.setItem(KEY,JSON.stringify(state));
                 processRecurring();renderAll();toast('Datos sincronizados');
                 setTimeout(()=>{try{checkMonthReview();}catch(e){console.error('Month review:',e);}},1500);
@@ -1092,10 +1170,12 @@ function getEndOfMonthProjection(){
     return{monthInc,monthExp,projectedExp,projectedBalance,daysPassed,daysInMonth};
 }
 
-// Helper: devuelve el grupo ('fijo'/'placer'/'otros') de un tx según su categoría
 function getTxGroup(t){
     const cat=state.config.cats.find(c=>c.id===t.cat);
     return (cat && cat.group) ? cat.group : 'otros';
+}
+function getCatsInGroup(group){
+    return state.config.cats.filter(c => (c.group || 'otros') === group).map(c => c.name).join(', ');
 }
 
 function generateAdvice(){
@@ -2071,6 +2151,7 @@ function parseMonto(v){
 
 function renderAll(){
     try{applyTheme();}catch(e){}
+    try{applyUIStyle();}catch(e){}
     try{applyNavMode();}catch(e){}
     try{renderDashboard();}catch(e){console.error('Dashboard:',e);}
     try{renderCuentas();}catch(e){console.error('Cuentas:',e);}
@@ -2298,7 +2379,7 @@ function renderConfig(){
     document.getElementById('projChartType').value=state.config.projChartType;
     document.getElementById('monthlyCatChartType').value=state.config.monthlyCatChartType;
     document.getElementById('fType').dispatchEvent(new Event('change'));
-    renderThemesGrid();renderNavmodeGrid();renderConfigSections();
+    renderThemesGrid();renderUIGrid();renderNavmodeGrid();renderConfigSections();
 }
 
 function renderTable(){
@@ -2538,10 +2619,11 @@ function renderExpertAnalysis(){
     const colorPlacer=metPlacer?'var(--green)':(pctPlacer<=40?'var(--yellow)':'var(--red)');
     const colorAhorro=metAhorro?'var(--green)':(pctAhorro>=10?'var(--yellow)':'var(--red)');
     const colorOtros='var(--muted)';
-    const createBar=(label,pct,target,isMax,color,met)=>{
+    const createBar=(label,pct,target,isMax,color,met,catsList)=>{
         const diff=isMax?(target-pct):(pct-target);
         const diffText=met?(isMax?`✅ ${diff.toFixed(1)}% por debajo del límite`:`✅ ${diff.toFixed(1)}% sobre la meta`):(isMax?`❌ ${Math.abs(diff).toFixed(1)}% sobre el límite`:`❌ ${Math.abs(diff).toFixed(1)}% bajo la meta`);
-        return `<div style="margin-bottom:14px;"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;flex-wrap:wrap;gap:4px;"><span style="font-weight:500;">${label} <span style="color:var(--muted);">(${isMax?'ideal ≤':'ideal ≥'}${target}%)</span></span><strong style="color:${color};">${pct.toFixed(1)}% ${met?'✅':'❌'}</strong></div><div class="bar" style="height:10px;position:relative;background:rgba(255,255,255,0.05);"><div class="bar-fill" style="width:${Math.max(0,Math.min(pct,100))}%;background:${color};"></div><div style="position:absolute;left:${target}%;top:0;bottom:0;width:2px;background:white;opacity:0.8;"></div></div><div style="font-size:10px;color:${color};margin-top:3px;">${diffText}</div></div>`;
+        const catInfo = catsList ? `<div style="font-size:9px;color:var(--muted);margin-top:2px;">Incluye: ${catsList}</div>` : '';
+        return `<div style="margin-bottom:14px;"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;flex-wrap:wrap;gap:4px;"><span style="font-weight:500;">${label} <span style="color:var(--muted);">(${isMax?'ideal ≤':'ideal ≥'}${target}%)</span></span><strong style="color:${color};">${pct.toFixed(1)}% ${met?'✅':'❌'}</strong></div><div class="bar" style="height:10px;position:relative;background:rgba(255,255,255,0.05);"><div class="bar-fill" style="width:${Math.max(0,Math.min(pct,100))}%;background:${color};"></div><div style="position:absolute;left:${target}%;top:0;bottom:0;width:2px;background:white;opacity:0.8;"></div></div><div style="font-size:10px;color:${color};margin-top:3px;">${diffText}</div>${catInfo}</div>`;
     };
     let resumen='';
     const metCount=[metFijo,metPlacer,metAhorro].filter(Boolean).length;
@@ -2560,7 +2642,11 @@ function renderExpertAnalysis(){
         const pct=inc>0?((amt/inc)*100).toFixed(1):0;
         catsBreakdown+=`<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;"><span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${ccolor};margin-right:6px;"></span>${name}</span><span style="color:var(--muted);">${fmt(amt)} · ${pct}%</span></div>`;
     });
-    box.innerHTML=resumen+createBar('Gastos grupo Fijo',pctFijo,50,true,colorFijo,metFijo)+createBar('Gastos grupo Placer',pctPlacer,30,true,colorPlacer,metPlacer)+createBar('Ahorro (bolsillos)',pctAhorro,20,false,colorAhorro,metAhorro)+otrosBar+
+    box.innerHTML=resumen+
+        createBar('Gastos grupo Fijo',pctFijo,50,true,colorFijo,metFijo,getCatsInGroup('fijo'))+
+        createBar('Gastos grupo Placer',pctPlacer,30,true,colorPlacer,metPlacer,getCatsInGroup('placer'))+
+        createBar('Ahorro (bolsillos)',pctAhorro,20,false,colorAhorro,metAhorro)+
+        otrosBar+
         `<div style="margin-top:12px;padding:10px;background:rgba(255,255,255,0.03);border-radius:6px;"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:bold;margin-bottom:6px;">Desglose por categoría (todas)</div>${catsBreakdown||'<span style="font-size:11px;color:var(--muted);">Sin gastos</span>'}</div>`;
 }
 
@@ -2623,7 +2709,10 @@ function renderMonthlySummaries(){
         summaries.push({month:i,inc,exp,ahorro,balance,color,advice,count,pctFijo,pctPlacer,pctOtros,pctAhorro,expOtros,metFijo,metPlacer,metAhorro,colorFijo,colorPlacer,colorAhorro,colorOtros,cumpleRegla,cumpleColor,byCat});
     }
     if(summaries.length===0){box.innerHTML='<p style="color:var(--muted);font-size:13px;">Los resúmenes aparecerán aquí al registrar movimientos.</p>';updateToggleAllBtn();return;}
-    const createBar5020=(label,pct,target,isMax,color,met)=>`<div><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;flex-wrap:wrap;gap:4px;"><span>${label} <span style="color:var(--muted);">(${isMax?'≤':'≥'}${target}%)</span></span><strong style="color:${color};">${pct.toFixed(1)}% ${met?'✅':'❌'}</strong></div><div class="bar" style="height:8px;position:relative;"><div class="bar-fill" style="width:${Math.max(0,Math.min(pct,100))}%;background:${color};"></div><div style="position:absolute;left:${target}%;top:0;bottom:0;width:2px;background:white;opacity:0.7;"></div></div></div>`;
+    const createBar5020=(label,pct,target,isMax,color,met,catsList)=>{
+        const catInfo = catsList ? `<div style="font-size:9px;color:var(--muted);margin-top:2px;">Incluye: ${catsList}</div>` : '';
+        return `<div><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;flex-wrap:wrap;gap:4px;"><span>${label} <span style="color:var(--muted);">(${isMax?'≤':'≥'}${target}%)</span></span><strong style="color:${color};">${pct.toFixed(1)}% ${met?'✅':'❌'}</strong></div><div class="bar" style="height:8px;position:relative;"><div class="bar-fill" style="width:${Math.max(0,Math.min(pct,100))}%;background:${color};"></div><div style="position:absolute;left:${target}%;top:0;bottom:0;width:2px;background:white;opacity:0.7;"></div></div>${catInfo}</div>`;
+    };
     box.innerHTML=summaries.map(s=>{
         const isOpen=!!state.summariesOpen[s.month];
         let catsBreakdown='';
@@ -2631,11 +2720,11 @@ function renderMonthlySummaries(){
             const cat=state.config.cats.find(c=>c.id===cid);
             const name=cat?cat.name:'Sin categoría';
             const ccolor=cat?cat.color:'#94a3b8';
-            const pct=s.exp>0?((amt/s.exp)*100).toFixed(0):0;
-            catsBreakdown+=`<div style="display:flex;justify-content:space-between;font-size:11px;padding:2px 0;"><span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${ccolor};margin-right:6px;"></span>${name}</span><span style="color:var(--muted);">${fmt(amt)} · ${pct}%</span></div>`;
+            const pct=s.inc>0?((amt/s.inc)*100).toFixed(1):0;
+            catsBreakdown+=`<div style="display:flex;justify-content:space-between;font-size:11px;padding:2px 0;"><span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${ccolor};margin-right:6px;"></span>${name}</span><span style="color:var(--muted);">${fmt(amt)} · ${pct}% de ingresos</span></div>`;
         });
         const otrosBar=s.expOtros>0?`<div style="margin-top:6px;"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;"><span>Otros (informativo)</span><strong style="color:var(--muted);">${s.pctOtros.toFixed(1)}% · ${fmt(s.expOtros)}</strong></div><div class="bar" style="height:8px;"><div class="bar-fill" style="width:${Math.min(s.pctOtros,100)}%;background:var(--muted);"></div></div></div>`:'';
-        return `<div style="background:var(--bg);border-radius:8px;border-left:4px solid ${s.color};overflow:hidden;"><div onclick="toggleMonthSummary(${s.month})" style="padding:12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;"><div><h4 style="font-size:14px;margin:0;">${monthNames[s.month]} ${state.active}</h4><span style="font-size:11px;color:var(--muted);">${s.count} mov · Balance: <span style="color:${s.color}">${fmt(s.balance)}</span></span></div><span style="font-size:16px;color:var(--muted);">${isOpen?'▼':'▶'}</span></div>${isOpen?`<div style="padding:0 12px 12px 12px;"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;flex-wrap:wrap;gap:8px;"><span>Ingresos: <span style="color:var(--green)">${fmt(s.inc)}</span></span><span>Gastos: <span style="color:var(--red)">${fmt(s.exp)}</span></span><span>Ahorro: <span style="color:var(--yellow)">${fmt(s.ahorro)}</span></span></div><div style="margin-top:10px;padding:10px;background:rgba(255,255,255,0.03);border-radius:6px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px;"><span style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:bold;">Regla 50/30/20</span><span style="font-size:11px;color:${s.cumpleColor};font-weight:bold;">${s.cumpleRegla}</span></div><div style="display:flex;flex-direction:column;gap:8px;">${createBar5020('Fijo',s.pctFijo,50,true,s.colorFijo,s.metFijo)}${createBar5020('Placer',s.pctPlacer,30,true,s.colorPlacer,s.metPlacer)}${createBar5020('Ahorro',s.pctAhorro,20,false,s.colorAhorro,s.metAhorro)}</div>${otrosBar}</div><div style="margin-top:10px;padding:10px;background:rgba(255,255,255,0.03);border-radius:6px;"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:bold;margin-bottom:6px;">Desglose por categoría (todas)</div>${catsBreakdown||'<span style="font-size:11px;color:var(--muted);">Sin gastos</span>'}</div><div style="font-size:11px;color:var(--muted);background:rgba(255,255,255,0.05);padding:8px;border-radius:4px;margin-top:8px;"><strong>🤖 Resumen:</strong> ${s.advice}</div></div>`:''}</div>`;
+        return `<div style="background:var(--bg);border-radius:8px;border-left:4px solid ${s.color};overflow:hidden;"><div onclick="toggleMonthSummary(${s.month})" style="padding:12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;"><div><h4 style="font-size:14px;margin:0;">${monthNames[s.month]} ${state.active}</h4><span style="font-size:11px;color:var(--muted);">${s.count} mov · Balance: <span style="color:${s.color}">${fmt(s.balance)}</span></span></div><span style="font-size:16px;color:var(--muted);">${isOpen?'▼':'▶'}</span></div>${isOpen?`<div style="padding:0 12px 12px 12px;"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;flex-wrap:wrap;gap:8px;"><span>Ingresos: <span style="color:var(--green)">${fmt(s.inc)}</span></span><span>Gastos: <span style="color:var(--red)">${fmt(s.exp)}</span></span><span>Ahorro: <span style="color:var(--yellow)">${fmt(s.ahorro)}</span></span></div><div style="margin-top:10px;padding:10px;background:rgba(255,255,255,0.03);border-radius:6px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px;"><span style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:bold;">Regla 50/30/20</span><span style="font-size:11px;color:${s.cumpleColor};font-weight:bold;">${s.cumpleRegla}</span></div><div style="display:flex;flex-direction:column;gap:8px;">${createBar5020('Fijo',s.pctFijo,50,true,s.colorFijo,s.metFijo,getCatsInGroup('fijo'))}${createBar5020('Placer',s.pctPlacer,30,true,s.colorPlacer,s.metPlacer,getCatsInGroup('placer'))}${createBar5020('Ahorro',s.pctAhorro,20,false,s.colorAhorro,s.metAhorro)}</div>${otrosBar}</div><div style="margin-top:10px;padding:10px;background:rgba(255,255,255,0.03);border-radius:6px;"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:bold;margin-bottom:6px;">Desglose por categoría (todas)</div>${catsBreakdown||'<span style="font-size:11px;color:var(--muted);">Sin gastos</span>'}</div><div style="font-size:11px;color:var(--muted);background:rgba(255,255,255,0.05);padding:8px;border-radius:4px;margin-top:8px;"><strong>🤖 Resumen:</strong> ${s.advice}</div></div>`:''}</div>`;
     }).join('');
     updateToggleAllBtn();
 }
