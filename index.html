@@ -13,6 +13,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <style>
+/* ===== BASE THEME ===== */
 :root{--bg:#0f172a;--card:#1e293b;--border:#334155;--text:#e2e8f0;--muted:#94a3b8;--accent:#3b82f6;--green:#22c55e;--red:#ef4444;--yellow:#eab308;--purple:#a855f7}
 *{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,sans-serif}
 body{background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:80px;transition:background 0.3s, color 0.3s}
@@ -26,7 +27,7 @@ header h1{font-size:17px;margin-right:auto;display:flex;align-items:center;gap:6
 nav{background:var(--card);padding:8px;display:flex;gap:6px;overflow-x:auto;border-bottom:1px solid var(--border)}
 nav button{background:transparent;border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px;cursor:pointer;white-space:nowrap;font-size:13px;display:flex;align-items:center;gap:5px}
 nav button.active{background:var(--accent);border-color:var(--accent)}
-main{padding:14px;max-width:1400px;margin:0 auto}
+main{padding:14px;max-width:1400px;margin:0 auto;width:100%}
 .card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px}
 .card-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;}
 .card-header h2{font-size:13px; color:var(--muted); text-transform:uppercase; margin:0;}
@@ -48,7 +49,7 @@ th{color:var(--muted);font-size:11px}
 .alert{padding:10px;border-radius:6px;margin-bottom:8px;font-size:13px;border-left:4px solid}
 .alert.warn{background:rgba(234,179,8,.1);border-color:var(--yellow);color:var(--yellow)}
 .alert.danger{background:rgba(239,68,68,.1);border-color:var(--red);color:var(--red)}
-.view{display:none;opacity:0;transition:opacity 0.25s ease}
+.view{display:none;opacity:0;transition:opacity 0.25s ease; width: 100%;}
 .view.active{display:block;opacity:1}
 .bar{height:8px;background:var(--bg);border-radius:4px;overflow:hidden;margin-top:6px}
 .bar-fill{height:100%;transition:width .3s}
@@ -157,49 +158,70 @@ input:checked + .slider:before{transform:translateX(20px)}
 .chat-model-status{font-size:10px;color:var(--muted);margin-top:2px;text-align:center;}
 .cat-color-input{width:34px !important;height:34px !important;padding:2px !important;border:1px solid var(--border) !important;border-radius:6px !important;cursor:pointer;margin:0 !important;flex-shrink:0;background:transparent !important;}
 
-/* ===== NUEVOS ESTILOS DE INTERFAZ (UI) ===== */
+/* =====================================================================
+   NUEVOS ESTILOS DE INTERFAZ (UI) - CAMBIOS ESTRUCTURALES REALES
+   ===================================================================== */
 
-/* Modo Lite */
-body.ui-lite .card { background: transparent; border: none; border-bottom: 2px solid var(--border); border-radius: 0; padding: 10px 0; margin-bottom: 10px; }
-body.ui-lite .stat { background: transparent; border: none; border-bottom: 1px solid var(--border); border-radius: 0; padding: 8px 0; }
-body.ui-lite input, body.ui-lite select, body.ui-lite button { border-radius: 2px; }
-body.ui-lite .modal-content { border-radius: 4px; border: 2px solid var(--border); }
-body.ui-lite .fab { border-radius: 4px; width: 48px; height: 48px; }
-body.ui-lite .config-section { border-left-width: 2px; }
-body.ui-lite .grid { display: flex; flex-direction: column; gap: 0; }
+/* 1. Modo Lite (Minimalista Lista) */
+body.ui-lite { background: #fff; color: #333; }
+body.ui-lite header, body.ui-lite nav { background: #f8f9fa; border-bottom: 1px solid #ddd; }
+body.ui-lite nav button { border: none; color: #666; padding: 10px; }
+body.ui-lite nav button.active { background: #e9ecef; color: #000; border-radius: 0; border-bottom: 2px solid #333; }
+body.ui-lite .card { background: transparent; border: none; border-bottom: 1px solid #eee; border-radius: 0; padding: 10px 0; margin-bottom: 0; }
+body.ui-lite #view-dashboard .grid { display: flex; flex-direction: column; gap: 0; }
+body.ui-lite .stat { background: transparent; border: none; border-bottom: 1px dashed #eee; border-radius: 0; padding: 12px 0; display: flex; justify-content: space-between; align-items: center; }
+body.ui-lite .stat .label { font-size: 14px; color: #666; margin: 0; }
+body.ui-lite .stat .value { font-size: 18px; margin: 0; }
+body.ui-lite .eye-btn { position: static; margin-left: 10px; }
+body.ui-lite .chart-wrapper { display: none; } /* Ocultar gráficos para que sea puramente texto/lista */
+body.ui-lite input, body.ui-lite select { border: 1px solid #ccc; background: #fff; color: #333; border-radius: 4px; }
 
-/* Cristal (Glassmorphism) */
-body.ui-glass { background: linear-gradient(135deg, #0f172a 0%, #0a0f1c 100%); background-attachment: fixed; }
-body.ui-glass .card, body.ui-glass .stat, body.ui-glass .modal-content, body.ui-glass nav, body.ui-glass header, body.ui-glass .auth-card, body.ui-glass #calculatorPanel { background: rgba(30, 41, 59, 0.45) !important; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08) !important; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); }
-body.ui-glass .card, body.ui-glass .modal-content, body.ui-glass #calculatorPanel { border-radius: 16px; }
-body.ui-glass input, body.ui-glass select { background: rgba(15, 23, 42, 0.6) !important; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; }
-body.ui-glass button.primary { border-radius: 10px; box-shadow: 0 4px 15px rgba(59,130,246,0.4); }
-body.ui-glass .theme-option.selected, body.ui-glass .navmode-option.selected { background: rgba(59, 130, 246, 0.2); }
-body.ui-glass nav { border-bottom: none; border-radius: 16px; margin: 5px 10px; }
-body.ui-glass #stickyTopWrap { background: transparent; }
+/* 2. Modo Cristal (Glassmorphism Masonry) */
+body.ui-glass { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); background-attachment: fixed; }
+body.ui-glass .card { background: rgba(255, 255, 255, 0.05) !important; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+body.ui-glass #view-dashboard { column-count: 1; column-gap: 15px; }
+@media(min-width: 768px) { body.ui-glass #view-dashboard { column-count: 2; } }
+body.ui-glass #view-dashboard .card { break-inside: avoid; display: inline-block; width: 100%; }
+body.ui-glass .stat { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; }
+body.ui-glass nav { background: rgba(30, 41, 59, 0.8); backdrop-filter: blur(10px); border-radius: 16px; margin: 10px; border: 1px solid rgba(255,255,255,0.1); }
+body.ui-glass nav button.active { background: rgba(255, 255, 255, 0.2); border-radius: 10px; }
+body.ui-glass input, body.ui-glass select { background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; color: #fff; }
 
-/* Neón Oscuro (Cyberpunk) */
-body.ui-neon { background: #050505; }
-body.ui-neon .card { border: 1px solid var(--accent); box-shadow: 0 0 15px rgba(59,130,246,0.15); border-radius: 4px; background: #0b1120; }
-body.ui-neon .stat { border: 1px solid var(--border); background: #0b1120; box-shadow: inset 0 0 10px rgba(59,130,246,0.1); border-radius: 2px; }
-body.ui-neon input, body.ui-neon select { border-radius: 0; border: 1px solid var(--accent); background: #000; color: #fff; }
-body.ui-neon button.primary { border-radius: 0; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; box-shadow: 0 0 10px var(--accent); }
-body.ui-neon h2, body.ui-neon h3 { text-transform: uppercase; letter-spacing: 1px; text-shadow: 0 0 5px currentColor; }
-body.ui-neon header h1 { text-shadow: 0 0 10px var(--yellow); }
-body.ui-neon nav { border-bottom: 2px solid var(--accent); box-shadow: 0 5px 15px rgba(59,130,246,0.2); }
-body.ui-neon nav button.active { box-shadow: 0 0 15px var(--accent); }
+/* 3. Modo Neón (Cyberpunk) */
+body.ui-neon { background: #000; color: #0ff; font-family: 'Courier New', monospace; }
+body.ui-neon header, body.ui-neon nav { background: #000; border-bottom: 2px solid #0ff; box-shadow: 0 0 10px #0ff; }
+body.ui-neon nav button { border: 1px solid #f0f; color: #f0f; border-radius: 0; text-transform: uppercase; }
+body.ui-neon nav button.active { background: #f0f; color: #000; box-shadow: 0 0 15px #f0f; }
+body.ui-neon .card { background: #000; border: 2px solid #0ff; border-radius: 0; box-shadow: 0 0 10px #0ff, inset 0 0 10px rgba(0, 255, 255, 0.2); }
+body.ui-neon h2, body.ui-neon h3 { color: #f0f; text-shadow: 0 0 5px #f0f; text-transform: uppercase; }
+body.ui-neon .stat { background: #000; border: 1px solid #f0f; border-radius: 0; box-shadow: 0 0 5px #f0f; }
+body.ui-neon .stat .value { color: #0ff; text-shadow: 0 0 5px #0ff; font-size: 22px; }
+body.ui-neon input, body.ui-neon select { background: #000; border: 1px solid #0ff; color: #0ff; border-radius: 0; }
+body.ui-neon button.primary { background: #000; border: 2px solid #0ff; color: #0ff; box-shadow: 0 0 10px #0ff; border-radius: 0; }
+body.ui-neon button.primary:hover { background: #0ff; color: #000; }
+body.ui-neon .chart-wrapper { height: 200px; }
 
-/* Modo Profesional */
-body.ui-pro { background: #eef2f6; color: #1e293b; }
-body.ui-pro header, body.ui-pro nav { background: #ffffff; border-bottom: 1px solid #cbd5e1; }
-body.ui-pro .card { background: #ffffff; border: 1px solid #cbd5e1; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-body.ui-pro .stat { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px; }
-body.ui-pro input, body.ui-pro select, body.ui-pro textarea { background: #f8fafc; border: 1px solid #cbd5e1; color: #1e293b; border-radius: 4px; }
-body.ui-pro .stat .label { color: #64748b; }
-body.ui-pro h2, body.ui-pro h3 { color: #334155; font-weight: 600; }
-body.ui-pro #view-dashboard { display: flex; flex-direction: column; }
-body.ui-pro #flowStats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-body.ui-pro #patrimonyStats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+/* 4. Modo Profesional (Dashboard Oscuro/Claro Organizado) */
+body.ui-pro { 
+    --bg: #f1f5f9; --card: #ffffff; --border: #cbd5e1; --text: #0f172a; --muted: #64748b; 
+    --accent: #2563eb; --green: #16a34a; --red: #dc2626; --yellow: #ca8a04; --purple: #9333ea;
+    background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+body.ui-pro header, body.ui-pro nav { background: var(--card); border-bottom: 2px solid var(--border); }
+body.ui-pro nav button { border-radius: 0; border: none; border-bottom: 3px solid transparent; color: var(--muted); }
+body.ui-pro nav button.active { background: transparent; border-bottom: 3px solid var(--accent); color: var(--accent); font-weight: bold; }
+body.ui-pro #view-dashboard { display: grid; grid-template-columns: 1fr; gap: 15px; }
+@media(min-width: 768px) { body.ui-pro #view-dashboard { grid-template-columns: 1fr 1fr; } }
+body.ui-pro #view-dashboard > .card:nth-child(1) { grid-column: span 1; } /* Flujo */
+body.ui-pro #view-dashboard > .card:nth-child(2) { grid-column: span 1; } /* Patrimonio */
+body.ui-pro #view-dashboard > .card:nth-child(3) { grid-column: span 1; } /* Metas */
+body.ui-pro #view-dashboard > .card:nth-child(4) { grid-column: span 1; } /* Flujo Chart */
+body.ui-pro #view-dashboard > .card:nth-child(5) { grid-column: span 1; } /* Mes Chart */
+body.ui-pro #view-dashboard > .card:nth-child(6) { grid-column: span 1; } /* Torta */
+body.ui-pro .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); padding: 20px; }
+body.ui-pro .stat { background: #f8fafc; border: 1px solid var(--border); border-radius: 6px; }
+body.ui-pro .stat .value { color: var(--text); }
+body.ui-pro input, body.ui-pro select { background: #f8fafc; border: 1px solid var(--border); color: var(--text); border-radius: 6px; }
 body.ui-pro .chart-wrapper { height: 250px; }
 </style>
 </head>
@@ -458,7 +480,7 @@ body.ui-pro .chart-wrapper { height: 250px; }
       <section class="view" id="view-analisis">
         <div class="card">
           <h2>🏆 Regla de Oro Financiera (50/30/20) <span id="expertAnalysisMonth" style="font-size:12px;color:var(--accent);font-weight:normal;"></span></h2>
-          <p style="font-size:11px;color:var(--muted);margin-bottom:15px;">Máximo 50% Gastos Fijos, máximo 30% Placer, mínimo 20% Ahorro. Las categorías nuevas se agrupan según su "Grupo" (configurable en Categorías).</p>
+          <p style="font-size:11px;color:var(--muted);margin-bottom:15px;">Máximo 50% Gastos Fijos, máximo 30% Placer, mínimo 20% Ahorro. Las categorías nuevas se agrupan según su "Grupo".</p>
           <div id="expertAnalysis"></div>
         </div>
 
@@ -747,7 +769,8 @@ body.ui-pro .chart-wrapper { height: 250px; }
             </div>
             <div style="margin-top:15px; border-top:1px dashed var(--border); padding-top:10px;">
                 <label style="font-size:11px;color:var(--muted);">Límite % para el grupo "Otros" (sobre ingresos)</label>
-                <input type="number" id="otrosLimitInput" value="10" min="0" max="100" onchange="setOtrosLimit(this.value)">
+                <input type="number" id="configOtrosLimit" value="10" min="0" max="100" oninput="updateOtrosLimit(this.value)">
+                <div style="font-size:10px;color:var(--accent);margin-top:3px;">Límite actual: <span id="otrosLimitDisplay">10</span>%</div>
             </div>
           </div>
         </div>
@@ -821,10 +844,10 @@ const THEMES={
 
 const UI_STYLES = {
     default: { name: 'Clásico (Default)', desc: 'El diseño original', class: '' },
-    lite: { name: 'Modo Lite', desc: 'Minimalista, sin sombras', class: 'ui-lite' },
-    glass: { name: 'Cristal', desc: 'Efecto vidrio flotante', class: 'ui-glass' },
-    neon: { name: 'Neón', desc: 'Estilo Cyberpunk', class: 'ui-neon' },
-    pro: { name: 'Profesional', desc: 'Enfoque de negocios', class: 'ui-pro' }
+    lite: { name: 'Modo Lite (Lista)', desc: 'Minimalista, sin tarjetas', class: 'ui-lite' },
+    glass: { name: 'Cristal (Masonry)', desc: 'Vidrio flotante en 2 columnas', class: 'ui-glass' },
+    neon: { name: 'Neón (Cyberpunk)', desc: 'Terminal oscura brillante', class: 'ui-neon' },
+    pro: { name: 'Profesional (Dashboard)', desc: 'Vista de negocios estructurada', class: 'ui-pro' }
 };
 
 function applyTheme(){
@@ -840,25 +863,39 @@ function setTheme(key){if(!THEMES[key])return;state.config.theme=key;save();appl
 function applyUIStyle(){
     const uiKey = (state.config && state.config.uiStyle) || 'default';
     const uiObj = UI_STYLES[uiKey] || UI_STYLES.default;
-    document.body.className = uiObj.class;
     
-    // Auto-change chart types based on UI style
+    // Remove all possible UI classes
+    document.body.classList.remove('ui-lite','ui-glass','ui-neon','ui-pro');
+    
+    // Add current
+    if (uiObj.class) document.body.classList.add(uiObj.class);
+    
+    // Auto-change chart types based on UI style to enhance the "different app" feel
     if (uiKey === 'lite') {
-        if(state.config.chartType !== 'bar') { state.config.chartType = 'bar'; document.getElementById('flowChartType').value = 'bar'; }
-        if(state.config.pieType !== 'pie') { state.config.pieType = 'pie'; document.getElementById('pieChartType').value = 'pie'; }
+        if(state.config.chartType !== 'bar') { state.config.chartType = 'bar'; if(document.getElementById('flowChartType')) document.getElementById('flowChartType').value = 'bar'; }
+        if(state.config.pieType !== 'pie') { state.config.pieType = 'pie'; if(document.getElementById('pieChartType')) document.getElementById('pieChartType').value = 'pie'; }
     } else if (uiKey === 'glass') {
-        if(state.config.chartType !== 'line') { state.config.chartType = 'line'; document.getElementById('flowChartType').value = 'line'; }
-        if(state.config.pieType !== 'polarArea') { state.config.pieType = 'polarArea'; document.getElementById('pieChartType').value = 'polarArea'; }
+        if(state.config.chartType !== 'line') { state.config.chartType = 'line'; if(document.getElementById('flowChartType')) document.getElementById('flowChartType').value = 'line'; }
+        if(state.config.pieType !== 'polarArea') { state.config.pieType = 'polarArea'; if(document.getElementById('pieChartType')) document.getElementById('pieChartType').value = 'polarArea'; }
     } else if (uiKey === 'neon') {
-        if(state.config.chartType !== 'radar') { state.config.chartType = 'radar'; document.getElementById('flowChartType').value = 'radar'; }
-        if(state.config.pieType !== 'doughnut') { state.config.pieType = 'doughnut'; document.getElementById('pieChartType').value = 'doughnut'; }
+        if(state.config.chartType !== 'radar') { state.config.chartType = 'radar'; if(document.getElementById('flowChartType')) document.getElementById('flowChartType').value = 'radar'; }
+        if(state.config.pieType !== 'doughnut') { state.config.pieType = 'doughnut'; if(document.getElementById('pieChartType')) document.getElementById('pieChartType').value = 'doughnut'; }
     } else if (uiKey === 'pro') {
-        if(state.config.chartType !== 'line') { state.config.chartType = 'line'; document.getElementById('flowChartType').value = 'line'; }
-        if(state.config.pieType !== 'doughnut') { state.config.pieType = 'doughnut'; document.getElementById('pieChartType').value = 'doughnut'; }
+        if(state.config.chartType !== 'line') { state.config.chartType = 'line'; if(document.getElementById('flowChartType')) document.getElementById('flowChartType').value = 'line'; }
+        if(state.config.pieType !== 'doughnut') { state.config.pieType = 'doughnut'; if(document.getElementById('pieChartType')) document.getElementById('pieChartType').value = 'doughnut'; }
     }
     
+    // Force theme for Pro mode to ensure readability
+    if (uiKey === 'pro') {
+        const currentTheme = state.config.theme;
+        if(currentTheme !== 'light') {
+            state.config.theme = 'light';
+            save();
+            applyTheme();
+        }
+    }
+
     if (typeof renderAll === 'function') {
-        // Re-draw charts so they apply the new types
         try {
             if(document.getElementById('view-dashboard').classList.contains('active')){
                 const yr=state.years[state.active];
@@ -1247,11 +1284,12 @@ function getCatsInGroup(group){
     return state.config.cats.filter(c => (c.group || 'otros') === group).map(c => c.name).join(', ');
 }
 
-function setOtrosLimit(val){
+function updateOtrosLimit(val){
     state.config.otrosLimit = parseFloat(val) || 0;
+    const disp = document.getElementById('otrosLimitDisplay');
+    if(disp) disp.innerText = state.config.otrosLimit;
     save();
     renderAll();
-    toast('Límite de Otros actualizado');
 }
 
 function generateAdvice(){
@@ -2461,8 +2499,10 @@ function renderConfig(){
     }).join('');
     
     // Otros limit input
-    const otrosLimEl = document.getElementById('otrosLimitInput');
+    const otrosLimEl = document.getElementById('configOtrosLimit');
     if(otrosLimEl) otrosLimEl.value = state.config.otrosLimit;
+    const otrosDisp = document.getElementById('otrosLimitDisplay');
+    if(otrosDisp) otrosDisp.innerText = state.config.otrosLimit;
 
     document.getElementById('configCatsList').innerHTML=state.config.cats.map(c=>{
         const isPlacer=c.group==='placer';
