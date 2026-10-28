@@ -159,36 +159,41 @@ input:checked + .slider:before{transform:translateX(20px)}
 .cat-color-input{width:34px !important;height:34px !important;padding:2px !important;border:1px solid var(--border) !important;border-radius:6px !important;cursor:pointer;margin:0 !important;flex-shrink:0;background:transparent !important;}
 
 /* =====================================================================
-   NUEVOS ESTILOS DE INTERFAZ (UI) - CAMBIOS ESTRUCTURALES REALES
+   UI STYLES
    ===================================================================== */
 
-/* 1. Modo Lite (Minimalista Lista) */
+/* 1. Modo Lite (Minimalista) */
 body.ui-lite { background: #fff; color: #333; }
-body.ui-lite header, body.ui-lite nav { background: #f8f9fa; border-bottom: 1px solid #ddd; }
+body.ui-lite #stickyTopWrap { background: #fff; border-bottom: 1px solid #ddd; }
+body.ui-lite header { background: #fff; border-bottom: none; }
+body.ui-lite nav { background: #f8f9fa; border-bottom: 1px solid #ddd; }
 body.ui-lite nav button { border: none; color: #666; padding: 10px; }
 body.ui-lite nav button.active { background: #e9ecef; color: #000; border-radius: 0; border-bottom: 2px solid #333; }
-body.ui-lite .card { background: transparent; border: none; border-bottom: 1px solid #eee; border-radius: 0; padding: 10px 0; margin-bottom: 0; }
+body.ui-lite .card { background: transparent; border: none; border-bottom: 1px solid #eee; border-radius: 0; padding: 10px 0; margin-bottom: 0; box-shadow: none; }
 body.ui-lite #view-dashboard .grid { display: flex; flex-direction: column; gap: 0; }
 body.ui-lite .stat { background: transparent; border: none; border-bottom: 1px dashed #eee; border-radius: 0; padding: 12px 0; display: flex; justify-content: space-between; align-items: center; }
 body.ui-lite .stat .label { font-size: 14px; color: #666; margin: 0; }
 body.ui-lite .stat .value { font-size: 18px; margin: 0; }
 body.ui-lite .eye-btn { position: static; margin-left: 10px; }
-body.ui-lite .chart-wrapper { display: none; } /* Ocultar gráficos para que sea puramente texto/lista */
+body.ui-lite .chart-wrapper { display: none; } /* Ocultar gráficos */
 body.ui-lite input, body.ui-lite select { border: 1px solid #ccc; background: #fff; color: #333; border-radius: 4px; }
 
 /* 2. Modo Cristal (Glassmorphism Masonry) */
 body.ui-glass { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); background-attachment: fixed; }
+body.ui-glass #stickyTopWrap { background: transparent; border: none; position: static; }
+body.ui-glass header { background: transparent; border: none; padding: 20px 10px; }
+body.ui-glass nav { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(10px); border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); margin: 0 10px; }
 body.ui-glass .card { background: rgba(255, 255, 255, 0.05) !important; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
-body.ui-glass #view-dashboard { column-count: 1; column-gap: 15px; }
+body.ui-glass #view-dashboard { column-count: 1; column-gap: 15px; padding: 10px; }
 @media(min-width: 768px) { body.ui-glass #view-dashboard { column-count: 2; } }
 body.ui-glass #view-dashboard .card { break-inside: avoid; display: inline-block; width: 100%; }
 body.ui-glass .stat { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; }
-body.ui-glass nav { background: rgba(30, 41, 59, 0.8); backdrop-filter: blur(10px); border-radius: 16px; margin: 10px; border: 1px solid rgba(255,255,255,0.1); }
 body.ui-glass nav button.active { background: rgba(255, 255, 255, 0.2); border-radius: 10px; }
 body.ui-glass input, body.ui-glass select { background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; color: #fff; }
 
 /* 3. Modo Neón (Cyberpunk) */
 body.ui-neon { background: #000; color: #0ff; font-family: 'Courier New', monospace; }
+body.ui-neon #stickyTopWrap { background: #000; border-bottom: 2px solid #0ff; }
 body.ui-neon header, body.ui-neon nav { background: #000; border-bottom: 2px solid #0ff; box-shadow: 0 0 10px #0ff; }
 body.ui-neon nav button { border: 1px solid #f0f; color: #f0f; border-radius: 0; text-transform: uppercase; }
 body.ui-neon nav button.active { background: #f0f; color: #000; box-shadow: 0 0 15px #f0f; }
@@ -201,28 +206,27 @@ body.ui-neon button.primary { background: #000; border: 2px solid #0ff; color: #
 body.ui-neon button.primary:hover { background: #0ff; color: #000; }
 body.ui-neon .chart-wrapper { height: 200px; }
 
-/* 4. Modo Profesional (Dashboard Oscuro/Claro Organizado) */
-body.ui-pro { 
-    --bg: #f1f5f9; --card: #ffffff; --border: #cbd5e1; --text: #0f172a; --muted: #64748b; 
-    --accent: #2563eb; --green: #16a34a; --red: #dc2626; --yellow: #ca8a04; --purple: #9333ea;
-    background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+/* 4. Modo Profesional (Sidebar SaaS) */
+body.ui-pro { background: #f1f5f9; color: #0f172a; }
+@media(min-width: 900px) {
+    body.ui-pro { display: grid; grid-template-columns: 260px 1fr; grid-template-rows: 1fr; height: 100vh; overflow: hidden; padding-bottom: 0; }
+    body.ui-pro #stickyTopWrap { position: static; display: flex; flex-direction: column; height: 100vh; overflow-y: auto; background: #ffffff; border-right: 1px solid #cbd5e1; }
+    body.ui-pro header { flex-direction: column; align-items: flex-start; border-bottom: 1px solid #cbd5e1; background: #fff; width: 100%; padding: 20px; }
+    body.ui-pro header h1 { margin-bottom: 15px; color: #1e293b; }
+    body.ui-pro .year-nav { margin-bottom: 15px; width: 100%; }
+    body.ui-pro nav { flex-direction: column; background: #fff; border-bottom: none; width: 100%; padding: 0 10px; }
+    body.ui-pro nav button { justify-content: flex-start; width: 100%; border-radius: 8px; margin-bottom: 5px; border: none; color: #64748b; }
+    body.ui-pro nav button.active { background: #eff6ff; color: #2563eb; font-weight: 600; }
+    body.ui-pro main { height: 100vh; overflow-y: auto; padding: 20px 30px; margin: 0; max-width: 100%; }
 }
-body.ui-pro header, body.ui-pro nav { background: var(--card); border-bottom: 2px solid var(--border); }
-body.ui-pro nav button { border-radius: 0; border: none; border-bottom: 3px solid transparent; color: var(--muted); }
-body.ui-pro nav button.active { background: transparent; border-bottom: 3px solid var(--accent); color: var(--accent); font-weight: bold; }
-body.ui-pro #view-dashboard { display: grid; grid-template-columns: 1fr; gap: 15px; }
-@media(min-width: 768px) { body.ui-pro #view-dashboard { grid-template-columns: 1fr 1fr; } }
-body.ui-pro #view-dashboard > .card:nth-child(1) { grid-column: span 1; } /* Flujo */
-body.ui-pro #view-dashboard > .card:nth-child(2) { grid-column: span 1; } /* Patrimonio */
-body.ui-pro #view-dashboard > .card:nth-child(3) { grid-column: span 1; } /* Metas */
-body.ui-pro #view-dashboard > .card:nth-child(4) { grid-column: span 1; } /* Flujo Chart */
-body.ui-pro #view-dashboard > .card:nth-child(5) { grid-column: span 1; } /* Mes Chart */
-body.ui-pro #view-dashboard > .card:nth-child(6) { grid-column: span 1; } /* Torta */
-body.ui-pro .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); padding: 20px; }
-body.ui-pro .stat { background: #f8fafc; border: 1px solid var(--border); border-radius: 6px; }
-body.ui-pro .stat .value { color: var(--text); }
-body.ui-pro input, body.ui-pro select { background: #f8fafc; border: 1px solid var(--border); color: var(--text); border-radius: 6px; }
-body.ui-pro .chart-wrapper { height: 250px; }
+body.ui-pro header, body.ui-pro #stickyTopWrap { background: #fff; border-bottom: 2px solid #cbd5e1; }
+body.ui-pro nav button { border-radius: 0; border: none; border-bottom: 3px solid transparent; color: #64748b; }
+body.ui-pro nav button.active { background: transparent; border-bottom: 3px solid #2563eb; color: #2563eb; font-weight: bold; }
+body.ui-pro .card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); padding: 24px; }
+body.ui-pro .stat { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; }
+body.ui-pro .stat .value { color: #0f172a; }
+body.ui-pro input, body.ui-pro select { background: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a; border-radius: 6px; }
+body.ui-pro .chart-wrapper { height: 280px; }
 </style>
 </head>
 <body>
@@ -479,8 +483,8 @@ body.ui-pro .chart-wrapper { height: 250px; }
 
       <section class="view" id="view-analisis">
         <div class="card">
-          <h2>🏆 Regla de Oro Financiera (50/30/20) <span id="expertAnalysisMonth" style="font-size:12px;color:var(--accent);font-weight:normal;"></span></h2>
-          <p style="font-size:11px;color:var(--muted);margin-bottom:15px;">Máximo 50% Gastos Fijos, máximo 30% Placer, mínimo 20% Ahorro. Las categorías nuevas se agrupan según su "Grupo".</p>
+          <h2>🏆 Regla de Oro Financiera <span id="expertAnalysisMonth" style="font-size:12px;color:var(--accent);font-weight:normal;"></span></h2>
+          <p style="font-size:11px;color:var(--muted);margin-bottom:15px;">Tu regla actual: Fijo (≤<span id="lblRuleFijo">50</span>%), Placer (≤<span id="lblRulePlacer">30</span>%), Ahorro (≥<span id="lblRuleAhorro">20</span>%), Otros (≤<span id="lblRuleOtros">0</span>%). Ajustable en Configuración.</p>
           <div id="expertAnalysis"></div>
         </div>
 
@@ -743,22 +747,23 @@ body.ui-pro .chart-wrapper { height: 250px; }
             <button class="warning" onclick="lockGoals()" style="margin-top:10px;" id="lockGoalsBtn">🔒 Bloquear Metas</button>
           </div>
         </div>
+        
         <div class="config-section" style="border-left-color:var(--yellow);">
           <div class="config-section-header" onclick="toggleConfigSection('cats')">
-            <h3>🏷️ Categorías de Gasto</h3>
+            <h3>🏷️ Categorías y Regla Financiera</h3>
             <span class="config-toggle" id="toggle-cats">▶</span>
           </div>
           <div class="config-section-content" id="content-cats" style="display:none;">
-            <p style="font-size:11px;color:var(--muted);margin-bottom:10px;">Cada categoría tiene un <strong>Grupo</strong> que indica cómo cuenta en la regla 50/30/20: <em>Fijo</em> (límite 50%), <em>Placer</em> (límite 30%), u <em>Otros</em> (límite configurable abajo).</p>
+            <p style="font-size:11px;color:var(--muted);margin-bottom:10px;">Cada categoría tiene un <strong>Grupo</strong> que indica cómo cuenta en la regla financiera.</p>
             <div id="configCatsList"></div>
             <div style="margin-top:10px;">
               <input type="text" id="newCatName" placeholder="Nombre Categoría (ej. Educación)">
               <input type="text" id="newCatDesc" placeholder="Guía (ej. Cursos, libros)">
               <input type="number" id="newCatLimit" placeholder="Límite mensual $ (opcional)">
-              <label style="font-size:11px;color:var(--muted);margin-top:5px;display:block;">Grupo en la regla 50/30/20</label>
+              <label style="font-size:11px;color:var(--muted);margin-top:5px;display:block;">Grupo en la regla</label>
               <select id="newCatGroup" style="margin-bottom:5px;">
-                <option value="fijo">Fijo (cuenta en el 50%)</option>
-                <option value="placer">Placer (cuenta en el 30%)</option>
+                <option value="fijo">Fijo</option>
+                <option value="placer">Placer</option>
                 <option value="otros" selected>Otros</option>
               </select>
               <div style="display:flex;gap:8px;align-items:center;margin-bottom:5px;">
@@ -767,13 +772,33 @@ body.ui-pro .chart-wrapper { height: 250px; }
               </div>
               <button class="primary" onclick="addCat()">+ Añadir Categoría</button>
             </div>
-            <div style="margin-top:15px; border-top:1px dashed var(--border); padding-top:10px;">
-                <label style="font-size:11px;color:var(--muted);">Límite % para el grupo "Otros" (sobre ingresos)</label>
-                <input type="number" id="configOtrosLimit" value="10" min="0" max="100" oninput="updateOtrosLimit(this.value)">
-                <div style="font-size:10px;color:var(--accent);margin-top:3px;">Límite actual: <span id="otrosLimitDisplay">10</span>%</div>
+            
+            <div style="margin-top:20px; border-top:1px dashed var(--border); padding-top:15px;">
+                <h4 style="font-size:13px;margin-bottom:10px;color:var(--accent);">⚖️ Mi Regla Financiera (Personalizada)</h4>
+                <p style="font-size:11px;color:var(--muted);margin-bottom:10px;">Suma total: <strong id="ruleSumDisplay">100</strong>% (no puede pasar de 100%).</p>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                    <div style="flex:1; min-width:100px;">
+                        <label style="font-size:11px;color:var(--muted);">Fijo (%)</label>
+                        <input type="number" id="ruleFijo" value="50" min="0" max="100" oninput="validateRule()">
+                    </div>
+                    <div style="flex:1; min-width:100px;">
+                        <label style="font-size:11px;color:var(--muted);">Placer (%)</label>
+                        <input type="number" id="rulePlacer" value="30" min="0" max="100" oninput="validateRule()">
+                    </div>
+                    <div style="flex:1; min-width:100px;">
+                        <label style="font-size:11px;color:var(--muted);">Ahorro (%)</label>
+                        <input type="number" id="ruleAhorro" value="20" min="0" max="100" oninput="validateRule()">
+                    </div>
+                    <div style="flex:1; min-width:100px;">
+                        <label style="font-size:11px;color:var(--muted);">Otros (%)</label>
+                        <input type="number" id="ruleOtros" value="0" min="0" max="100" oninput="validateRule()">
+                    </div>
+                </div>
+                <button class="primary" onclick="saveRule()" style="margin-top:10px; background:var(--green);">Guardar Regla</button>
             </div>
           </div>
         </div>
+        
         <div class="config-section" style="border-left-color:var(--red);">
           <div class="config-section-header" onclick="toggleConfigSection('admin')">
             <h3>🔧 Zona de Administrador</h3>
@@ -844,10 +869,10 @@ const THEMES={
 
 const UI_STYLES = {
     default: { name: 'Clásico (Default)', desc: 'El diseño original', class: '' },
-    lite: { name: 'Modo Lite (Lista)', desc: 'Minimalista, sin tarjetas', class: 'ui-lite' },
-    glass: { name: 'Cristal (Masonry)', desc: 'Vidrio flotante en 2 columnas', class: 'ui-glass' },
-    neon: { name: 'Neón (Cyberpunk)', desc: 'Terminal oscura brillante', class: 'ui-neon' },
-    pro: { name: 'Profesional (Dashboard)', desc: 'Vista de negocios estructurada', class: 'ui-pro' }
+    lite: { name: 'Modo Lite', desc: 'Minimalista, sin sombras', class: 'ui-lite' },
+    glass: { name: 'Cristal', desc: 'Efecto vidrio flotante', class: 'ui-glass' },
+    neon: { name: 'Neón', desc: 'Estilo Cyberpunk', class: 'ui-neon' },
+    pro: { name: 'Profesional', desc: 'Sidebar de negocios', class: 'ui-pro' }
 };
 
 function applyTheme(){
@@ -864,13 +889,9 @@ function applyUIStyle(){
     const uiKey = (state.config && state.config.uiStyle) || 'default';
     const uiObj = UI_STYLES[uiKey] || UI_STYLES.default;
     
-    // Remove all possible UI classes
     document.body.classList.remove('ui-lite','ui-glass','ui-neon','ui-pro');
-    
-    // Add current
     if (uiObj.class) document.body.classList.add(uiObj.class);
     
-    // Auto-change chart types based on UI style to enhance the "different app" feel
     if (uiKey === 'lite') {
         if(state.config.chartType !== 'bar') { state.config.chartType = 'bar'; if(document.getElementById('flowChartType')) document.getElementById('flowChartType').value = 'bar'; }
         if(state.config.pieType !== 'pie') { state.config.pieType = 'pie'; if(document.getElementById('pieChartType')) document.getElementById('pieChartType').value = 'pie'; }
@@ -885,7 +906,6 @@ function applyUIStyle(){
         if(state.config.pieType !== 'doughnut') { state.config.pieType = 'doughnut'; if(document.getElementById('pieChartType')) document.getElementById('pieChartType').value = 'doughnut'; }
     }
     
-    // Force theme for Pro mode to ensure readability
     if (uiKey === 'pro') {
         const currentTheme = state.config.theme;
         if(currentTheme !== 'light') {
@@ -1061,6 +1081,7 @@ function migrateState(){
         state.config.migratedCatGroups=true;
     }
     if(state.config.uiStyle===undefined)state.config.uiStyle='default';
+    if(!state.config.rule)state.config.rule={fijo:50,placer:30,ahorro:20,otros:0};
     if(state.config.otrosLimit===undefined)state.config.otrosLimit=10;
     if(state.config.placer===undefined)state.config.placer=30;
     if(!state.config.chartType)state.config.chartType='bar';
@@ -1284,12 +1305,35 @@ function getCatsInGroup(group){
     return state.config.cats.filter(c => (c.group || 'otros') === group).map(c => c.name).join(', ');
 }
 
-function updateOtrosLimit(val){
-    state.config.otrosLimit = parseFloat(val) || 0;
-    const disp = document.getElementById('otrosLimitDisplay');
-    if(disp) disp.innerText = state.config.otrosLimit;
+function validateRule(){
+    const f = parseFloat(document.getElementById('ruleFijo').value) || 0;
+    const p = parseFloat(document.getElementById('rulePlacer').value) || 0;
+    const a = parseFloat(document.getElementById('ruleAhorro').value) || 0;
+    const o = parseFloat(document.getElementById('ruleOtros').value) || 0;
+    const sum = f + p + a + o;
+    const disp = document.getElementById('ruleSumDisplay');
+    if(disp){
+        disp.innerText = sum;
+        if(sum > 100) disp.style.color = 'var(--red)';
+        else disp.style.color = 'var(--green)';
+    }
+}
+
+function saveRule(){
+    const f = parseFloat(document.getElementById('ruleFijo').value) || 0;
+    const p = parseFloat(document.getElementById('rulePlacer').value) || 0;
+    const a = parseFloat(document.getElementById('ruleAhorro').value) || 0;
+    const o = parseFloat(document.getElementById('ruleOtros').value) || 0;
+    const sum = f + p + a + o;
+    if(sum > 100){
+        toast('❌ La suma no puede pasar de 100%');
+        return;
+    }
+    state.config.rule = {fijo: f, placer: p, ahorro: a, otros: o};
+    state.config.otrosLimit = o;
     save();
     renderAll();
+    toast('✅ Regla financiera actualizada');
 }
 
 function generateAdvice(){
@@ -1317,13 +1361,14 @@ function generateAdvice(){
         adviceHtml.push(`<div class="alert" style="background:rgba(59,130,246,.1);border-color:var(--accent);color:var(--accent);">💡 <strong>Asesor:</strong> Registra tus movimientos de este mes para recomendaciones personalizadas.</div>`);
     }else{
         if(mInc>0){
+            const rule = state.config.rule;
             const pctFijo=(mFijo/mInc)*100;
             const pctPlacer=(mPlacer/mInc)*100;
             const pctOtros=(mOtros/mInc)*100;
-            if(pctFijo>50)adviceHtml.push(`<div class="alert warn">📉 <strong>Gastos fijos altos:</strong> ${pctFijo.toFixed(0)}% de tus ingresos del mes van a gastos del grupo Fijo. Lo ideal es ≤50%.</div>`);
-            if(pctPlacer>30)adviceHtml.push(`<div class="alert warn">🎉 <strong>Placer alto:</strong> Has gastado el ${pctPlacer.toFixed(0)}% en categorías del grupo Placer este mes. El límite ideal es 30%.</div>`);
-            if(pctOtros>state.config.otrosLimit)adviceHtml.push(`<div class="alert warn">📦 <strong>Otros alto:</strong> Has gastado el ${pctOtros.toFixed(0)}% en categorías del grupo Otros. Tu límite es ${state.config.otrosLimit}%.</div>`);
-            if(ahorroPots<(mInc*0.2))adviceHtml.push(`<div class="alert danger">🐖 <strong>Ahorro bajo:</strong> Te sugiero ahorrar el 20% (${fmt(mInc*0.2)}). Aún te faltan ${fmt((mInc*0.2)-ahorroPots)}.</div>`);
+            if(pctFijo>rule.fijo)adviceHtml.push(`<div class="alert warn">📉 <strong>Gastos fijos altos:</strong> ${pctFijo.toFixed(0)}% de tus ingresos del mes van a gastos del grupo Fijo. Tu límite es ${rule.fijo}%.</div>`);
+            if(pctPlacer>rule.placer)adviceHtml.push(`<div class="alert warn">🎉 <strong>Placer alto:</strong> Has gastado el ${pctPlacer.toFixed(0)}% en categorías del grupo Placer este mes. Tu límite es ${rule.placer}%.</div>`);
+            if(pctOtros>rule.otros)adviceHtml.push(`<div class="alert warn">📦 <strong>Otros alto:</strong> Has gastado el ${pctOtros.toFixed(0)}% en categorías del grupo Otros. Tu límite es ${rule.otros}%.</div>`);
+            if(ahorroPots<(mInc*(rule.ahorro/100)))adviceHtml.push(`<div class="alert danger">🐖 <strong>Ahorro bajo:</strong> Te sugiero ahorrar el ${rule.ahorro}% (${fmt(mInc*(rule.ahorro/100))}). Aún te faltan ${fmt((mInc*(rule.ahorro/100))-ahorroPots)}.</div>`);
         }
 
         if(prevExp>0&&mExp>0){
@@ -1573,7 +1618,7 @@ function setCatColor(id, color){
 }
 function setCatGroup(id, group){
     const c=state.config.cats.find(x=>x.id===id);
-    if(c){c.group=group;save();renderAll();toast('Grupo 50/30/20 actualizado');}
+    if(c){c.group=group;save();renderAll();toast('Grupo actualizado');}
 }
 
 // ===== Edición de movimientos =====
@@ -1891,13 +1936,15 @@ Patrimonio Total: ${fmt(patrimonio)}
   - Billetera (efectivo): ${fmt(cashBilletera)}
   - Deudas activas: ${fmt(totalDeudas)}
 
+REGLA FINANCIERA DEL USUARIO: Fijo (≤${state.config.rule.fijo}%), Placer (≤${state.config.rule.placer}%), Ahorro (≥${state.config.rule.ahorro}%), Otros (≤${state.config.rule.otros}%).
+
 HISTORIAL MES A MES (${state.active}):
 ${monthData.map(m=>`${m.mes}: Ingresos ${fmt(m.ingresos)}, Gastos ${fmt(m.gastos)}, Balance ${fmt(m.balance)}`).join('\n')}
 
 DESGLOSE COMPLETO DE GASTOS POR CATEGORÍA (MES A MES):
 ${monthCatBreakdown.join('\n')||'Sin gastos'}
 
-AGRUPACIÓN POR REGLA 50/30/20 (todo el año):
+AGRUPACIÓN POR REGLA (todo el año):
 ${grupoStr}
 
 TOP CATEGORÍAS DE GASTO ANUAL (todas, incluidas las nuevas):
@@ -1925,7 +1972,7 @@ ${projStr}
 
 [FIN DEL CONTEXTO]
 
-Eres un asesor financiero personal senior con expertise en finanzas personales, presupuestos y planificación. Responde en español, sé concreto y accionable. IMPORTANTE: en el desglose de arriba aparecen TODAS las categorías que el usuario tiene configuradas, incluidas las personalizadas que haya creado (por ejemplo "Compromisos Sociales"). Tenlas todas en cuenta en tus análisis y consejos, no te limites a las categorías clásicas (Fijo, Placer, Necesario). Si una categoría nueva tiene gasto alto o creciente, menciónala y da consejos específicos sobre ella. Cuando el usuario pregunte sobre ahorro, inversión o metas, usa los datos reales de arriba para dar números específicos y planes concretos. No des consejos genéricos; siempre personaliza con sus cifras. Cuando sugieras algo, calcula el impacto real.
+Eres un asesor financiero personal senior con expertise en finanzas personales, presupuestos y planificación. Responde en español, sé concreto y accionable. IMPORTANTE: en el desglose de arriba aparecen TODAS las categorías que el usuario tiene configuradas, incluidas las personalizadas que haya creado. Tenlas todas en cuenta en tus análisis y consejos. El usuario tiene una regla financiera personalizada (indicada arriba), así que ajusta tus consejos y alertas a los porcentajes que él ha definido, no a la regla estándar 50/30/20. Cuando el usuario pregunte sobre ahorro, inversión o metas, usa los datos reales de arriba para dar números específicos y planes concretos. No des consejos genéricos; siempre personaliza con sus cifras. Cuando sugieras algo, calcula el impacto real.
 `;
 }
 
@@ -2498,11 +2545,25 @@ function renderConfig(){
         </div>`;
     }).join('');
     
-    // Otros limit input
-    const otrosLimEl = document.getElementById('configOtrosLimit');
-    if(otrosLimEl) otrosLimEl.value = state.config.otrosLimit;
-    const otrosDisp = document.getElementById('otrosLimitDisplay');
-    if(otrosDisp) otrosDisp.innerText = state.config.otrosLimit;
+    // Regla financiera
+    const rf = document.getElementById('ruleFijo');
+    const rp = document.getElementById('rulePlacer');
+    const ra = document.getElementById('ruleAhorro');
+    const ro = document.getElementById('ruleOtros');
+    if(rf) rf.value = state.config.rule.fijo;
+    if(rp) rp.value = state.config.rule.placer;
+    if(ra) ra.value = state.config.rule.ahorro;
+    if(ro) ro.value = state.config.rule.otros;
+    validateRule();
+
+    const lblFijo = document.getElementById('lblRuleFijo');
+    const lblPlacer = document.getElementById('lblRulePlacer');
+    const lblAhorro = document.getElementById('lblRuleAhorro');
+    const lblOtros = document.getElementById('lblRuleOtros');
+    if(lblFijo) lblFijo.innerText = state.config.rule.fijo;
+    if(lblPlacer) lblPlacer.innerText = state.config.rule.placer;
+    if(lblAhorro) lblAhorro.innerText = state.config.rule.ahorro;
+    if(lblOtros) lblOtros.innerText = state.config.rule.otros;
 
     document.getElementById('configCatsList').innerHTML=state.config.cats.map(c=>{
         const isPlacer=c.group==='placer';
@@ -2511,11 +2572,11 @@ function renderConfig(){
             <input value="${c.desc||''}" onchange="renameCat('${c.id}','desc',this.value)" style="border:none;width:20%;font-size:11px;color:var(--muted);" placeholder="Guía...">
             ${isPlacer 
                 ? `<span style="width:16%;font-size:10px;color:var(--muted);text-align:center;padding:6px 0;">usa %</span>`
-                : `<input type="number" value="${c.limit||0}" onchange="setCatLimit('${c.id}',this.value)" placeholder="Límite" style="width:16%;font-size:11px;">`
+                : `<input type="number" value="${c.limit||0}" onchange="setCatLimit('${c.id}',this.value)" placeholder="Límite $" style="width:16%;font-size:11px;">`
             }
             <select onchange="setCatGroup('${c.id}',this.value)" style="width:20%;font-size:11px;margin:0;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:4px;border-radius:4px;">
-                <option value="fijo" ${c.group==='fijo'?'selected':''}>Fijo (50%)</option>
-                <option value="placer" ${c.group==='placer'?'selected':''}>Placer (30%)</option>
+                <option value="fijo" ${c.group==='fijo'?'selected':''}>Fijo</option>
+                <option value="placer" ${c.group==='placer'?'selected':''}>Placer</option>
                 <option value="otros" ${c.group==='otros'?'selected':''}>Otros</option>
             </select>
             <input type="color" value="${c.color||'#3b82f6'}" onchange="setCatColor('${c.id}',this.value)" class="cat-color-input" title="Cambiar color">
@@ -2771,14 +2832,15 @@ function renderExpertAnalysis(){
     const pctPlacer=(expPlacer/inc)*100;
     const pctOtros=(expOtros/inc)*100;
     const pctAhorro=(ahorroPots/inc)*100;
-    const metFijo=pctFijo<=50;
-    const metPlacer=pctPlacer<=30;
-    const metAhorro=pctAhorro>=20;
-    const metOtros=pctOtros<=state.config.otrosLimit;
-    const colorFijo=metFijo?'var(--green)':(pctFijo<=60?'var(--yellow)':'var(--red)');
-    const colorPlacer=metPlacer?'var(--green)':(pctPlacer<=40?'var(--yellow)':'var(--red)');
-    const colorAhorro=metAhorro?'var(--green)':(pctAhorro>=10?'var(--yellow)':'var(--red)');
-    const colorOtros=metOtros?'var(--green)':(pctOtros<=state.config.otrosLimit*1.2?'var(--yellow)':'var(--red)');
+    const rule = state.config.rule;
+    const metFijo=pctFijo<=rule.fijo;
+    const metPlacer=pctPlacer<=rule.placer;
+    const metAhorro=pctAhorro>=rule.ahorro;
+    const metOtros=pctOtros<=rule.otros;
+    const colorFijo=metFijo?'var(--green)':(pctFijo<=rule.fijo+10?'var(--yellow)':'var(--red)');
+    const colorPlacer=metPlacer?'var(--green)':(pctPlacer<=rule.placer+10?'var(--yellow)':'var(--red)');
+    const colorAhorro=metAhorro?'var(--green)':(pctAhorro>=rule.ahorro-10?'var(--yellow)':'var(--red)');
+    const colorOtros=metOtros?'var(--green)':(pctOtros<=rule.otros+10?'var(--yellow)':'var(--red)');
     
     const createBar=(label,pct,target,isMax,color,met,catsList)=>{
         const diff=isMax?(target-pct):(pct-target);
@@ -2793,8 +2855,8 @@ function renderExpertAnalysis(){
     else resumen=`<div class="alert danger" style="font-size:13px;margin-bottom:12px;">❌ <strong>Atención:</strong> Solo cumples ${metCount} de 3 indicadores principales.</div>`;
     
     let otrosBar='';
-    if(expOtros>0 || state.config.otrosLimit>0){
-        otrosBar = createBar('Otros gastos', pctOtros, state.config.otrosLimit, true, colorOtros, metOtros, getCatsInGroup('otros'));
+    if(expOtros>0 || rule.otros>0){
+        otrosBar = createBar('Otros gastos', pctOtros, rule.otros, true, colorOtros, metOtros, getCatsInGroup('otros'));
     }
     
     let catsBreakdown='';
@@ -2806,9 +2868,9 @@ function renderExpertAnalysis(){
         catsBreakdown+=`<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;"><span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${ccolor};margin-right:6px;"></span>${name}</span><span style="color:var(--muted);">${fmt(amt)} · ${pct}%</span></div>`;
     });
     box.innerHTML=resumen+
-        createBar('Gastos grupo Fijo',pctFijo,50,true,colorFijo,metFijo,getCatsInGroup('fijo'))+
-        createBar('Gastos grupo Placer',pctPlacer,30,true,colorPlacer,metPlacer,getCatsInGroup('placer'))+
-        createBar('Ahorro (bolsillos)',pctAhorro,20,false,colorAhorro,metAhorro)+
+        createBar('Gastos grupo Fijo',pctFijo,rule.fijo,true,colorFijo,metFijo,getCatsInGroup('fijo'))+
+        createBar('Gastos grupo Placer',pctPlacer,rule.placer,true,colorPlacer,metPlacer,getCatsInGroup('placer'))+
+        createBar('Ahorro (bolsillos)',pctAhorro,rule.ahorro,false,colorAhorro,metAhorro)+
         otrosBar+
         `<div style="margin-top:12px;padding:10px;background:rgba(255,255,255,0.03);border-radius:6px;"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:bold;margin-bottom:6px;">Desglose por categoría (todas)</div>${catsBreakdown||'<span style="font-size:11px;color:var(--muted);">Sin gastos</span>'}</div>`;
 }
@@ -2858,19 +2920,20 @@ function renderMonthlySummaries(){
         let topExpense=Object.keys(details).reduce((a,b)=>details[a]>details[b]?a:b,'');
         let pctFijo=0,pctPlacer=0,pctOtros=0,pctAhorro=0;
         let metFijo=false,metPlacer=false,metAhorro=false,metOtros=false;
+        const rule = state.config.rule;
         if(inc>0){
             pctFijo=(expFijo/inc)*100;pctPlacer=(expPlacer/inc)*100;pctOtros=(expOtros/inc)*100;pctAhorro=(ahorro/inc)*100;
-            metFijo=pctFijo<=50;metPlacer=pctPlacer<=30;metAhorro=pctAhorro>=20;metOtros=pctOtros<=state.config.otrosLimit;
+            metFijo=pctFijo<=rule.fijo;metPlacer=pctPlacer<=rule.placer;metAhorro=pctAhorro>=rule.ahorro;metOtros=pctOtros<=rule.otros;
         }
-        const colorFijo=!inc?'var(--muted)':(metFijo?'var(--green)':(pctFijo<=60?'var(--yellow)':'var(--red)'));
-        const colorPlacer=!inc?'var(--muted)':(metPlacer?'var(--green)':(pctPlacer<=40?'var(--yellow)':'var(--red)'));
-        const colorAhorro=!inc?'var(--muted)':(metAhorro?'var(--green)':(pctAhorro>=10?'var(--yellow)':'var(--red)'));
-        const colorOtros=!inc?'var(--muted)':(metOtros?'var(--green)':(pctOtros<=state.config.otrosLimit*1.2?'var(--yellow)':'var(--red)'));
+        const colorFijo=!inc?'var(--muted)':(metFijo?'var(--green)':(pctFijo<=rule.fijo+10?'var(--yellow)':'var(--red)'));
+        const colorPlacer=!inc?'var(--muted)':(metPlacer?'var(--green)':(pctPlacer<=rule.placer+10?'var(--yellow)':'var(--red)'));
+        const colorAhorro=!inc?'var(--muted)':(metAhorro?'var(--green)':(pctAhorro>=rule.ahorro-10?'var(--yellow)':'var(--red)'));
+        const colorOtros=!inc?'var(--muted)':(metOtros?'var(--green)':(pctOtros<=rule.otros+10?'var(--yellow)':'var(--red)'));
         let cumpleRegla='— Sin ingresos';let cumpleColor='var(--muted)';
         if(inc>0){const metCount=[metFijo,metPlacer,metAhorro].filter(Boolean).length;if(metCount===3){cumpleRegla='✅ Regla cumplida';cumpleColor='var(--green)';}else if(metCount===2){cumpleRegla='⚠️ Parcial (2/3)';cumpleColor='var(--yellow)';}else{cumpleRegla=`❌ No cumplida (${metCount}/3)`;cumpleColor='var(--red)';}}
         let advice='';
         if(exp>inc)advice=`Gastaste más de lo que ingresaste. Reduce en <strong>${topExpense||'otros'}</strong>.`;
-        else if(ahorro<(inc*0.2))advice=`Podrías ahorrar más. Mayor gasto: <strong>${topExpense||'otros'}</strong>.`;
+        else if(ahorro<(inc*(rule.ahorro/100)))advice=`Podrías ahorrar más. Mayor gasto: <strong>${topExpense||'otros'}</strong>.`;
         else advice=`¡Excelente mes! Mayor gasto: <strong>${topExpense||'otros'}</strong>.`;
         summaries.push({month:i,inc,exp,ahorro,balance,color,advice,count,pctFijo,pctPlacer,pctOtros,pctAhorro,expOtros,metFijo,metPlacer,metAhorro,metOtros,colorFijo,colorPlacer,colorAhorro,colorOtros,cumpleRegla,cumpleColor,byCat});
     }
@@ -2879,6 +2942,7 @@ function renderMonthlySummaries(){
         const catInfo = catsList ? `<div style="font-size:9px;color:var(--muted);margin-top:2px;">Incluye: ${catsList}</div>` : '';
         return `<div><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;flex-wrap:wrap;gap:4px;"><span>${label} <span style="color:var(--muted);">(${isMax?'≤':'≥'}${target}%)</span></span><strong style="color:${color};">${pct.toFixed(1)}% ${met?'✅':'❌'}</strong></div><div class="bar" style="height:8px;position:relative;"><div class="bar-fill" style="width:${Math.max(0,Math.min(pct,100))}%;background:${color};"></div><div style="position:absolute;left:${target}%;top:0;bottom:0;width:2px;background:white;opacity:0.7;"></div></div>${catInfo}</div>`;
     };
+    const rule = state.config.rule;
     box.innerHTML=summaries.map(s=>{
         const isOpen=!!state.summariesOpen[s.month];
         let catsBreakdown='';
@@ -2890,10 +2954,10 @@ function renderMonthlySummaries(){
             catsBreakdown+=`<div style="display:flex;justify-content:space-between;font-size:11px;padding:2px 0;"><span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${ccolor};margin-right:6px;"></span>${name}</span><span style="color:var(--muted);">${fmt(amt)} · ${pct}% de ingresos</span></div>`;
         });
         let otrosBar = '';
-        if(s.expOtros>0 || state.config.otrosLimit>0){
-            otrosBar = `<div style="margin-top:6px;">${createBar5020('Otros', s.pctOtros, state.config.otrosLimit, true, s.colorOtros, s.metOtros, getCatsInGroup('otros'))}</div>`;
+        if(s.expOtros>0 || rule.otros>0){
+            otrosBar = `<div style="margin-top:6px;">${createBar5020('Otros', s.pctOtros, rule.otros, true, s.colorOtros, s.metOtros, getCatsInGroup('otros'))}</div>`;
         }
-        return `<div style="background:var(--bg);border-radius:8px;border-left:4px solid ${s.color};overflow:hidden;"><div onclick="toggleMonthSummary(${s.month})" style="padding:12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;"><div><h4 style="font-size:14px;margin:0;">${monthNames[s.month]} ${state.active}</h4><span style="font-size:11px;color:var(--muted);">${s.count} mov · Balance: <span style="color:${s.color}">${fmt(s.balance)}</span></span></div><span style="font-size:16px;color:var(--muted);">${isOpen?'▼':'▶'}</span></div>${isOpen?`<div style="padding:0 12px 12px 12px;"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;flex-wrap:wrap;gap:8px;"><span>Ingresos: <span style="color:var(--green)">${fmt(s.inc)}</span></span><span>Gastos: <span style="color:var(--red)">${fmt(s.exp)}</span></span><span>Ahorro: <span style="color:var(--yellow)">${fmt(s.ahorro)}</span></span></div><div style="margin-top:10px;padding:10px;background:rgba(255,255,255,0.03);border-radius:6px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px;"><span style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:bold;">Regla 50/30/20</span><span style="font-size:11px;color:${s.cumpleColor};font-weight:bold;">${s.cumpleRegla}</span></div><div style="display:flex;flex-direction:column;gap:8px;">${createBar5020('Fijo',s.pctFijo,50,true,s.colorFijo,s.metFijo,getCatsInGroup('fijo'))}${createBar5020('Placer',s.pctPlacer,30,true,s.colorPlacer,s.metPlacer,getCatsInGroup('placer'))}${createBar5020('Ahorro',s.pctAhorro,20,false,s.colorAhorro,s.metAhorro)}</div>${otrosBar}</div><div style="margin-top:10px;padding:10px;background:rgba(255,255,255,0.03);border-radius:6px;"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:bold;margin-bottom:6px;">Desglose por categoría (todas)</div>${catsBreakdown||'<span style="font-size:11px;color:var(--muted);">Sin gastos</span>'}</div><div style="font-size:11px;color:var(--muted);background:rgba(255,255,255,0.05);padding:8px;border-radius:4px;margin-top:8px;"><strong>🤖 Resumen:</strong> ${s.advice}</div></div>`:''}</div>`;
+        return `<div style="background:var(--bg);border-radius:8px;border-left:4px solid ${s.color};overflow:hidden;"><div onclick="toggleMonthSummary(${s.month})" style="padding:12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;"><div><h4 style="font-size:14px;margin:0;">${monthNames[s.month]} ${state.active}</h4><span style="font-size:11px;color:var(--muted);">${s.count} mov · Balance: <span style="color:${s.color}">${fmt(s.balance)}</span></span></div><span style="font-size:16px;color:var(--muted);">${isOpen?'▼':'▶'}</span></div>${isOpen?`<div style="padding:0 12px 12px 12px;"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;flex-wrap:wrap;gap:8px;"><span>Ingresos: <span style="color:var(--green)">${fmt(s.inc)}</span></span><span>Gastos: <span style="color:var(--red)">${fmt(s.exp)}</span></span><span>Ahorro: <span style="color:var(--yellow)">${fmt(s.ahorro)}</span></span></div><div style="margin-top:10px;padding:10px;background:rgba(255,255,255,0.03);border-radius:6px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px;"><span style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:bold;">Mi Regla Financiera</span><span style="font-size:11px;color:${s.cumpleColor};font-weight:bold;">${s.cumpleRegla}</span></div><div style="display:flex;flex-direction:column;gap:8px;">${createBar5020('Fijo',s.pctFijo,rule.fijo,true,s.colorFijo,s.metFijo,getCatsInGroup('fijo'))}${createBar5020('Placer',s.pctPlacer,rule.placer,true,s.colorPlacer,s.metPlacer,getCatsInGroup('placer'))}${createBar5020('Ahorro',s.pctAhorro,rule.ahorro,false,s.colorAhorro,s.metAhorro)}</div>${otrosBar}</div><div style="margin-top:10px;padding:10px;background:rgba(255,255,255,0.03);border-radius:6px;"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:bold;margin-bottom:6px;">Desglose por categoría (todas)</div>${catsBreakdown||'<span style="font-size:11px;color:var(--muted);">Sin gastos</span>'}</div><div style="font-size:11px;color:var(--muted);background:rgba(255,255,255,0.05);padding:8px;border-radius:4px;margin-top:8px;"><strong>🤖 Resumen:</strong> ${s.advice}</div></div>`:''}</div>`;
     }).join('');
     updateToggleAllBtn();
 }
