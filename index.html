@@ -94,6 +94,21 @@ th{color:var(--muted);font-size:11px}
 .note-item .note-title{font-size:13px;font-weight:600;margin-bottom:2px}
 .note-item .note-meta{font-size:10px;color:var(--muted)}
 .note-item .note-preview{font-size:11px;color:var(--muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.conn-status{width:10px;height:10px;border-radius:50%;flex-shrink:0;display:inline-block;box-shadow:0 0 0 2px rgba(0,0,0,0.25)}
+.conn-status.online{background:var(--green)}
+.conn-status.offline{background:var(--red)}
+.tx-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:10px}
+.tx-filters select{margin-bottom:0;font-size:12px;padding:7px}
+.note-tag-chip{display:inline-block;font-size:10px;padding:2px 7px;border-radius:10px;background:var(--border);color:var(--muted);margin-right:4px}
+.note-tag-chip.ideas{background:rgba(59,130,246,0.2);color:var(--accent)}
+.note-tag-chip.pendientes{background:rgba(234,179,8,0.2);color:var(--yellow)}
+.note-tag-chip.general{background:rgba(148,163,184,0.2);color:var(--muted)}
+.note-pin{color:var(--yellow);margin-right:4px}
+.note-tag-filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.note-tag-filters button{width:auto;padding:4px 10px;font-size:11px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:14px;cursor:pointer;margin:0}
+.note-tag-filters button.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.month-closed-badge{font-size:10px;background:rgba(239,68,68,0.15);color:var(--red);padding:2px 6px;border-radius:4px;margin-left:6px}
+
 #notesEditor{display:none}
 #notesEditor.active{display:block}
 #noteContent{min-height:160px;resize:vertical;font-family:inherit;line-height:1.5}
@@ -257,7 +272,8 @@ input:checked + .slider:before{transform:translateX(20px)}
             <button onclick="closeMonthReview()" style="background:transparent;border:none;color:var(--text);font-size:22px;cursor:pointer;width:auto;padding:0;margin:0;">✕</button>
         </div>
         <div id="monthReviewContent"></div>
-        <button class="primary" onclick="closeMonthReview(true)" style="margin-top:15px;">✓ Entendido, mes revisado</button>
+        <button class="primary" onclick="closeMonthReview(true)" style="margin-top:15px;">✓ Revisar y cerrar mes (snapshot)</button>
+        <button class="warning" onclick="closeMonthReview(false)" style="margin-top:8px;width:100%;">Solo cerrar aviso (sin cerrar mes)</button>
     </div>
 </div>
 
@@ -292,12 +308,28 @@ input:checked + .slider:before{transform:translateX(20px)}
                 <button class="primary" onclick="newNote()" style="width:auto;padding:6px 12px;font-size:12px;">+ Nueva nota</button>
             </div>
             <input type="text" id="notesSearch" placeholder="🔍 Buscar notas..." oninput="renderNotesList()" style="margin-bottom:10px;">
+            <div class="note-tag-filters" id="noteTagFilters">
+                <button type="button" class="active" data-tag="" onclick="setNoteTagFilter(this)">Todas</button>
+                <button type="button" data-tag="ideas" onclick="setNoteTagFilter(this)">Ideas</button>
+                <button type="button" data-tag="pendientes" onclick="setNoteTagFilter(this)">Pendientes</button>
+                <button type="button" data-tag="general" onclick="setNoteTagFilter(this)">General</button>
+                <button type="button" data-tag="pinned" onclick="setNoteTagFilter(this)">📌 Fijadas</button>
+            </div>
             <div class="notes-list" id="notesList"></div>
             <p id="notesEmpty" style="font-size:12px;color:var(--muted);text-align:center;display:none;">No hay notas todavía. Crea la primera.</p>
         </div>
         <div id="notesEditor">
             <label style="font-size:11px;color:var(--muted);">Título</label>
             <input type="text" id="noteTitle" placeholder="Título de la nota">
+            <label style="font-size:11px;color:var(--muted);">Etiqueta</label>
+            <select id="noteTag">
+                <option value="general">General</option>
+                <option value="ideas">Ideas</option>
+                <option value="pendientes">Pendientes</option>
+            </select>
+            <label style="font-size:12px;color:var(--text);display:flex;align-items:center;gap:8px;margin:8px 0 10px 0;cursor:pointer;">
+                <input type="checkbox" id="notePinned" style="width:auto;margin:0;"> 📌 Fijar arriba
+            </label>
             <label style="font-size:11px;color:var(--muted);">Contenido</label>
             <textarea id="noteContent" placeholder="Escribe tu nota aquí..."></textarea>
             <input type="hidden" id="noteEditId">
@@ -355,6 +387,7 @@ input:checked + .slider:before{transform:translateX(20px)}
           <span id="yearBadge" style="font-size:11px;font-weight:normal;background:var(--accent);color:#fff;padding:2px 8px;border-radius:10px;margin-left:4px;">2024</span>
         </h1>
         <div class="header-tools">
+          <span id="connStatus" class="conn-status online" title="En línea" aria-label="Estado de conexión"></span>
           <button class="calc-toggle" onclick="toggleNotes()" title="Notas" aria-label="Notas">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -457,6 +490,18 @@ input:checked + .slider:before{transform:translateX(20px)}
         <div class="card">
           <h2>Historial <span id="txCount" style="float:right;color:var(--muted)"></span></h2>
           <input type="text" id="txSearch" placeholder="🔍 Buscar..." oninput="renderTable()">
+          <div class="tx-filters" id="txFilters">
+            <select id="txFilterMonth" onchange="renderTable()"><option value="">Todos los meses</option></select>
+            <select id="txFilterType" onchange="renderTable()">
+              <option value="">Todos los tipos</option>
+              <option value="Ingreso">Ingreso</option>
+              <option value="Gasto">Gasto</option>
+              <option value="Transferencia">Movimiento Interno</option>
+              <option value="PagoDeuda">Pago de Deuda</option>
+            </select>
+            <select id="txFilterCat" onchange="renderTable()"><option value="">Todas las categorías</option></select>
+            <select id="txFilterAcc" onchange="renderTable()"><option value="">Todas las cuentas</option></select>
+          </div>
           <div style="overflow-x:auto">
             <table id="txTable">
               <thead><tr><th>Fecha</th><th>Detalle</th><th>Acción</th><th style="text-align:right">Monto</th><th></th></tr></thead>
@@ -801,6 +846,8 @@ input:checked + .slider:before{transform:translateX(20px)}
             <button class="warning" onclick="unlockDebts()">🔓 Desbloquear Deudas Pagadas</button>
             <p style="font-size:11px;color:var(--accent);margin-top:15px;margin-bottom:5px;">Edición de Movimientos</p>
             <button class="warning" onclick="toggleEditUnlock()" id="editUnlockBtn">🔓 Desbloquear Edición de Movimientos</button>
+            <p style="font-size:11px;color:var(--accent);margin-top:15px;margin-bottom:5px;">Meses cerrados</p>
+            <button class="warning" onclick="unlockClosedMonths()">🔓 Desbloquear Meses Cerrados</button>
           </div>
         </div>
         <div class="config-section" style="border-left-color:var(--muted);">
@@ -866,8 +913,21 @@ try{
 }catch(e){console.warn('Persistence setup:', e);}
 
 /* #39 – Aviso offline/online */
-window.addEventListener('offline',()=>{try{toast('⚠️ Sin conexión: cambios guardados localmente');}catch(e){}});
-window.addEventListener('online',()=>{try{toast('✅ Conexión restaurada');}catch(e){}});
+function updateConnStatus(){
+    const el=document.getElementById('connStatus');
+    if(!el)return;
+    if(navigator.onLine){
+        el.className='conn-status online';
+        el.title='En línea';
+    }else{
+        el.className='conn-status offline';
+        el.title='Sin conexión (modo offline)';
+    }
+}
+window.addEventListener('offline',()=>{try{updateConnStatus();toast('⚠️ Sin conexión: cambios guardados localmente');}catch(e){}});
+window.addEventListener('online',()=>{try{updateConnStatus();toast('✅ Conexión restaurada');}catch(e){}});
+document.addEventListener('DOMContentLoaded',updateConnStatus);
+setTimeout(updateConnStatus,100);
 
 let bioCredentialId=localStorage.getItem('bioCredentialId');
 
@@ -1064,6 +1124,7 @@ function migrateState(){
         if(!state.active)state.active=new Date().getFullYear();
         if(!state.years[state.active])state.years[state.active]={locked:false,lockedInit:false,openingBalances:{},txs:[]};
         if(!state.notes)state.notes=[];
+        if(!state.monthClosures)state.monthClosures={};
         return;
     }
     if(!state.config)state.config={};
@@ -1123,6 +1184,7 @@ function migrateState(){
     if(!state.hidden.locks)state.hidden.locks={};
     if(!state.placerLimits)state.placerLimits={};
     if(!state.notes)state.notes=[];
+    if(!state.monthClosures)state.monthClosures={};
     if(!state.years[state.active])state.years[state.active]={locked:false,lockedInit:false,openingBalances:{},txs:[]};
     state.accounts.forEach(a=>{if(state.years[state.active].openingBalances[a.id]===undefined)state.years[state.active].openingBalances[a.id]=0;});
     state.pockets.forEach(p=>{if(state.years[state.active].openingBalances[p.id]===undefined)state.years[state.active].openingBalances[p.id]=0;});
@@ -1612,6 +1674,55 @@ function checkMonthReview(){
     document.getElementById('monthReviewContent').innerHTML=html;
     document.getElementById('monthReviewModal').classList.add('active');
 }
+function monthClosureKey(year,month){return `${year}-${month}`;}
+function isMonthClosedForDate(dateStr){
+    if(!state.monthClosures||!dateStr)return false;
+    const d=parseTxDate({date:dateStr});
+    return !!state.monthClosures[monthClosureKey(d.getFullYear(),d.getMonth())];
+}
+function buildMonthSnapshot(year,month){
+    const yr=state.years[year];
+    if(!yr)return null;
+    let inc=0,exp=0,ahorro=0;
+    const byCat={};
+    const details={};
+    yr.txs.forEach(t=>{
+        const d=parseTxDate(t);
+        if(d.getMonth()!==month||d.getFullYear()!==year)return;
+        if(t.type==='Ingreso')inc+=t.amount;
+        if(t.type==='Gasto'||t.type==='PagoDeuda'){
+            exp+=t.amount;
+            const cid=t.cat||'_sin';
+            byCat[cid]=(byCat[cid]||0)+t.amount;
+            details[t.detail]=(details[t.detail]||0)+t.amount;
+        }
+        if(t.type==='Transferencia'){
+            if(state.pockets.some(p=>p.id===t.to))ahorro+=t.amount;
+            if(state.pockets.some(p=>p.id===t.from))ahorro-=t.amount;
+        }
+    });
+    let expFijo=0,expPlacer=0,expOtros=0;
+    Object.entries(byCat).forEach(([cid,amt])=>{
+        const cat=state.config.cats.find(c=>c.id===cid);
+        const g=(cat&&cat.group)?cat.group:'otros';
+        if(g==='fijo')expFijo+=amt;
+        else if(g==='placer')expPlacer+=amt;
+        else expOtros+=amt;
+    });
+    const rule=state.config.rule||{fijo:50,placer:30,ahorro:20,otros:0};
+    const pctFijo=inc>0?(expFijo/inc)*100:0;
+    const pctPlacer=inc>0?(expPlacer/inc)*100:0;
+    const pctAhorro=inc>0?(ahorro/inc)*100:0;
+    const pctOtros=inc>0?(expOtros/inc)*100:0;
+    let topExpense='';
+    Object.keys(details).forEach(k=>{if(!topExpense||details[k]>details[topExpense])topExpense=k;});
+    return {
+        year,month,inc,exp,ahorro,balance:inc-exp,
+        pctFijo,pctPlacer,pctAhorro,pctOtros,
+        metFijo:pctFijo<=rule.fijo,metPlacer:pctPlacer<=rule.placer,metAhorro:pctAhorro>=rule.ahorro,metOtros:pctOtros<=rule.otros,
+        topExpense,byCat,closedAt:Date.now()
+    };
+}
 function closeMonthReview(markReviewed){
     document.getElementById('monthReviewModal').classList.remove('active');
     if(markReviewed){
@@ -1619,9 +1730,24 @@ function closeMonthReview(markReviewed){
         let pm=now.getMonth()-1,py=now.getFullYear();
         if(pm<0){pm=11;py--;}
         state.config.lastMonthReview=`${py}-${pm}`;
+        if(!state.monthClosures)state.monthClosures={};
+        const snap=buildMonthSnapshot(py,pm);
+        if(snap){
+            state.monthClosures[monthClosureKey(py,pm)]=snap;
+            toast('✅ Mes revisado y cerrado (snapshot guardado)');
+        }else{
+            toast('✅ Mes revisado');
+        }
         save();
-        toast('✅ Mes revisado');
+        try{renderMonthlySummaries();}catch(e){}
     }
+}
+function unlockClosedMonths(){
+    if(!confirm('⚠️ ¿Desbloquear todos los meses cerrados? Podrás editar movimientos de esos meses otra vez.'))return;
+    state.monthClosures={};
+    save();
+    try{renderAll();}catch(e){}
+    toast('Meses cerrados desbloqueados');
 }
 
 function openSimulator(){
@@ -1774,6 +1900,7 @@ function openEditTx(id){
     const yr = state.years[state.active];
     const tx = yr.txs.find(t=>t.id===id);
     if(!tx) return toast('Movimiento no encontrado');
+    if(isMonthClosedForDate(tx.date)) return toast('🔒 Ese mes está cerrado. Desbloquéalo en Admin si necesitas editar.');
     const origins=[...state.accounts.map(a=>({id:a.id,name:a.name})),...state.pockets.map(p=>({id:p.id,name:p.name}))];
     const opts=origins.map(o=>`<option value="${o.id}">${escapeHtml(o.name)}</option>`).join('');
     document.getElementById('editTxFrom').innerHTML=opts;
@@ -1799,6 +1926,8 @@ function closeEditTx(){
 
 /* #I2 – valida monto contra la deuda DESPUÉS del revert */
 function saveEditTx(){
+    const _editDateGuard=document.getElementById('editTxDate')?.value;
+    if(_editDateGuard&&isMonthClosedForDate(_editDateGuard))return toast('🔒 Ese mes está cerrado. Desbloquéalo en Admin si necesitas editar.');
     if(!state.editUnlocked) return toast('🔒 Desbloquea la edición en Admin');
     const id = document.getElementById('editTxId').value;
     const yr = state.years[state.active];
@@ -1940,6 +2069,7 @@ function addTx(){
     const a=parseFloat(document.getElementById('fAmount').value);
     const ty=document.getElementById('fType').value;
     if(!d||!det||isNaN(a)||a<=0)return toast('Completa bien los datos');
+    if(isMonthClosedForDate(d))return toast('🔒 Ese mes está cerrado. Desbloquéalo en Admin si necesitas editar.');
     if(ty==='PagoDeuda'){
         const debtId=document.getElementById('fDebtSelect').value;
         const debt = state.debts.find(x=>x.id===debtId);
@@ -2017,6 +2147,7 @@ function delTx(id){
     if(!canEdit())return;
     const t=state.years[state.active].txs.find(x=>x.id===id);
     if(!t)return;
+    if(isMonthClosedForDate(t.date))return toast('🔒 Ese mes está cerrado. Desbloquéalo en Admin si necesitas editar.');
     if(!confirm('¿Eliminar este movimiento? Esta acción no se puede deshacer.')) return;
     if(t.type==='PagoDeuda' && t.debtId){
         const debt=state.debts.find(x=>x.id===t.debtId);
@@ -3005,14 +3136,50 @@ function renderConfig(){
 }
 
 /* #11 – sólo renderiza si la vista está activa */
+function fillTxFilters(){
+    const monthSel=document.getElementById('txFilterMonth');
+    const catSel=document.getElementById('txFilterCat');
+    const accSel=document.getElementById('txFilterAcc');
+    if(!monthSel||!catSel||!accSel)return;
+    const prevM=monthSel.value, prevC=catSel.value, prevA=accSel.value;
+    const months=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    monthSel.innerHTML='<option value="">Todos los meses</option>'+months.map((n,i)=>`<option value="${i}">${n}</option>`).join('');
+    catSel.innerHTML='<option value="">Todas las categorías</option>'+(state.config.cats||[]).map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+    const origins=[...(state.accounts||[]).map(a=>({id:a.id,name:a.name})),...(state.pockets||[]).map(p=>({id:p.id,name:p.name}))];
+    accSel.innerHTML='<option value="">Todas las cuentas</option>'+origins.map(o=>`<option value="${o.id}">${escapeHtml(o.name)}</option>`).join('');
+    if(prevM)monthSel.value=prevM;
+    if(prevC)catSel.value=prevC;
+    if(prevA)accSel.value=prevA;
+}
 function renderTable(){
     const view=document.getElementById('view-movimientos');
     if(!view || !view.classList.contains('active')) return;
     const tb=document.querySelector('#txTable tbody');
     const tfoot=document.querySelector('#txTable tfoot');
-    const q=document.getElementById('txSearch').value.toLowerCase();
+    const q=(document.getElementById('txSearch')?.value||'').toLowerCase();
+    const fMonth=document.getElementById('txFilterMonth')?.value??'';
+    const fType=document.getElementById('txFilterType')?.value??'';
+    const fCat=document.getElementById('txFilterCat')?.value??'';
+    const fAcc=document.getElementById('txFilterAcc')?.value??'';
+    fillTxFilters();
+    if(document.getElementById('txFilterMonth')&&fMonth!=='')document.getElementById('txFilterMonth').value=fMonth;
+    if(document.getElementById('txFilterType')&&fType)document.getElementById('txFilterType').value=fType;
+    if(document.getElementById('txFilterCat')&&fCat)document.getElementById('txFilterCat').value=fCat;
+    if(document.getElementById('txFilterAcc')&&fAcc)document.getElementById('txFilterAcc').value=fAcc;
     const yr=state.years[state.active];
-    const list=yr.txs.filter(t=>t.detail.toLowerCase().includes(q)).sort((a,b)=>b.date.localeCompare(a.date));
+    const list=yr.txs.filter(t=>{
+        if(q&&!(t.detail||'').toLowerCase().includes(q))return false;
+        if(fType&&t.type!==fType)return false;
+        if(fCat&&t.cat!==fCat)return false;
+        if(fMonth!==''){
+            const d=parseTxDate(t);
+            if(String(d.getMonth())!==String(fMonth))return false;
+        }
+        if(fAcc){
+            if(t.from!==fAcc&&t.to!==fAcc)return false;
+        }
+        return true;
+    }).sort((a,b)=>b.date.localeCompare(a.date));
     document.getElementById('txCount').textContent=list.length+' registros';
     const totalSum=list.reduce((s,t)=>s+t.amount,0);
     tb.innerHTML=list.map(t=>{
@@ -3030,9 +3197,10 @@ function renderTable(){
             if(catObj&&catObj.color){colorMonto=catObj.color;catColor=catObj.color;}
         }
         const catStr=t.cat?`<br><small style="color:${catColor}">${escapeHtml(getCatName(t.cat))}</small>`:'';
-        const editBtn=state.editUnlocked?`<button class="warning" style="padding:3px 6px;font-size:10px;margin-right:4px;" onclick="openEditTx('${t.id}')" title="Editar">✏️</button>`:'';
+        const monthClosed=isMonthClosedForDate(t.date);
+        const editBtn=(state.editUnlocked&&!monthClosed)?`<button class="warning" style="padding:3px 6px;font-size:10px;margin-right:4px;" onclick="openEditTx('${t.id}')" title="Editar">✏️</button>`:(monthClosed?'<span title="Mes cerrado" style="font-size:11px;margin-right:4px;">🔒</span>':'');
         const typeLabel=t.type==='Transferencia'?'Movimiento Interno':t.type;
-        return `<tr><td>${t.date}</td><td>${escapeHtml(t.detail)}</td><td>${typeLabel}${catStr}<br><small style="color:var(--muted)">${escapeHtml(ruta)}</small></td><td style="text-align:right;color:${colorMonto};font-weight:bold;">${fmt(t.amount)}</td><td>${editBtn}${canEdit()?`<button class="danger" onclick="delTx('${t.id}')">X</button>`:''}</td></tr>`;
+        return `<tr><td>${t.date}</td><td>${escapeHtml(t.detail)}</td><td>${typeLabel}${catStr}<br><small style="color:var(--muted)">${escapeHtml(ruta)}</small></td><td style="text-align:right;color:${colorMonto};font-weight:bold;">${fmt(t.amount)}</td><td>${editBtn}${(canEdit()&&!monthClosed)?`<button class="danger" onclick="delTx('${t.id}')">X</button>`:''}</td></tr>`;
     }).join('')||'<tr><td colspan="5" style="text-align:center">Sin datos</td></tr>';
     if(list.length>0){
         tfoot.innerHTML=`<tr style="background:var(--bg);border-top:2px solid var(--border);"><td colspan="3" style="text-align:right;font-weight:bold;color:var(--muted);">Total:</td><td style="text-align:right;font-weight:bold;color:var(--accent);font-size:15px;">${fmt(totalSum)}</td><td></td></tr>`;
@@ -3372,7 +3540,8 @@ function renderMonthlySummaries(){
         if(s.expOtros>0 || rule.otros>0){
             otrosBar = `<div style="margin-top:6px;">${createBar5020('Otros', s.pctOtros, rule.otros, true, s.colorOtros, s.metOtros, getCatsInGroup('otros'))}</div>`;
         }
-        return `<div style="background:var(--bg);border-radius:8px;border-left:4px solid ${s.color};overflow:hidden;"><div onclick="toggleMonthSummary(${s.month})" style="padding:12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;"><div><h4 style="font-size:14px;margin:0;">${monthNames[s.month]} ${state.active}</h4><span style="font-size:11px;color:var(--muted);">${s.count} mov · Balance: <span style="color:${s.color}">${fmt(s.balance)}</span></span></div><span style="font-size:16px;color:var(--muted);">${isOpen?'▼':'▶'}</span></div>${isOpen?`<div style="padding:0 12px 12px 12px;"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;flex-wrap:wrap;gap:8px;"><span>Ingresos: <span style="color:var(--green)">${fmt(s.inc)}</span></span><span>Gastos: <span style="color:var(--red)">${fmt(s.exp)}</span></span><span>Ahorro: <span style="color:var(--yellow)">${fmt(s.ahorro)}</span></span></div><div style="margin-top:10px;padding:10px;background:rgba(255,255,255,0.03);border-radius:6px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px;"><span style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:bold;">Mi Regla Financiera</span><span style="font-size:11px;color:${s.cumpleColor};font-weight:bold;">${s.cumpleRegla}</span></div><div style="display:flex;flex-direction:column;gap:8px;">${createBar5020('Fijo',s.pctFijo,rule.fijo,true,s.colorFijo,s.metFijo,getCatsInGroup('fijo'))}${createBar5020('Placer',s.pctPlacer,rule.placer,true,s.colorPlacer,s.metPlacer,getCatsInGroup('placer'))}${createBar5020('Ahorro',s.pctAhorro,rule.ahorro,false,s.colorAhorro,s.metAhorro)}</div>${otrosBar}</div><div style="margin-top:10px;padding:10px;background:rgba(255,255,255,0.03);border-radius:6px;"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:bold;margin-bottom:6px;">Desglose por categoría (todas)</div>${catsBreakdown||'<span style="font-size:11px;color:var(--muted);">Sin gastos</span>'}</div><div style="font-size:11px;color:var(--muted);background:rgba(255,255,255,0.05);padding:8px;border-radius:4px;margin-top:8px;"><strong>🤖 Resumen:</strong> ${s.advice}</div></div>`:''}</div>`;
+        const closedKey=monthClosureKey(state.active,s.month);const isClosed=!!(state.monthClosures&&state.monthClosures[closedKey]);
+        return `<div style="background:var(--bg);border-radius:8px;border-left:4px solid ${s.color};overflow:hidden;"><div onclick="toggleMonthSummary(${s.month})" style="padding:12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;"><div><h4 style="font-size:14px;margin:0;">${monthNames[s.month]} ${state.active}${isClosed?'<span class="month-closed-badge">🔒 Cerrado</span>':''}</h4><span style="font-size:11px;color:var(--muted);">${s.count} mov · Balance: <span style="color:${s.color}">${fmt(s.balance)}</span></span></div><span style="font-size:16px;color:var(--muted);">${isOpen?'▼':'▶'}</span></div>${isOpen?`<div style="padding:0 12px 12px 12px;"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;flex-wrap:wrap;gap:8px;"><span>Ingresos: <span style="color:var(--green)">${fmt(s.inc)}</span></span><span>Gastos: <span style="color:var(--red)">${fmt(s.exp)}</span></span><span>Ahorro: <span style="color:var(--yellow)">${fmt(s.ahorro)}</span></span></div><div style="margin-top:10px;padding:10px;background:rgba(255,255,255,0.03);border-radius:6px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px;"><span style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:bold;">Mi Regla Financiera</span><span style="font-size:11px;color:${s.cumpleColor};font-weight:bold;">${s.cumpleRegla}</span></div><div style="display:flex;flex-direction:column;gap:8px;">${createBar5020('Fijo',s.pctFijo,rule.fijo,true,s.colorFijo,s.metFijo,getCatsInGroup('fijo'))}${createBar5020('Placer',s.pctPlacer,rule.placer,true,s.colorPlacer,s.metPlacer,getCatsInGroup('placer'))}${createBar5020('Ahorro',s.pctAhorro,rule.ahorro,false,s.colorAhorro,s.metAhorro)}</div>${otrosBar}</div><div style="margin-top:10px;padding:10px;background:rgba(255,255,255,0.03);border-radius:6px;"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:bold;margin-bottom:6px;">Desglose por categoría (todas)</div>${catsBreakdown||'<span style="font-size:11px;color:var(--muted);">Sin gastos</span>'}</div><div style="font-size:11px;color:var(--muted);background:rgba(255,255,255,0.05);padding:8px;border-radius:4px;margin-top:8px;"><strong>🤖 Resumen:</strong> ${s.advice}</div></div>`:''}</div>`;
     }).join('');
     updateToggleAllBtn();
 }
@@ -3416,6 +3585,13 @@ function calcDelete(){calcExpr=calcExpr.slice(0,-1);calcUpdateDisplay();}
 function calcToggleSign(){if(!calcExpr)return;const m=calcExpr.match(/(\d+\.?\d*)$/);if(m){const num=m[1];const start=calcExpr.length-num.length;if(start>0&&calcExpr[start-1]==='-')calcExpr=calcExpr.slice(0,start-1)+num;else calcExpr=calcExpr.slice(0,start)+'-'+num;}else calcExpr='-'+calcExpr;calcUpdateDisplay();}
 
 /* ========== Notas ========== */
+let notesTagFilter='';
+function setNoteTagFilter(btn){
+    notesTagFilter=btn.getAttribute('data-tag')||'';
+    document.querySelectorAll('#noteTagFilters button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    renderNotesList();
+}
 function toggleNotes(){
     const modal=document.getElementById('notesModal');
     if(!modal)return;
@@ -3423,6 +3599,10 @@ function toggleNotes(){
     document.getElementById('notesListView').style.display='block';
     document.getElementById('notesEditor').classList.remove('active');
     document.getElementById('notesSearch').value='';
+    notesTagFilter='';
+    document.querySelectorAll('#noteTagFilters button').forEach(b=>{
+        b.classList.toggle('active', (b.getAttribute('data-tag')||'')==='');
+    });
     renderNotesList();
     modal.classList.add('active');
 }
@@ -3435,7 +3615,16 @@ function renderNotesList(){
     const list=document.getElementById('notesList');
     const empty=document.getElementById('notesEmpty');
     const q=(document.getElementById('notesSearch')?.value||'').toLowerCase().trim();
-    let notes=[...state.notes].sort((a,b)=>(b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0));
+    let notes=[...state.notes].sort((a,b)=>{
+        const ap=a.pinned?1:0, bp=b.pinned?1:0;
+        if(ap!==bp) return bp-ap;
+        return (b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0);
+    });
+    if(notesTagFilter==='pinned'){
+        notes=notes.filter(n=>!!n.pinned);
+    }else if(notesTagFilter){
+        notes=notes.filter(n=>(n.tag||'general')===notesTagFilter);
+    }
     if(q){
         notes=notes.filter(n=>
             (n.title||'').toLowerCase().includes(q) ||
@@ -3449,13 +3638,16 @@ function renderNotesList(){
         return;
     }
     if(empty)empty.style.display='none';
+    const tagLabels={ideas:'Ideas',pendientes:'Pendientes',general:'General'};
     list.innerHTML=notes.map(n=>{
         const d=new Date(n.updatedAt||n.createdAt||Date.now());
         const ds=`${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
         const preview=(n.content||'').replace(/\s+/g,' ').trim().substring(0,80);
+        const tag=n.tag||'general';
+        const pin=n.pinned?'<span class="note-pin">📌</span>':'';
         return `<div class="note-item" onclick="openNote('${n.id}')">
-            <div class="note-title">${escapeHtml(n.title||'Sin título')}</div>
-            <div class="note-meta">${ds}</div>
+            <div class="note-title">${pin}${escapeHtml(n.title||'Sin título')}</div>
+            <div class="note-meta"><span class="note-tag-chip ${tag}">${tagLabels[tag]||tag}</span>${ds}</div>
             ${preview?`<div class="note-preview">${escapeHtml(preview)}</div>`:''}
         </div>`;
     }).join('');
@@ -3464,6 +3656,8 @@ function newNote(){
     document.getElementById('noteEditId').value='';
     document.getElementById('noteTitle').value='';
     document.getElementById('noteContent').value='';
+    document.getElementById('noteTag').value='general';
+    document.getElementById('notePinned').checked=false;
     document.getElementById('noteDeleteBtn').style.display='none';
     document.getElementById('notesListView').style.display='none';
     document.getElementById('notesEditor').classList.add('active');
@@ -3476,6 +3670,8 @@ function openNote(id){
     document.getElementById('noteEditId').value=n.id;
     document.getElementById('noteTitle').value=n.title||'';
     document.getElementById('noteContent').value=n.content||'';
+    document.getElementById('noteTag').value=n.tag||'general';
+    document.getElementById('notePinned').checked=!!n.pinned;
     document.getElementById('noteDeleteBtn').style.display='inline-block';
     document.getElementById('notesListView').style.display='none';
     document.getElementById('notesEditor').classList.add('active');
@@ -3490,15 +3686,19 @@ function saveNote(){
     const id=document.getElementById('noteEditId').value;
     const title=sanitizeDetail(document.getElementById('noteTitle').value)||'Sin título';
     const content=String(document.getElementById('noteContent').value||'').replace(/\x00/g,'').trim();
+    const tag=document.getElementById('noteTag').value||'general';
+    const pinned=!!document.getElementById('notePinned').checked;
     const now=Date.now();
     if(id){
         const n=state.notes.find(x=>x.id===id);
         if(!n)return toast('Nota no encontrada');
         n.title=title;
         n.content=content;
+        n.tag=tag;
+        n.pinned=pinned;
         n.updatedAt=now;
     }else{
-        state.notes.unshift({id:genId(),title,content,createdAt:now,updatedAt:now});
+        state.notes.unshift({id:genId(),title,content,tag,pinned,createdAt:now,updatedAt:now});
     }
     save();
     toast('📝 Nota guardada');
