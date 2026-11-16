@@ -84,7 +84,20 @@ th{color:var(--muted);font-size:11px}
 
 .calc-toggle{background:var(--border);border:none;color:var(--text);padding:6px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.15s;width:34px;height:34px;flex-shrink:0}
 .calc-toggle:hover,.calc-toggle:active{background:var(--accent)}
+
 .calc-toggle svg{display:block;width:18px;height:18px}
+.header-tools{display:flex;gap:6px;align-items:center;flex-shrink:0}
+.notes-list{display:flex;flex-direction:column;gap:8px;max-height:220px;overflow-y:auto;margin-bottom:12px}
+.note-item{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;cursor:pointer;transition:border-color 0.15s}
+.note-item:hover{border-color:var(--accent)}
+.note-item.active{border-color:var(--accent);box-shadow:0 0 0 1px rgba(59,130,246,0.3)}
+.note-item .note-title{font-size:13px;font-weight:600;margin-bottom:2px}
+.note-item .note-meta{font-size:10px;color:var(--muted)}
+.note-item .note-preview{font-size:11px;color:var(--muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#notesEditor{display:none}
+#notesEditor.active{display:block}
+#noteContent{min-height:160px;resize:vertical;font-family:inherit;line-height:1.5}
+
 #calculatorPanel{position:fixed;bottom:20px;right:20px;width:300px;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,0.6);z-index:9997;display:none;flex-direction:column;padding:12px;max-height:calc(100vh - 40px)}
 @media (max-width:480px){#calculatorPanel{left:10px;right:10px;bottom:10px;width:auto}}
 .calc-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:12px;color:var(--muted);text-transform:uppercase;font-weight:bold;letter-spacing:0.5px}
@@ -266,6 +279,37 @@ input:checked + .slider:before{transform:translateX(20px)}
     </div>
 </div>
 
+
+<div class="modal-overlay" id="notesModal">
+    <div class="modal-content" style="max-width:560px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+            <h2 style="color:var(--accent);font-size:18px;margin:0;">📝 Mis Notas</h2>
+            <button onclick="closeNotes()" style="background:transparent;border:none;color:var(--text);font-size:22px;cursor:pointer;width:auto;padding:0;margin:0;">✕</button>
+        </div>
+        <div id="notesListView">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px;flex-wrap:wrap;">
+                <p style="font-size:12px;color:var(--muted);margin:0;">Apunta ideas, recordatorios o lo que necesites.</p>
+                <button class="primary" onclick="newNote()" style="width:auto;padding:6px 12px;font-size:12px;">+ Nueva nota</button>
+            </div>
+            <input type="text" id="notesSearch" placeholder="🔍 Buscar notas..." oninput="renderNotesList()" style="margin-bottom:10px;">
+            <div class="notes-list" id="notesList"></div>
+            <p id="notesEmpty" style="font-size:12px;color:var(--muted);text-align:center;display:none;">No hay notas todavía. Crea la primera.</p>
+        </div>
+        <div id="notesEditor">
+            <label style="font-size:11px;color:var(--muted);">Título</label>
+            <input type="text" id="noteTitle" placeholder="Título de la nota">
+            <label style="font-size:11px;color:var(--muted);">Contenido</label>
+            <textarea id="noteContent" placeholder="Escribe tu nota aquí..."></textarea>
+            <input type="hidden" id="noteEditId">
+            <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+                <button class="primary" onclick="saveNote()" style="flex:1;">💾 Guardar</button>
+                <button class="warning" onclick="backToNotesList()" style="width:auto;padding:10px 14px;">← Lista</button>
+                <button class="danger" id="noteDeleteBtn" onclick="deleteCurrentNote()" style="width:auto;padding:10px 14px;display:none;">🗑️</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div id="calculatorPanel">
     <div class="calc-header">
         <div class="calc-header-left">
@@ -310,14 +354,25 @@ input:checked + .slider:before{transform:translateX(20px)}
           Mis Finanzas Pro
           <span id="yearBadge" style="font-size:11px;font-weight:normal;background:var(--accent);color:#fff;padding:2px 8px;border-radius:10px;margin-left:4px;">2024</span>
         </h1>
-        <button class="calc-toggle" onclick="toggleCalculator()" title="Abrir calculadora" aria-label="Calculadora">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/>
-              <line x1="8" y1="10" x2="8" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/><line x1="16" y1="10" x2="16" y2="10"/>
-              <line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/>
-              <line x1="8" y1="18" x2="8" y2="18"/><line x1="12" y1="18" x2="12" y2="18"/><line x1="16" y1="18" x2="16" y2="18"/>
-          </svg>
-        </button>
+        <div class="header-tools">
+          <button class="calc-toggle" onclick="toggleNotes()" title="Notas" aria-label="Notas">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <line x1="10" y1="9" x2="8" y2="9"/>
+            </svg>
+          </button>
+          <button class="calc-toggle" onclick="toggleCalculator()" title="Abrir calculadora" aria-label="Calculadora">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/>
+                <line x1="8" y1="10" x2="8" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/><line x1="16" y1="10" x2="16" y2="10"/>
+                <line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/>
+                <line x1="8" y1="18" x2="8" y2="18"/><line x1="12" y1="18" x2="12" y2="18"/><line x1="16" y1="18" x2="16" y2="18"/>
+            </svg>
+          </button>
+        </div>
         <div class="year-nav" id="yearNav"></div>
       </header>
       <nav id="mainNav">
@@ -1008,6 +1063,7 @@ function migrateState(){
         if(!state.years)state.years={};
         if(!state.active)state.active=new Date().getFullYear();
         if(!state.years[state.active])state.years[state.active]={locked:false,lockedInit:false,openingBalances:{},txs:[]};
+        if(!state.notes)state.notes=[];
         return;
     }
     if(!state.config)state.config={};
@@ -1066,6 +1122,7 @@ function migrateState(){
     if(!state.hidden.stats)state.hidden.stats={};
     if(!state.hidden.locks)state.hidden.locks={};
     if(!state.placerLimits)state.placerLimits={};
+    if(!state.notes)state.notes=[];
     if(!state.years[state.active])state.years[state.active]={locked:false,lockedInit:false,openingBalances:{},txs:[]};
     state.accounts.forEach(a=>{if(state.years[state.active].openingBalances[a.id]===undefined)state.years[state.active].openingBalances[a.id]=0;});
     state.pockets.forEach(p=>{if(state.years[state.active].openingBalances[p.id]===undefined)state.years[state.active].openingBalances[p.id]=0;});
@@ -3353,6 +3410,106 @@ function calcEquals(){if(!calcExpr)return;try{let r=Function('"use strict";retur
 function calcClear(){calcExpr='';calcUpdateDisplay();}
 function calcDelete(){calcExpr=calcExpr.slice(0,-1);calcUpdateDisplay();}
 function calcToggleSign(){if(!calcExpr)return;const m=calcExpr.match(/(\d+\.?\d*)$/);if(m){const num=m[1];const start=calcExpr.length-num.length;if(start>0&&calcExpr[start-1]==='-')calcExpr=calcExpr.slice(0,start-1)+num;else calcExpr=calcExpr.slice(0,start)+'-'+num;}else calcExpr='-'+calcExpr;calcUpdateDisplay();}
+
+/* ========== Notas ========== */
+function toggleNotes(){
+    const modal=document.getElementById('notesModal');
+    if(!modal)return;
+    if(modal.classList.contains('active')){closeNotes();return;}
+    document.getElementById('notesListView').style.display='block';
+    document.getElementById('notesEditor').classList.remove('active');
+    document.getElementById('notesSearch').value='';
+    renderNotesList();
+    modal.classList.add('active');
+}
+function closeNotes(){
+    const modal=document.getElementById('notesModal');
+    if(modal)modal.classList.remove('active');
+}
+function renderNotesList(){
+    if(!state.notes)state.notes=[];
+    const list=document.getElementById('notesList');
+    const empty=document.getElementById('notesEmpty');
+    const q=(document.getElementById('notesSearch')?.value||'').toLowerCase().trim();
+    let notes=[...state.notes].sort((a,b)=>(b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0));
+    if(q){
+        notes=notes.filter(n=>
+            (n.title||'').toLowerCase().includes(q) ||
+            (n.content||'').toLowerCase().includes(q)
+        );
+    }
+    if(!list)return;
+    if(notes.length===0){
+        list.innerHTML='';
+        if(empty)empty.style.display='block';
+        return;
+    }
+    if(empty)empty.style.display='none';
+    list.innerHTML=notes.map(n=>{
+        const d=new Date(n.updatedAt||n.createdAt||Date.now());
+        const ds=`${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+        const preview=(n.content||'').replace(/\s+/g,' ').trim().substring(0,80);
+        return `<div class="note-item" onclick="openNote('${n.id}')">
+            <div class="note-title">${escapeHtml(n.title||'Sin título')}</div>
+            <div class="note-meta">${ds}</div>
+            ${preview?`<div class="note-preview">${escapeHtml(preview)}</div>`:''}
+        </div>`;
+    }).join('');
+}
+function newNote(){
+    document.getElementById('noteEditId').value='';
+    document.getElementById('noteTitle').value='';
+    document.getElementById('noteContent').value='';
+    document.getElementById('noteDeleteBtn').style.display='none';
+    document.getElementById('notesListView').style.display='none';
+    document.getElementById('notesEditor').classList.add('active');
+    setTimeout(()=>document.getElementById('noteTitle').focus(),50);
+}
+function openNote(id){
+    if(!state.notes)state.notes=[];
+    const n=state.notes.find(x=>x.id===id);
+    if(!n)return;
+    document.getElementById('noteEditId').value=n.id;
+    document.getElementById('noteTitle').value=n.title||'';
+    document.getElementById('noteContent').value=n.content||'';
+    document.getElementById('noteDeleteBtn').style.display='inline-block';
+    document.getElementById('notesListView').style.display='none';
+    document.getElementById('notesEditor').classList.add('active');
+}
+function backToNotesList(){
+    document.getElementById('notesEditor').classList.remove('active');
+    document.getElementById('notesListView').style.display='block';
+    renderNotesList();
+}
+function saveNote(){
+    if(!state.notes)state.notes=[];
+    const id=document.getElementById('noteEditId').value;
+    const title=sanitizeDetail(document.getElementById('noteTitle').value)||'Sin título';
+    const content=String(document.getElementById('noteContent').value||'').replace(/\x00/g,'').trim();
+    const now=Date.now();
+    if(id){
+        const n=state.notes.find(x=>x.id===id);
+        if(!n)return toast('Nota no encontrada');
+        n.title=title;
+        n.content=content;
+        n.updatedAt=now;
+    }else{
+        state.notes.unshift({id:genId(),title,content,createdAt:now,updatedAt:now});
+    }
+    save();
+    toast('📝 Nota guardada');
+    backToNotesList();
+}
+function deleteCurrentNote(){
+    const id=document.getElementById('noteEditId').value;
+    if(!id)return;
+    if(!confirm('¿Eliminar esta nota?'))return;
+    state.notes=(state.notes||[]).filter(n=>n.id!==id);
+    save();
+    toast('Nota eliminada');
+    backToNotesList();
+}
+
 function toggleCalculator(){const p=document.getElementById('calculatorPanel');if(!p)return;p.style.display=(p.style.display==='none'||!p.style.display)?'flex':'none';}
 
 document.addEventListener('keydown',(e)=>{
