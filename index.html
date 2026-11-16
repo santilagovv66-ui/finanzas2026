@@ -2739,13 +2739,17 @@ function renderAll(){
 function renderDashboard(){
     document.getElementById('toggleAdvisor').checked=state.config.advisorEnabled;
     const yn=document.getElementById('yearNav');yn.innerHTML='';
-    Object.keys(state.years).sort((a,b)=>b-a).forEach(y=>{
-        const b=document.createElement('button');
-        b.textContent=(state.years[y].locked?'🔒 ':'')+y;
-        if(y==state.active)b.classList.add('active');
-        b.onclick=()=>{state.active=parseInt(y);save();renderAll();};
-        yn.appendChild(b);
-    });
+    const yearKeys=Object.keys(state.years).sort((a,b)=>b-a);
+    /* Solo mostrar selector de años si hay más de uno (evita repetir el año del título) */
+    if(yearKeys.length>1){
+        yearKeys.forEach(y=>{
+            const b=document.createElement('button');
+            b.textContent=(state.years[y].locked?'🔒 ':'')+y;
+            if(y==state.active)b.classList.add('active');
+            b.onclick=()=>{state.active=parseInt(y);save();renderAll();};
+            yn.appendChild(b);
+        });
+    }
     const yr=state.years[state.active];
     document.getElementById('addCard').style.display=canEdit()?'block':'none';
     document.getElementById('lockBtn').textContent=yr.locked?'🔓 Reabrir Año':'🔒 Cerrar Año';
